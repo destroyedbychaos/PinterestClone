@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36127.28
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinterestClone.API", "PinterestClone.API\PinterestClone.API.csproj", "{DCEC9CB0-0D46-4D01-994C-9D61A9CF5F32}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinterestClone.BLL", "PinterestClone.BLL\PinterestClone.BLL.csproj", "{0CAB9E03-3214-4A59-8981-ADDE41B8820D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinterestClone.DAL", "PinterestClone.DAL\PinterestClone.DAL.csproj", "{D659BFA9-2D55-4110-AB9E-FC9B85791060}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DCEC9CB0-0D46-4D01-994C-9D61A9CF5F32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCEC9CB0-0D46-4D01-994C-9D61A9CF5F32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCEC9CB0-0D46-4D01-994C-9D61A9CF5F32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCEC9CB0-0D46-4D01-994C-9D61A9CF5F32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CAB9E03-3214-4A59-8981-ADDE41B8820D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CAB9E03-3214-4A59-8981-ADDE41B8820D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CAB9E03-3214-4A59-8981-ADDE41B8820D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CAB9E03-3214-4A59-8981-ADDE41B8820D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D659BFA9-2D55-4110-AB9E-FC9B85791060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D659BFA9-2D55-4110-AB9E-FC9B85791060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D659BFA9-2D55-4110-AB9E-FC9B85791060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D659BFA9-2D55-4110-AB9E-FC9B85791060}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {55D400E5-D6E4-4215-B068-016737E8E40C}
+	EndGlobalSection
+EndGlobal
