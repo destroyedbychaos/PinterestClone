@@ -1,0 +1,23 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace PinterestClone.BLL.DTOs
+{
+    public class CreatePinDto
+    {
+        [Required]
+        [StringLength(255)]
+        public string Title { get; set; } = string.Empty;
+
+        [StringLength(1000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Url]
+        public string ImageUrl { get; set; } = string.Empty;
+
+        [Url]
+        public string? Link { get; set; }
+
+        // public string? Tags { get; set; } // 
+    }
+} 
