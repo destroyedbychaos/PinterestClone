@@ -9,10 +9,10 @@ namespace PinterestClone.DAL.Models
     public class BoardPin
     {
         public Guid BoardId { get; set; }
-        public Board Board { get; set; } = null!;
+        public Board? Board { get; set; } 
 
         public Guid PinId { get; set; }
-        public Pin Pin { get; set; } = null!;
+        public Pin? Pin { get; set; }
     }
 
 }

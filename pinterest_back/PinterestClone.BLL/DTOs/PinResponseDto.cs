@@ -16,6 +16,7 @@ namespace PinterestClone.BLL.DTOs
         public int CommentsCount { get; set; }
     }
 
+
     public class BoardSimpleDto
     {
         public Guid Id { get; set; }
