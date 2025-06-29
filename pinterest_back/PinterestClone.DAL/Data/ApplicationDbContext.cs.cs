@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -18,9 +19,7 @@ namespace PinterestClone.DAL.Data
             : base(options) { }
 
 
-        public DbSet<User> Users { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }
+   
 
 
         public DbSet<Pin> Pins { get; set; }
@@ -32,7 +31,6 @@ namespace PinterestClone.DAL.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
             builder.Entity<User>(b =>
             {
                 b.ToTable("Users");
@@ -43,19 +41,69 @@ namespace PinterestClone.DAL.Data
                 b.ToTable("Roles");
             });
 
+            builder.Entity<UserClaim>(b =>
+            {
+                b.ToTable("UserClaims");
+            });
+
+            builder.Entity<UserLogin>(b =>
+            {
+                b.ToTable("UserLogins");
+            });
+
+            builder.Entity<UserToken>(b =>
+            {
+                b.ToTable("UserTokens");
+            });
+
+            builder.Entity<RoleClaim>(b =>
+            {
+                b.ToTable("RoleClaims");
+            });
+
             builder.Entity<UserRole>(b =>
             {
                 b.ToTable("UserRoles");
-                b.HasKey(ur => new { ur.UserId, ur.RoleId });
-
-                b.HasOne(ur => ur.User)
-                    .WithMany()
-                    .HasForeignKey(ur => ur.UserId);
-
-                b.HasOne(ur => ur.Role)
-                    .WithMany()
-                    .HasForeignKey(ur => ur.RoleId);
             });
+
+            builder.Entity < User>(b =>
+            {
+                // Each User can have many UserClaims
+                b.HasMany(e=>e.Claims)
+                    .WithOne(e => e.User)
+                    .HasForeignKey(uc=>uc.UserId)
+                    .IsRequired();
+                // Each User can have many UserLogins
+                b.HasMany(e => e.Logins)
+                    .WithOne(e=>e.User)
+                    .HasForeignKey(ul => ul.UserId)
+                    .IsRequired();
+                // Each User can have many UserTokens
+                b.HasMany(e => e.Tokens)
+                    .WithOne(e => e.User)
+                    .HasForeignKey(ut=>ut.UserId)
+                    .IsRequired();
+                // Each User can have many entries in the UserRole join table
+                b.HasMany(e=>e.UserRoles)
+                    .WithOne(e => e.User)
+                    .HasForeignKey(ur => ur.UserId)
+                    .IsRequired();
+            });
+
+            builder.Entity<Role>(b =>
+            {
+                b.HasMany(e => e.UserRoles)
+                    .WithOne(e => e.Role)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .IsRequired();
+                // Each Role can have many associated RoleClaims
+                b.HasMany(e => e.RoleClaims)
+                    .WithOne(e => e.Role)
+                    .HasForeignKey(rc => rc.RoleId)
+                    .IsRequired();
+            });
+
+            
 
             builder.Entity<BoardPin>()
                 .HasKey(bp => new { bp.BoardId, bp.PinId });
