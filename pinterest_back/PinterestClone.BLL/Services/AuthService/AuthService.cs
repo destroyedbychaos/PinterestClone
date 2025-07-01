@@ -59,7 +59,7 @@ namespace PinterestClone.BLL.Services.AccountService
 
             var user = new User
             {
-                Id = Guid.NewGuid().ToString(), // 👈 ОБОВ'ЯЗКОВО
+                Id = Guid.NewGuid().ToString(), 
                 Email = model.Email,
                 UserName = model.Email,
                 DisplayName = model.Email.Split('@')[0],

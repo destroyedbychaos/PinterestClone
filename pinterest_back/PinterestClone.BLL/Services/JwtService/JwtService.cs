@@ -68,7 +68,6 @@ namespace PinterestClone.BLL.Services.JwtService
 
             
 
-            // Creating token
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
