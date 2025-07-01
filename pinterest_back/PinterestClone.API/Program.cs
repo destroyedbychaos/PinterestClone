@@ -1,19 +1,27 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PinterestClone.BLL.Interfaces;
 using PinterestClone.BLL.Services;
+using PinterestClone.BLL.Services.AccountService;
+using PinterestClone.BLL.Services.JwtService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
+using PinterestClone.DAL.Repositories.UserRepository;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgres")));
+
 
 builder.Services.AddIdentityCore<User>(options =>
 {
@@ -30,9 +38,32 @@ builder.Services.AddIdentityCore<User>(options =>
 .AddDefaultTokenProviders();
 
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        RequireExpirationTime = true,
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"])),
+        ValidIssuer = builder.Configuration["AuthSettings:issuer"],
+        ValidAudience = builder.Configuration["AuthSettings:audience"],
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
 
 builder.Services.AddScoped<IPinService, PinService>();
-
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
