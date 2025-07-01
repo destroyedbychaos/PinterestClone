@@ -8,20 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 
-
 namespace PinterestClone.DAL.Data
 {
-
-    public class AppDbContext : IdentityDbContext<User, Role, string, UserClaim, UserRole, UserLogin, RoleClaim, UserToken>
+    public class AppDbContext : IdentityDbContext<User>
     {
-        public AppDbContext(DbContextOptions options)
+        public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
-
-
-        public DbSet<User> Users { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }
-
 
         public DbSet<Pin> Pins { get; set; }
         public DbSet<Board> Boards { get; set; }
@@ -32,47 +24,6 @@ namespace PinterestClone.DAL.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            
-            builder.Entity<Pin>()
-                .Property(p => p.Id)
-                .ValueGeneratedOnAdd();
-
-            builder.Entity<Board>()
-                .Property(b => b.Id)
-                .ValueGeneratedOnAdd();
-
-            builder.Entity<Comment>()
-                .Property(c => c.Id)
-                .ValueGeneratedOnAdd();
-
-            builder.Entity<Like>()
-                .Property(l => l.Id)
-                .ValueGeneratedOnAdd();
-
-            builder.Entity<User>(b =>
-            {
-                b.ToTable("Users");
-            });
-
-            builder.Entity<Role>(b =>
-            {
-                b.ToTable("Roles");
-            });
-
-            builder.Entity<UserRole>(b =>
-            {
-                b.ToTable("UserRoles");
-                b.HasKey(ur => new { ur.UserId, ur.RoleId });
-
-                b.HasOne(ur => ur.User)
-                    .WithMany()
-                    .HasForeignKey(ur => ur.UserId);
-
-                b.HasOne(ur => ur.Role)
-                    .WithMany()
-                    .HasForeignKey(ur => ur.RoleId);
-            });
 
             builder.Entity<BoardPin>()
                 .HasKey(bp => new { bp.BoardId, bp.PinId });
@@ -106,8 +57,8 @@ namespace PinterestClone.DAL.Data
                 .HasOne(l => l.User)
                 .WithMany(u => u.Likes)
                 .HasForeignKey(l => l.UserId);
+
+
         }
     }
-
-
 }
