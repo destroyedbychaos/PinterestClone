@@ -14,6 +14,7 @@ namespace PinterestClone.DAL.Models
         public string? Description { get; set; }
         public string ImageUrl { get; set; } = string.Empty;
         public string? Link { get; set; }
+        // public string? Tags { get; set; } // 
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
