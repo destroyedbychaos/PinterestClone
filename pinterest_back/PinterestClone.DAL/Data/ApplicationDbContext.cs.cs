@@ -33,6 +33,23 @@ namespace PinterestClone.DAL.Data
         {
             base.OnModelCreating(builder);
 
+            
+            builder.Entity<Pin>()
+                .Property(p => p.Id)
+                .ValueGeneratedOnAdd();
+
+            builder.Entity<Board>()
+                .Property(b => b.Id)
+                .ValueGeneratedOnAdd();
+
+            builder.Entity<Comment>()
+                .Property(c => c.Id)
+                .ValueGeneratedOnAdd();
+
+            builder.Entity<Like>()
+                .Property(l => l.Id)
+                .ValueGeneratedOnAdd();
+
             builder.Entity<User>(b =>
             {
                 b.ToTable("Users");
