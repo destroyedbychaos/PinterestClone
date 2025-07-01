@@ -21,7 +21,6 @@ namespace PinterestClone.DAL.Data
         {
             base.OnModelCreating(builder);
 
-            // Зв'язок many-to-many між Board і Pin
             builder.Entity<BoardPin>()
                 .HasKey(bp => new { bp.BoardId, bp.PinId });
 
@@ -35,7 +34,6 @@ namespace PinterestClone.DAL.Data
                 .WithMany(p => p.BoardPins)
                 .HasForeignKey(bp => bp.PinId);
 
-            // Коментарі
             builder.Entity<Comment>()
                 .HasOne(c => c.Pin)
                 .WithMany(p => p.Comments)
@@ -46,7 +44,6 @@ namespace PinterestClone.DAL.Data
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.UserId);
 
-            // Лайки
             builder.Entity<Like>()
                 .HasOne(l => l.Pin)
                 .WithMany(p => p.Likes)
