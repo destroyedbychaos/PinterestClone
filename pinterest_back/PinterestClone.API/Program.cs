@@ -15,11 +15,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Підключення до бази даних
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgres")));
 
-// Identity без ролей
 builder.Services.AddIdentityCore<User>(options =>
 {
     options.Password.RequireNonAlphanumeric = false;
@@ -34,7 +32,6 @@ builder.Services.AddIdentityCore<User>(options =>
 .AddSignInManager()
 .AddDefaultTokenProviders();
 
-// JWT-аутентифікація
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -52,11 +49,10 @@ builder.Services.AddAuthentication(options =>
             Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"])),
         ValidIssuer = builder.Configuration["AuthSettings:issuer"],
         ValidAudience = builder.Configuration["AuthSettings:audience"],
-        ClockSkew = TimeSpan.Zero // Без затримки по часу
+        ClockSkew = TimeSpan.Zero 
     };
 });
 
-// Сервіси
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
