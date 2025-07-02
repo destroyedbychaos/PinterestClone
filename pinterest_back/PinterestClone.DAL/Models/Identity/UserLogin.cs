@@ -9,6 +9,6 @@ namespace PinterestClone.DAL.Models.Identity
 {
     public class UserLogin : IdentityUserLogin<string>
     {
-        public virtual User User { get; set; }
+        public virtual User? User { get; set; }
     }
 }

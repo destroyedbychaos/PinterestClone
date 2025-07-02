@@ -8,3 +8,4 @@ namespace PinterestClone.BLL.Services.AuthService
         Task<ServiceResponse> RegisterAsync(RegisterVM model);
     }
 }
+

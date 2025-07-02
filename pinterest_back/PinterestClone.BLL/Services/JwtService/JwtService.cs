@@ -56,15 +56,15 @@ namespace PinterestClone.BLL.Services.JwtService
             var issuer = _configuration["AuthSettings:issuer"];
             var audience = _configuration["AuthSettings:audience"];
             var keyString = _configuration["AuthSettings:key"];
-            var symmetricKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
+            var symmetricKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString ?? throw new InvalidOperationException("JWT key not found")));
 
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Email, user.Email ?? throw new InvalidOperationException("User email is null")),
                 new Claim("id", user.Id),
-                new Claim("email", user.Email),
+                new Claim("email", user.Email ?? throw new InvalidOperationException("User email is null")),
             };
 
             
@@ -168,7 +168,7 @@ namespace PinterestClone.BLL.Services.JwtService
                 ValidateAudience = false,
                 ValidateLifetime = false,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecurityKey))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecurityKey ?? throw new InvalidOperationException("JWT key not found")))
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

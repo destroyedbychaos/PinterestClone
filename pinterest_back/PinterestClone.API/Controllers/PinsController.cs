@@ -8,7 +8,7 @@ namespace PinterestClone.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PinsController : ControllerBase
+    public class PinsController : BaseController
     {
         private readonly IPinService _pinService;
 
@@ -18,24 +18,38 @@ namespace PinterestClone.API.Controllers
         }
         
 
+        /// <summary>
+        /// </summary>
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<PinResponseDto>> CreatePin([FromBody] CreatePinDto createPinDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PinResponseDto>> CreatePin([FromForm] CreatePinDto createPinDto)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
+                    return Unauthorized("User not authenticated");
+                
+                if (createPinDto.ImageFile == null)
+                {
+                    return BadRequest("Потрібно вказати файл зображення");
+                }
 
                 var pin = await _pinService.CreatePinAsync(createPinDto, userId);
-                return CreatedAtAction(nameof(GetPin), new { id = pin.Id }, pin);
+                return Ok(pin);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
                 return BadRequest($"Error creating pin: {ex.Message}");
             }
         }
+
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<PinResponseDto>> GetPin(Guid id)
@@ -72,6 +86,89 @@ namespace PinterestClone.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest($"Error getting pins: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// </summary>
+        [HttpGet("search")]
+        public async Task<ActionResult<PinListDto>> SearchPins(
+            [FromQuery] string searchTerm,
+            [FromQuery] bool searchInTitle = true,
+            [FromQuery] bool searchInDescription = true,
+            [FromQuery] bool exactMatch = false,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return BadRequest("Search term is required");
+                }
+
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.SearchPinsAsync(searchTerm, searchInTitle, searchInDescription, exactMatch, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error searching pins: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// </summary>
+        [HttpGet("search-by-image-hash")]
+        public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
+            [FromQuery] string imageHash,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(imageHash))
+                {
+                    return BadRequest("Image hash is required");
+                }
+
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.SearchPinsByImageAsync(imageHash, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error searching pins by image: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// </summary>
+        [HttpPost("find-similar-images")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
+        {
+            try
+            {
+                if (request.ImageFile == null)
+                {
+                    return BadRequest("Image file is required");
+                }
+
+                var pins = await _pinService.FindSimilarImagesAsync(request.ImageFile);
+                return Ok(pins);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error finding similar images: {ex.Message}");
             }
         }
 

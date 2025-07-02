@@ -55,6 +55,8 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -87,7 +89,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"])),
+            Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"] ?? throw new InvalidOperationException("JWT key not found"))),
         ValidIssuer = builder.Configuration["AuthSettings:issuer"],
         ValidAudience = builder.Configuration["AuthSettings:audience"],
         ClockSkew = TimeSpan.Zero 
@@ -98,6 +100,7 @@ builder.Services.AddScoped<IPinService, PinService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 var app = builder.Build();
 
@@ -122,6 +125,9 @@ app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()
     .AllowAnyHeader());
+
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
