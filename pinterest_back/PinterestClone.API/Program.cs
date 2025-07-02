@@ -17,10 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Добавляем CORS для поддержки frontend запросов
 builder.Services.AddCors();
 
-// Улучшенная конфигурация Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -34,7 +32,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Конфигурация JWT авторизации в Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -60,7 +57,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Конфигурация Entity Framework с PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -121,7 +117,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Добавляем CORS для разработки
+
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()

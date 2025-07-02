@@ -26,6 +26,7 @@ namespace PinterestClone.DAL.Migrations
                     table.PrimaryKey("PK_AspNetRoles", x => x.Id);
                 });
 
+
             migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
@@ -255,7 +256,7 @@ namespace PinterestClone.DAL.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
+ 
             migrationBuilder.CreateTable(
                 name: "BoardPins",
                 columns: table => new
