@@ -19,7 +19,6 @@ namespace PinterestClone.API.Controllers
         
 
         /// <summary>
-        /// Створення піна з файлом зображення
         /// </summary>
         [HttpPost]
         [Authorize]
@@ -32,7 +31,6 @@ namespace PinterestClone.API.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User not authenticated");
                 
-                // Проста валідація: тільки перевірка наявності файлу
                 if (createPinDto.ImageFile == null)
                 {
                     return BadRequest("Потрібно вказати файл зображення");
@@ -92,7 +90,6 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
-        /// Розширений пошук пінів з детальними параметрами
         /// </summary>
         [HttpGet("search")]
         public async Task<ActionResult<PinListDto>> SearchPins(
@@ -123,7 +120,6 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
-        /// Пошук пінів з ідентичним зображенням за хешем
         /// </summary>
         [HttpGet("search-by-image-hash")]
         public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
@@ -151,7 +147,6 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
-        /// Пошук схожих зображень - завантаження файлу і пошук дублікатів/схожих (всі результати)
         /// </summary>
         [HttpPost("find-similar-images")]
         [Consumes("multipart/form-data")]

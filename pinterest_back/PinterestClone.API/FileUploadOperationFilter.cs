@@ -37,7 +37,6 @@ namespace PinterestClone.API
             };
 
             var formDataSchema = operation.RequestBody.Content["multipart/form-data"].Schema;
-
         
             foreach (var parameter in context.MethodInfo.GetParameters())
             {

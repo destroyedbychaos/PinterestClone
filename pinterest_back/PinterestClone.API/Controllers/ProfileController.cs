@@ -39,6 +39,8 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Profile updated successfully." });
         }
 
+        
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
         {
