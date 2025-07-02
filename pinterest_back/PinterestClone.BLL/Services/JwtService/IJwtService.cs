@@ -1,4 +1,5 @@
-﻿using PinterestClone.DAL.Models.Identity;
+﻿using PinterestClone.BLL.Services;
+using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 
 namespace PinterestClone.BLL.Services.JwtService

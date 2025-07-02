@@ -12,8 +12,8 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250701184858_init")]
-    partial class init
+    [Migration("20250702121038_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

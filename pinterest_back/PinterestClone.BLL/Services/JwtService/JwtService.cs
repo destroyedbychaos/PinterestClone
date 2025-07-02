@@ -61,9 +61,10 @@ namespace PinterestClone.BLL.Services.JwtService
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim("id", user.Id),
                 new Claim("email", user.Email),
-
             };
 
             

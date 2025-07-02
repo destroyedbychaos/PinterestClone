@@ -2,9 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using PinterestClone.BLL.Interfaces;
 using PinterestClone.BLL.Services;
-using PinterestClone.BLL.Services.AccountService;
+using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.JwtService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
@@ -13,17 +14,57 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
+// Добавляем CORS для поддержки frontend запросов
+builder.Services.AddCors();
 
+// Улучшенная конфигурация Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Pinterest Clone API",
+        Version = "v1",
+        Description = "API для клона Pinterest с авторизацией и CRUD операциями",
+        Contact = new OpenApiContact
+        {
+            Name = "Pinterest Clone Team"
+        }
+    });
+
+    // Конфигурация JWT авторизации в Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Конфигурация Entity Framework с PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("postgres")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
-builder.Services.AddIdentityCore<User>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredUniqueChars = 0;
@@ -34,9 +75,7 @@ builder.Services.AddIdentityCore<User>(options =>
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
-.AddSignInManager()
 .AddDefaultTokenProviders();
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -59,7 +98,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
 builder.Services.AddScoped<IPinService, PinService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -70,8 +108,24 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Pinterest Clone API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Pinterest Clone API Documentation";
+        c.DefaultModelsExpandDepth(-1);
+        c.DisplayRequestDuration();
+        c.EnableDeepLinking();
+        c.EnableFilter();
+        c.ShowExtensions();
+    });
 }
+
+// Добавляем CORS для разработки
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 app.UseHttpsRedirection();
 

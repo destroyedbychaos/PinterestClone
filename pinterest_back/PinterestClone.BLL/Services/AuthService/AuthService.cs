@@ -1,4 +1,5 @@
 ﻿using PinterestClone.BLL.Services.JwtService;
+using PinterestClone.BLL.Services;
 using PinterestClone.DAL;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.UserRepository;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 
-namespace PinterestClone.BLL.Services.AccountService
+namespace PinterestClone.BLL.Services.AuthService
 {
     public class AuthService : IAuthService
     {

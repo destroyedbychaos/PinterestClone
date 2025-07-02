@@ -1,6 +1,6 @@
 ﻿using PinterestClone.DAL.ViewModels;
 
-namespace PinterestClone.BLL.Services.AccountService
+namespace PinterestClone.BLL.Services.AuthService
 {
     public interface IAuthService
     {

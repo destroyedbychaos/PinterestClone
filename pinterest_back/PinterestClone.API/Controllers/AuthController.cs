@@ -1,5 +1,5 @@
 using PinterestClone.BLL.Services;
-using PinterestClone.BLL.Services.AccountService;
+using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.JwtService;
 using PinterestClone.BLL.Validators;
 using PinterestClone.DAL.ViewModels;
@@ -9,12 +9,12 @@ namespace PinterestClone.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountController : BaseController
+    public class AuthController : BaseController
     {
         private readonly IAuthService _accountService;
         private readonly IJwtService _jwtService;
 
-        public AccountController(IAuthService accountService, IJwtService jwtService)
+        public AuthController(IAuthService accountService, IJwtService jwtService)
         {
             _accountService = accountService;
             _jwtService = jwtService;
