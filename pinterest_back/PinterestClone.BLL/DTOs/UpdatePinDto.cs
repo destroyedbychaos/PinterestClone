@@ -11,9 +11,6 @@ namespace PinterestClone.BLL.DTOs
         [StringLength(1000)]
         public string? Description { get; set; }
 
-        [Required]
-        [Url]
-        public string ImageUrl { get; set; } = string.Empty;
 
         [Url]
         public string? Link { get; set; }

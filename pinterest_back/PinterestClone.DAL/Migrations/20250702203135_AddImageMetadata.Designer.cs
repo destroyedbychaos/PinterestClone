@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PinterestClone.DAL.Data;
@@ -11,9 +12,11 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250702203135_AddImageMetadata")]
+    partial class AddImageMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,7 +197,6 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
@@ -376,33 +378,27 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ImageContentType")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ImageFileName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ImageHash")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("ImageSize")
+                    b.Property<long?>("ImageSize")
                         .HasColumnType("bigint");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Link")
                         .HasColumnType("text");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -452,6 +448,7 @@ namespace PinterestClone.DAL.Migrations
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>");
 
                     b.Property<string>("UserId1")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasIndex("UserId1");
@@ -464,6 +461,7 @@ namespace PinterestClone.DAL.Migrations
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>");
 
                     b.Property<string>("UserId1")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasIndex("UserId1");
@@ -476,6 +474,7 @@ namespace PinterestClone.DAL.Migrations
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUserToken<string>");
 
                     b.Property<string>("UserId1")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasIndex("UserId1");
@@ -604,9 +603,7 @@ namespace PinterestClone.DAL.Migrations
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
                         .WithMany("Pins")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
@@ -626,7 +623,9 @@ namespace PinterestClone.DAL.Migrations
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
                         .WithMany("Claims")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -635,7 +634,9 @@ namespace PinterestClone.DAL.Migrations
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
                         .WithMany("Logins")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -644,7 +645,9 @@ namespace PinterestClone.DAL.Migrations
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
                         .WithMany("Tokens")
-                        .HasForeignKey("UserId1");
+                        .HasForeignKey("UserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

@@ -5,7 +5,7 @@ namespace PinterestClone.BLL.Services
 {
     public class ServiceResponse
     {
-        public string Message { get; set; }
+        public required string Message { get; set; }
         public bool Success { get; set; }
         public object? Payload { get; set; }
         public HttpStatusCode StatusCode { get; set; }

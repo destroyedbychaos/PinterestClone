@@ -1,23 +1,31 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace PinterestClone.BLL.DTOs
 {
     public class CreatePinDto
     {
         [Required]
-        [StringLength(255)]
+        [StringLength(200)]
         public string Title { get; set; } = string.Empty;
 
         [StringLength(1000)]
         public string? Description { get; set; }
 
+       
         [Required]
-        [Url]
-        public string ImageUrl { get; set; } = string.Empty;
+        public IFormFile ImageFile { get; set; } = null!;
 
         [Url]
         public string? Link { get; set; }
 
-        // public string? Tags { get; set; } // 
+        public string? Tags { get; set; }
+    }
+
+    
+    public class FindSimilarImagesDto
+    {
+        [Required]
+        public IFormFile ImageFile { get; set; } = null!;
     }
 } 
