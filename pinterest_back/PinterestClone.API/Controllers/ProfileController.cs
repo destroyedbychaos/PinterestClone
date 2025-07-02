@@ -39,13 +39,15 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Profile updated successfully." });
         }
 
+        
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword ?? throw new ArgumentException("Current password is required"), model.NewPassword ?? throw new ArgumentException("New password is required"));
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
@@ -74,7 +76,7 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var isValid = await _userManager.CheckPasswordAsync(user, model.Password);
+            var isValid = await _userManager.CheckPasswordAsync(user, model.Password ?? throw new ArgumentException("Password is required"));
             if (!isValid)
                 return BadRequest(new { error = "Invalid password." });
 

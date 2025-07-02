@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
@@ -53,8 +53,6 @@ namespace PinterestClone.DAL.Data
                 .HasOne(l => l.User)
                 .WithMany(u => u.Likes)
                 .HasForeignKey(l => l.UserId);
-
-
         }
     }
-}
+} 
