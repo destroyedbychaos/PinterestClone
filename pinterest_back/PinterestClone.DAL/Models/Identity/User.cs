@@ -11,7 +11,7 @@ namespace PinterestClone.DAL.Models.Identity
 {
     public class User : IdentityUser
     {
-        public string DisplayName { get; set; } = string.Empty;
+        public string? DisplayName { get; set; } 
         public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
 

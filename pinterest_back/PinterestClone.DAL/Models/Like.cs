@@ -12,10 +12,10 @@ namespace PinterestClone.DAL.Models
         public Guid Id { get; set; }
 
         public Guid PinId { get; set; }
-        public Pin Pin { get; set; } = null!;
+        public Pin? Pin { get; set; } 
 
         public string UserId { get; set; }
-        public User User { get; set; } = null!;
+        public User? User { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
