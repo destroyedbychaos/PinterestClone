@@ -75,6 +75,44 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Розширений пошук пінів з детальними параметрами
+        /// </summary>
+        [HttpGet("search")]
+        public async Task<ActionResult<PinListDto>> SearchPins(
+            [FromQuery] string searchTerm,
+            [FromQuery] bool searchInTitle = true,
+            [FromQuery] bool searchInDescription = true,
+            [FromQuery] bool exactMatch = false,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return BadRequest("Search term is required");
+                }
+
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.SearchPinsAsync(
+                    searchTerm, 
+                    searchInTitle, 
+                    searchInDescription, 
+                    exactMatch, 
+                    pageNumber, 
+                    pageSize);
+
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error searching pins: {ex.Message}");
+            }
+        }
+
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<PinListDto>> GetUserPins(
             string userId,

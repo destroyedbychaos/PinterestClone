@@ -49,8 +49,13 @@ namespace PinterestClone.BLL.Services
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(p => p.Title.Contains(searchTerm) || 
-                                        (p.Description != null && p.Description.Contains(searchTerm)));
+                var searchTermLower = searchTerm.ToLower();
+                
+                // Простий пошук по заголовку та опису
+                query = query.Where(p => 
+                    p.Title.ToLower().Contains(searchTermLower) ||
+                    (p.Description != null && p.Description.ToLower().Contains(searchTermLower))
+                );
             }
 
             if (!string.IsNullOrWhiteSpace(tags))
@@ -239,6 +244,94 @@ namespace PinterestClone.BLL.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<PinListDto> SearchPinsAsync(
+            string searchTerm,
+            bool searchInTitle = true,
+            bool searchInDescription = true,
+            bool exactMatch = false,
+            int pageNumber = 1,
+            int pageSize = 20)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return await GetPinsAsync(pageNumber, pageSize);
+            }
+
+            var query = _context.Pins
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .AsQueryable();
+
+            var searchTermLower = searchTerm.ToLower();
+
+            if (exactMatch)
+            {
+                
+                if (searchInTitle && searchInDescription)
+                {
+                    query = query.Where(p => 
+                        p.Title.ToLower() == searchTermLower ||
+                        (p.Description != null && p.Description.ToLower() == searchTermLower)
+                    );
+                }
+                else if (searchInTitle)
+                {
+                    query = query.Where(p => p.Title.ToLower() == searchTermLower);
+                }
+                else if (searchInDescription)
+                {
+                    query = query.Where(p => p.Description != null && p.Description.ToLower() == searchTermLower);
+                }
+            }
+            else
+            {
+                // Гнучкий пошук (Contains)
+                if (searchInTitle && searchInDescription)
+                {
+                    query = query.Where(p => 
+                        p.Title.ToLower().Contains(searchTermLower) ||
+                        (p.Description != null && p.Description.ToLower().Contains(searchTermLower))
+                    );
+                }
+                else if (searchInTitle)
+                {
+                    query = query.Where(p => p.Title.ToLower().Contains(searchTermLower));
+                }
+                else if (searchInDescription)
+                {
+                    query = query.Where(p => p.Description != null && p.Description.ToLower().Contains(searchTermLower));
+                }
+            }
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var pins = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PinSimpleDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    ImageUrl = p.ImageUrl,
+                    CreatedAt = p.CreatedAt,
+                    UserName = p.User.UserName ?? "",
+                    LikesCount = p.Likes.Count
+                })
+                .ToListAsync();
+
+            return new PinListDto
+            {
+                Pins = pins,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
         }
 
         private async Task<PinResponseDto?> GetPinResponseAsync(Guid pinId)
