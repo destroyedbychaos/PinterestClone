@@ -12,7 +12,10 @@ namespace PinterestClone.BLL.DTOs
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool IsPrivate { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public bool IsArchived { get; set; } = false;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public string UserId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
