@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PinterestClone.BLL.Interfaces;
-using PinterestClone.BLL.Services;
 using PinterestClone.BLL.Services.AuthService;
+using PinterestClone.BLL.Services.BoardService;
+using PinterestClone.BLL.Services.ImageService;
 using PinterestClone.BLL.Services.JwtService;
+using PinterestClone.BLL.Services.PinService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
+using PinterestClone.DAL.Repositories.BoardRepository;
+using PinterestClone.DAL.Repositories.PinRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
 using System.Text;
 
@@ -96,11 +99,14 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IBoardRepository, BoardRepository>();
+builder.Services.AddScoped<IPinRepository, PinRepository>();
 builder.Services.AddScoped<IPinService, PinService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
 

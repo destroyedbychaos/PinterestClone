@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
-using PinterestClone.BLL.Interfaces;
+using PinterestClone.BLL.Services.PinService;
 using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
@@ -52,20 +52,13 @@ namespace PinterestClone.API.Controllers
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<PinResponseDto>> GetPin(Guid id)
+        public async Task<ActionResult<PinResponseDto>> GetPin(string id)
         {
-            try
-            {
-                var pin = await _pinService.GetPinByIdAsync(id);
-                if (pin == null)
-                    return NotFound("Pin not found");
+            var pin = await _pinService.GetPinByIdAsync(id);
+            if (pin == null)
+                return NotFound("Pin not found");
 
-                return Ok(pin);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error getting pin: {ex.Message}");
-            }
+            return Ok(pin);
         }
 
         [HttpGet]
@@ -75,229 +68,174 @@ namespace PinterestClone.API.Controllers
             [FromQuery] string? searchTerm = null,
             [FromQuery] string? tags = null)
         {
-            try
-            {
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error getting pins: {ex.Message}");
-            }
+            var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags);
+            return Ok(pins);
         }
 
-        /// <summary>
-        /// </summary>
-        [HttpGet("search")]
-        public async Task<ActionResult<PinListDto>> SearchPins(
-            [FromQuery] string searchTerm,
-            [FromQuery] bool searchInTitle = true,
-            [FromQuery] bool searchInDescription = true,
-            [FromQuery] bool exactMatch = false,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    return BadRequest("Search term is required");
-                }
+        ///// <summary>
+        ///// </summary>
+        //[HttpGet("search")]
+        //public async Task<ActionResult<PinListDto>> SearchPins(
+        //    [FromQuery] string searchTerm,
+        //    [FromQuery] bool searchInTitle = true,
+        //    [FromQuery] bool searchInDescription = true,
+        //    [FromQuery] bool exactMatch = false,
+        //    [FromQuery] int pageNumber = 1,
+        //    [FromQuery] int pageSize = 20)
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(searchTerm))
+        //        {
+        //            return BadRequest("Search term is required");
+        //        }
 
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
+        //        if (pageSize > 100) pageSize = 100;
+        //        if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.SearchPinsAsync(searchTerm, searchInTitle, searchInDescription, exactMatch, pageNumber, pageSize);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error searching pins: {ex.Message}");
-            }
-        }
+        //        var pins = await _pinService.SearchPinsAsync(searchTerm, searchInTitle, searchInDescription, exactMatch, pageNumber, pageSize);
+        //        return Ok(pins);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest($"Error searching pins: {ex.Message}");
+        //    }
+        //}
 
-        /// <summary>
-        /// </summary>
-        [HttpGet("search-by-image-hash")]
-        public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
-            [FromQuery] string imageHash,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(imageHash))
-                {
-                    return BadRequest("Image hash is required");
-                }
+        ///// <summary>
+        ///// </summary>
+        //[HttpGet("search-by-image-hash")]
+        //public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
+        //    [FromQuery] string imageHash,
+        //    [FromQuery] int pageNumber = 1,
+        //    [FromQuery] int pageSize = 20)
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(imageHash))
+        //        {
+        //            return BadRequest("Image hash is required");
+        //        }
 
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
+        //        if (pageSize > 100) pageSize = 100;
+        //        if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.SearchPinsByImageAsync(imageHash, pageNumber, pageSize);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error searching pins by image: {ex.Message}");
-            }
-        }
+        //        var pins = await _pinService.SearchPinsByImageAsync(imageHash, pageNumber, pageSize);
+        //        return Ok(pins);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest($"Error searching pins by image: {ex.Message}");
+        //    }
+        //}
 
-        /// <summary>
-        /// </summary>
-        [HttpPost("find-similar-images")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
-        {
-            try
-            {
-                if (request.ImageFile == null)
-                {
-                    return BadRequest("Image file is required");
-                }
+        ///// <summary>
+        ///// </summary>
+        //[HttpPost("find-similar-images")]
+        //[Consumes("multipart/form-data")]
+        //public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
+        //{
+        //    try
+        //    {
+        //        if (request.ImageFile == null)
+        //        {
+        //            return BadRequest("Image file is required");
+        //        }
 
-                var pins = await _pinService.FindSimilarImagesAsync(request.ImageFile);
-                return Ok(pins);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error finding similar images: {ex.Message}");
-            }
-        }
+        //        var pins = await _pinService.FindSimilarImagesAsync(request.ImageFile);
+        //        return Ok(pins);
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest($"Error finding similar images: {ex.Message}");
+        //    }
+        //}
 
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<PinListDto>> GetUserPins(
-            string userId,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PinListDto>> GetUserPins(string userId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
         {
-            try
-            {
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error getting user pins: {ex.Message}");
-            }
+            var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize);
+            return Ok(pins);
         }
 
         [HttpGet("board/{boardId}")]
-        public async Task<ActionResult<PinListDto>> GetBoardPins(
-            Guid boardId,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PinListDto>> GetBoardPins(string boardId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
         {
-            try
-            {
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetBoardPinsAsync(boardId, pageNumber, pageSize);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error getting board pins: {ex.Message}");
-            }
+            var pins = await _pinService.GetBoardPinsAsync(boardId, pageNumber, pageSize);
+            return Ok(pins);
         }
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<ActionResult<PinResponseDto>> UpdatePin(Guid id, [FromBody] UpdatePinDto updatePinDto)
+        public async Task<ActionResult<PinResponseDto>> UpdatePin(string id, [FromBody] UpdatePinDto updatePinDto)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-                var pin = await _pinService.UpdatePinAsync(id, updatePinDto, userId);
-                if (pin == null)
-                    return NotFound("Pin not found or you don't have permission to edit it");
+            var pin = await _pinService.UpdatePinAsync(id, updatePinDto, userId);
+            if (pin == null)
+                return NotFound("Pin not found or you don't have permission to edit it");
 
-                return Ok(pin);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error updating pin: {ex.Message}");
-            }
+            return Ok(pin);
         }
 
         [HttpDelete("{id}")]
         [Authorize]
-        public async Task<ActionResult> DeletePin(Guid id)
+        public async Task<ActionResult> DeletePin(string id)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-                var result = await _pinService.DeletePinAsync(id, userId);
-                if (!result)
-                    return NotFound("Pin not found or you don't have permission to delete it");
+            var result = await _pinService.DeletePinAsync(id, userId);
+            if (!result)
+                return NotFound("Pin not found or you don't have permission to delete it");
 
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error deleting pin: {ex.Message}");
-            }
+            return NoContent();
         }
 
         [HttpPost("{pinId}/boards/{boardId}")]
         [Authorize]
-        public async Task<ActionResult> AddPinToBoard(Guid pinId, Guid boardId)
+        public async Task<ActionResult> AddPinToBoard(string pinId, string boardId)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-                var result = await _pinService.AddPinToBoardAsync(pinId, boardId, userId);
-                if (!result)
-                    return BadRequest("Failed to add pin to board");
+            var result = await _pinService.AddPinToBoardAsync(pinId, boardId, userId);
+            if (!result)
+                return BadRequest("Failed to add pin to board");
 
-                return Ok(new { message = "Pin successfully added to board" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error adding pin to board: {ex.Message}");
-            }
+            return Ok(new { message = "Pin successfully added to board" });
         }
 
         [HttpDelete("{pinId}/boards/{boardId}")]
         [Authorize]
-        public async Task<ActionResult> RemovePinFromBoard(Guid pinId, Guid boardId)
+        public async Task<ActionResult> RemovePinFromBoard(string pinId, string boardId)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-                var result = await _pinService.RemovePinFromBoardAsync(pinId, boardId, userId);
-                if (!result)
-                    return BadRequest("Failed to remove pin from board");
+            var result = await _pinService.RemovePinFromBoardAsync(pinId, boardId, userId);
+            if (!result)
+                return BadRequest("Failed to remove pin from board");
 
-                return Ok(new { message = "Pin successfully removed from board" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error removing pin from board: {ex.Message}");
-            }
+            return Ok(new { message = "Pin successfully removed from board" });
         }
 
         private string? GetCurrentUserId()
