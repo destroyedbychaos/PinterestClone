@@ -29,7 +29,9 @@ namespace PinterestClone.BLL.Services.BoardService
                 Description = boardDto.Description,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
-                IsPrivate = boardDto.IsPrivate
+                UpdatedAt = DateTime.UtcNow,
+                IsPrivate = boardDto.IsPrivate,
+                IsArchived = false
             };
 
             var createdBoard = await _boardRepository.CreateBoardAsync(board, userId);
@@ -41,12 +43,15 @@ namespace PinterestClone.BLL.Services.BoardService
                 Name = createdBoard.Name,
                 Description = createdBoard.Description,
                 IsPrivate = createdBoard.IsPrivate,
+                IsArchived = createdBoard.IsArchived,
                 CreatedAt = createdBoard.CreatedAt,
+                UpdatedAt = createdBoard.UpdatedAt,
                 UserId = createdBoard.UserId
             };
         }
 
-        public async Task<BoardListDto> GetAllBoards(int pageNumber = 1, int pageSize = 20, string? searchTerm = null)
+        public async Task<BoardListDto> GetAllBoards(int pageNumber = 1, int pageSize = 20, string? searchTerm = null,
+        string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
         {
             pageNumber = Math.Max(1, pageNumber);
             pageSize = Math.Max(1, pageSize);
@@ -59,11 +64,23 @@ namespace PinterestClone.BLL.Services.BoardService
                 query = query.Where(b => b.Name != null && b.Name.ToLower().Contains(term));
             }
 
+            if (isArchived.HasValue)
+            {
+                query = query.Where(b => b.IsArchived == isArchived.Value);
+            }
+
+            query = sortBy?.ToLower() switch
+            {
+                "name" => isAscending ? query.OrderBy(b => b.Name) : query.OrderByDescending(b => b.Name),
+                "createdat" or "created" => isAscending ? query.OrderBy(b => b.CreatedAt) : query.OrderByDescending(b => b.CreatedAt),
+                "updatedat" or "updated" => isAscending ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt),
+                _ => query.OrderByDescending(b => b.CreatedAt)
+            };
+
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             var boards = await query
-                .OrderByDescending(b => b.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(b => new BoardSimpleDto
@@ -72,10 +89,38 @@ namespace PinterestClone.BLL.Services.BoardService
                     Name = b.Name ?? "",
                     Description = b.Description,
                     IsPrivate = b.IsPrivate,
+                    IsArchived = b.IsArchived,
                     CreatedAt = b.CreatedAt,
+                    UpdatedAt = b.UpdatedAt,
                     UserId = b.UserId
                 })
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(groupBy))
+            {
+                var groupedBoards = groupBy.ToLower() switch
+                {
+                    "privacy" => boards.GroupBy(b => b.IsPrivate)
+                        .ToDictionary(g => g.Key ? "Private" : "Public", g => g.ToList()),
+                    "archived" => boards.GroupBy(b => b.IsArchived)
+                        .ToDictionary(g => g.Key ? "Archived" : "Active", g => g.ToList()),
+                    "createdmonth" => boards.GroupBy(b => b.CreatedAt.ToString("yyyy-MM"))
+                        .ToDictionary(g => g.Key, g => g.ToList()),
+                    _ => null
+                };
+
+                if (groupedBoards != null)
+                {
+                    return new BoardListDto
+                    {
+                        GroupedBoards = groupedBoards,
+                        TotalCount = totalCount,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    };
+                }
+            }
 
             return new BoardListDto
             {
@@ -87,30 +132,71 @@ namespace PinterestClone.BLL.Services.BoardService
             };
         }
 
-        public async Task<BoardListDto> GetBoardsByUserId(string userId, int pageNumber = 1, int pageSize = 20)
+        public async Task<BoardListDto> GetBoardsByUserId(string userId, int pageNumber = 1, int pageSize = 20,
+        string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
         {
             pageNumber = Math.Max(1, pageNumber);
             pageSize = Math.Max(1, pageSize);
 
-            var query = _boardRepository.GetBoardsByUserId(userId, pageNumber, pageSize);
+            var query = _boardRepository.GetBoardsByUserId(userId);
+
+            if (isArchived.HasValue)
+            {
+                query = query.Where(b => b.IsArchived == isArchived.Value);
+            }
+            
+            query = sortBy?.ToLower() switch
+            {
+                "name" => isAscending ? query.OrderBy(b => b.Name) : query.OrderByDescending(b => b.Name),
+                "createdat" or "created" => isAscending ? query.OrderBy(b => b.CreatedAt) : query.OrderByDescending(b => b.CreatedAt),
+                "updatedat" or "updated" => isAscending ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt),
+                _ => query.OrderByDescending(b => b.CreatedAt)
+            };
 
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             var boards = await query
-                .OrderByDescending(b => b.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(b => new BoardSimpleDto
                 {
                     Id = b.Id.ToString(),
-                    Name = b.Name ?? string.Empty,
+                    Name = b.Name ?? "",
                     Description = b.Description,
                     IsPrivate = b.IsPrivate,
+                    IsArchived = b.IsArchived,
                     CreatedAt = b.CreatedAt,
+                    UpdatedAt = b.UpdatedAt,
                     UserId = b.UserId
                 })
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(groupBy))
+            {
+                var groupedBoards = groupBy.ToLower() switch
+                {
+                    "privacy" => boards.GroupBy(b => b.IsPrivate)
+                        .ToDictionary(g => g.Key ? "Private" : "Public", g => g.ToList()),
+                    "archived" => boards.GroupBy(b => b.IsArchived)
+                        .ToDictionary(g => g.Key ? "Archived" : "Active", g => g.ToList()),
+                    "createdmonth" => boards.GroupBy(b => b.CreatedAt.ToString("yyyy-MM"))
+                        .ToDictionary(g => g.Key, g => g.ToList()),
+                    _ => null
+                };
+
+                if (groupedBoards != null)
+                {
+                    return new BoardListDto
+                    {
+                        GroupedBoards = groupedBoards,
+                        TotalCount = totalCount,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    };
+                }
+            }
 
             return new BoardListDto
             {
@@ -134,7 +220,9 @@ namespace PinterestClone.BLL.Services.BoardService
                 Name = board.Name ?? string.Empty,
                 Description = board.Description,
                 IsPrivate = board.IsPrivate,
+                IsArchived = board.IsArchived,
                 CreatedAt = board.CreatedAt,
+                UpdatedAt = board.UpdatedAt,
                 UserId = board.UserId,
                 UserName = board.User?.UserName ?? string.Empty,
                 Pins = board.BoardPins
@@ -163,6 +251,7 @@ namespace PinterestClone.BLL.Services.BoardService
             board.Name = updateBoard.Name;
             board.Description = updateBoard.Description;
             board.IsPrivate = updateBoard.IsPrivate;
+            board.UpdatedAt = DateTime.UtcNow;
 
             await _boardRepository.UpdateBoardAsync(boardId, board, userId);
 
@@ -172,6 +261,32 @@ namespace PinterestClone.BLL.Services.BoardService
         public async Task<bool> DeleteBoardAsync(string boardId)
         {
             return await _boardRepository.DeleteBoardAsync(boardId);
+        }
+
+        public async Task<BoardResponseDto?> ArchiveBoardAsync(string boardId, string userId)
+        {
+            var board = await _boardRepository.GetBoardByIdAsync(boardId);
+            if (board == null || board.UserId != userId)
+                return null;
+
+            board.IsArchived = true;
+            board.UpdatedAt = DateTime.UtcNow;
+
+            await _boardRepository.UpdateBoardAsync(boardId, board, userId);
+            return await GetBoardByIdAsync(boardId);
+        }
+
+        public async Task<BoardResponseDto?> RestoreBoardAsync(string boardId, string userId)
+        {
+            var board = await _boardRepository.GetBoardByIdAsync(boardId);
+            if (board == null || board.UserId != userId)
+                return null;
+
+            board.IsArchived = false;
+            board.UpdatedAt = DateTime.UtcNow;
+
+            await _boardRepository.UpdateBoardAsync(boardId, board, userId);
+            return await GetBoardByIdAsync(boardId);
         }
     }
 }
