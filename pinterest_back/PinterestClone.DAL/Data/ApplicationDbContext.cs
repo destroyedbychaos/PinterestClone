@@ -21,6 +21,12 @@ namespace PinterestClone.DAL.Data
         {
             base.OnModelCreating(builder);
 
+            builder.Entity<Board>()
+                .HasOne(b => b.User)
+                .WithMany(u => u.Boards)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<BoardPin>()
                 .HasKey(bp => new { bp.BoardId, bp.PinId });
 

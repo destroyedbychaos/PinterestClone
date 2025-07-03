@@ -9,14 +9,14 @@ namespace PinterestClone.DAL.Models
 {
     public class Comment
     {
-        public Guid Id { get; set; }
-        public string? Text { get; set; }
+        public required Guid Id { get; set; } = Guid.NewGuid();
+        public required string Text { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public Guid PinId { get; set; }
+        public required Guid PinId { get; set; }
         public Pin? Pin { get; set; } 
 
-        public string? UserId { get; set; } 
+        public required string UserId { get; set; } 
         public User? User { get; set; } 
     }
 

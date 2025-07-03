@@ -9,7 +9,7 @@ namespace PinterestClone.DAL.Models
 {
     public class Like
     {
-        public Guid Id { get; set; }
+        public required Guid Id { get; set; } = Guid.NewGuid();
 
         public Guid PinId { get; set; }
         public virtual Pin? Pin { get; set; }

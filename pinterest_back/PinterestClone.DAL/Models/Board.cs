@@ -9,14 +9,17 @@ namespace PinterestClone.DAL.Models
 {
     public class Board
     {
-        public Guid Id { get; set; }
+        public required Guid Id { get; set; } = Guid.NewGuid();
         public required string Name { get; set; }
+        public string? Description { get; set; }
         public bool IsPrivate { get; set; }
+        public bool IsArchived { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         public required string UserId { get; set; }
-        public virtual User? User { get; set; }
+        public virtual User User { get; set; } = null!;
 
         public virtual ICollection<BoardPin> BoardPins { get; set; } = [];
     }
