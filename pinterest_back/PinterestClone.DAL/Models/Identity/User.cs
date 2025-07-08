@@ -22,6 +22,12 @@ namespace PinterestClone.DAL.Models.Identity
 
         public bool IsProfilePublic { get; set; } = true;
 
+        // SMS notification fields
+        public string? PhoneNumber { get; set; }
+        public bool IsPhoneNumberVerified { get; set; } = false;
+        public bool SmsNotificationsEnabled { get; set; } = true;
+        public DateTime? PhoneNumberVerifiedAt { get; set; }
+
         public virtual ICollection<Board> Boards { get; set; } = [];
         public virtual ICollection<Pin> Pins { get; set; } = [];
         public virtual ICollection<Comment> Comments { get; set; } = [];

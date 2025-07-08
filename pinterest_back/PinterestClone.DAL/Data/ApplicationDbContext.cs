@@ -16,6 +16,8 @@ namespace PinterestClone.DAL.Data
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Like> Likes { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<SmsVerification> SmsVerifications { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -59,6 +61,51 @@ namespace PinterestClone.DAL.Data
                 .HasOne(l => l.User)
                 .WithMany(u => u.Likes)
                 .HasForeignKey(l => l.UserId);
+
+            // SMS Verification configuration
+            builder.Entity<SmsVerification>()
+                .HasOne(sv => sv.User)
+                .WithMany()
+                .HasForeignKey(sv => sv.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SmsVerification>()
+                .HasIndex(sv => new { sv.PhoneNumber, sv.VerificationCode })
+                .IsUnique(false);
+
+            builder.Entity<SmsVerification>()
+                .HasIndex(sv => sv.UserId);
+
+            // Notification configuration
+            builder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Notification>()
+                .HasOne(n => n.Pin)
+                .WithMany()
+                .HasForeignKey(n => n.PinId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Notification>()
+                .HasOne(n => n.Board)
+                .WithMany()
+                .HasForeignKey(n => n.BoardId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Notification>()
+                .HasOne(n => n.Comment)
+                .WithMany()
+                .HasForeignKey(n => n.CommentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Notification>()
+                .HasIndex(n => new { n.UserId, n.Status });
+
+            builder.Entity<Notification>()
+                .HasIndex(n => n.CreatedAt);
         }
     }
 } 
