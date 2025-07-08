@@ -6,7 +6,6 @@ using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.PinRepository;
 
-
 namespace PinterestClone.BLL.Services.PinService
 {
     public class PinService : IPinService
@@ -83,7 +82,7 @@ namespace PinterestClone.BLL.Services.PinService
             };
         }
 
-        public async Task<PinListDto?> GetPinsAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null, string? tags = null)
+        public async Task<PinListDto?> GetPinsAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null, string? tags = null, string? sortBy = "createdAt", bool isAscending = false)
         {
             var query = _pinRepository.GetAllPins();
 
@@ -107,10 +106,12 @@ namespace PinterestClone.BLL.Services.PinService
                         .Contains(tag)));
             }
 
+            query = ApplySorting(query, sortBy, isAscending);
+
             int totalCount = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var pins = await query.OrderByDescending(p => p.CreatedAt)
+            var pins = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -135,14 +136,16 @@ namespace PinterestClone.BLL.Services.PinService
             };
         }
 
-        public async Task<PinListDto?> GetUserPinsAsync(string userId, int pageNumber = 1, int pageSize = 20)
+        public async Task<PinListDto?> GetUserPinsAsync(string userId, int pageNumber = 1, int pageSize = 20, string? sortBy = "createdAt", bool isAscending = false)
         {
             var query = _pinRepository.GetPinsByUserid(userId);
+
+            query = ApplySorting(query, sortBy, isAscending);
 
             int totalCount = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var pins = await query.OrderByDescending(p => p.CreatedAt)
+            var pins = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(p => new PinSimpleDto
@@ -168,15 +171,16 @@ namespace PinterestClone.BLL.Services.PinService
             };
         }
 
-        public async Task<PinListDto?> GetBoardPinsAsync(string boardId, int pageNumber = 1, int pageSize = 20)
+        public async Task<PinListDto?> GetBoardPinsAsync(string boardId, int pageNumber = 1, int pageSize = 20, string? sortBy = "createdAt", bool isAscending = false)
         {
             var query = _pinRepository.GetPinsByBoardId(boardId);
+
+            query = ApplySorting(query, sortBy, isAscending);
 
             int totalCount = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             var pins = await query
-                .OrderByDescending(p => p.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(p => new PinSimpleDto
@@ -245,6 +249,30 @@ namespace PinterestClone.BLL.Services.PinService
             await _pinRepository.RemovePinFromBoardAsync(pinId, boardId, userId);
 
             return true;
+        }
+
+        private IQueryable<Pin> ApplySorting(IQueryable<Pin> query, string? sortBy, bool isAscending)
+        {
+            return sortBy?.ToLower() switch
+            {
+                "createdat" or "created" => isAscending
+                    ? query.OrderBy(p => p.CreatedAt)
+                    : query.OrderByDescending(p => p.CreatedAt),
+
+                "popularity" or "likes" => isAscending
+                    ? query.OrderBy(p => p.Likes.Count)
+                    : query.OrderByDescending(p => p.Likes.Count),
+
+                "title" or "name" => isAscending
+                    ? query.OrderBy(p => p.Title)
+                    : query.OrderByDescending(p => p.Title),
+
+                "comments" => isAscending
+                    ? query.OrderBy(p => p.Comments.Count)
+                    : query.OrderByDescending(p => p.Comments.Count),
+
+                _ => query.OrderByDescending(p => p.CreatedAt)
+            };
         }
 
         private async Task<PinResponseDto?> GetPinResponseAsync(string pinId)

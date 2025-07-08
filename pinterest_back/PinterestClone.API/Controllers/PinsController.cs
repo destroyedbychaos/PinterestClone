@@ -18,8 +18,6 @@ namespace PinterestClone.API.Controllers
         }
         
 
-        /// <summary>
-        /// </summary>
         [HttpPost]
         [Authorize]
         [Consumes("multipart/form-data")]
@@ -66,13 +64,22 @@ namespace PinterestClone.API.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
             [FromQuery] string? searchTerm = null,
-            [FromQuery] string? tags = null)
+            [FromQuery] string? tags = null,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false)
         {
-            if (pageSize > 100) pageSize = 100;
-            if (pageNumber < 1) pageNumber = 1;
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
 
-            var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags);
-            return Ok(pins);
+                var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags, sortBy, isAscending);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pins: {ex.Message}");
+            }
         }
 
         ///// <summary>
@@ -159,23 +166,47 @@ namespace PinterestClone.API.Controllers
         //}
 
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<PinListDto>> GetUserPins(string userId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PinListDto>> GetUserPins(
+            string userId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false)
         {
-            if (pageSize > 100) pageSize = 100;
-            if (pageNumber < 1) pageNumber = 1;
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
 
-            var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize);
-            return Ok(pins);
+                var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize, sortBy, isAscending);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting user pins: {ex.Message}");
+            }
         }
 
         [HttpGet("board/{boardId}")]
-        public async Task<ActionResult<PinListDto>> GetBoardPins(string boardId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PinListDto>> GetBoardPins(
+            string boardId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false)
         {
-            if (pageSize > 100) pageSize = 100;
-            if (pageNumber < 1) pageNumber = 1;
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
 
-            var pins = await _pinService.GetBoardPinsAsync(boardId, pageNumber, pageSize);
-            return Ok(pins);
+                var pins = await _pinService.GetBoardPinsAsync(boardId, pageNumber, pageSize, sortBy, isAscending);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting board pins: {ex.Message}");
+            }
         }
 
         [HttpPut("{id}")]

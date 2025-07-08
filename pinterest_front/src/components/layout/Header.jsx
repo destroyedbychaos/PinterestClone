@@ -138,7 +138,7 @@ const Header = memo(() => {
                                         <img
                                             src={user?.avatar || user?.profileImage || defaultUserAvatar}
                                             className="h-8 w-8 rounded-full object-cover"
-                                            alt={user?.name || user?.username || "User Profile"}
+                                            alt={user?.email || user?.username || "User Profile"}
                                             onError={(e) => {
                                                 e.target.src = defaultUserAvatar;
                                             }}
@@ -148,7 +148,7 @@ const Header = memo(() => {
                                     {userMenuOpen && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                                             <div className="px-4 py-2 text-sm text-gray-500 border-b">
-                                                {user?.name || user?.username || user?.email}
+                                                {user?.email || user?.username || user?.email}
                                             </div>
                                             <Link
                                                 to="/profile"
