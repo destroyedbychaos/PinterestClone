@@ -10,7 +10,7 @@ namespace PinterestClone.BLL.Services
         public object? Payload { get; set; }
         public HttpStatusCode StatusCode { get; set; }
 
-        public static ServiceResponse GetResponse(string message, bool success, object? payload, HttpStatusCode statusCode)
+        private static ServiceResponse GetResponse(string message, bool success, object? payload, HttpStatusCode statusCode)
         {
             return new ServiceResponse
             {
@@ -38,14 +38,9 @@ namespace PinterestClone.BLL.Services
 
         public static ServiceResponse ByIdentityResult(IdentityResult result, string successMessage)
         {
-            if (result.Succeeded)
-            {
-                return ServiceResponse.OkResponse(successMessage);
-            }
-            else
-            {
-                return ServiceResponse.BadRequestResponse(result.Errors.First().Description);
-            }
+            return result.Succeeded 
+                ? OkResponse(successMessage)
+                : BadRequestResponse(result.Errors.First().Description);
         }
     }
 }
