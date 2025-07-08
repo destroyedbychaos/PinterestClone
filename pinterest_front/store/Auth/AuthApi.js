@@ -9,6 +9,7 @@ export const authApi = createApi({
             if (token) {
                 headers.set('Authorization', `Bearer ${token}`);
             }
+            headers.set('Content-Type', 'application/json');
             return headers;
         },
     }),
@@ -16,16 +17,16 @@ export const authApi = createApi({
     endpoints: (builder) => ({
         login: builder.mutation({
             query: (credentials) => ({
-                url: '/login',
+                url: '/Auth/login',
                 method: 'POST',
-                body: credentials
+                body: credentials,
             }),
             invalidatesTags: ['User'],
         }),
 
         register: builder.mutation({
             query: (credentials) => ({
-                url: 'register',
+                url: '/Auth/register',
                 method: 'POST',
                 body: {
                     ...credentials,
@@ -35,15 +36,19 @@ export const authApi = createApi({
             invalidatesTags: ['User'],
         }),
 
-        getMe: builder.query({
-            query: () => 'users/me',
-            providesTags: ['User'],
+        refreshToken: builder.mutation({
+            query: () => ({
+                url: '/Auth/refresh',
+                method: 'POST'
+            }),
+            invalidatesTags: ['User'],
         }),
+        
     })
 });
 
 export const {
     useLoginMutation,
     useRegisterMutation,
-    useGetMeQuery,
+    useRefreshTokenMutation,
 } = authApi;

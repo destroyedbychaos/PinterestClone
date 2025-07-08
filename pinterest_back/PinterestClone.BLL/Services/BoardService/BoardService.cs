@@ -69,13 +69,12 @@ namespace PinterestClone.BLL.Services.BoardService
                 query = query.Where(b => b.IsArchived == isArchived.Value);
             }
 
-            query = sortBy?.ToLower() switch
-            {
-                "name" => isAscending ? query.OrderBy(b => b.Name) : query.OrderByDescending(b => b.Name),
-                "createdat" or "created" => isAscending ? query.OrderBy(b => b.CreatedAt) : query.OrderByDescending(b => b.CreatedAt),
-                "updatedat" or "updated" => isAscending ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt),
-                _ => query.OrderByDescending(b => b.CreatedAt)
-            };
+            Type type = typeof(Board);
+            var prop = type.GetProperty(sortBy ?? string.Empty, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (prop == null)
+                query.OrderBy(b => b.CreatedAt);
+            else
+                query = query.OrderBy(b => prop.GetValue(b));
 
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
