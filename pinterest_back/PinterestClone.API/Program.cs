@@ -9,6 +9,9 @@ using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
 using PinterestClone.BLL.Services.JwtService;
 using PinterestClone.BLL.Services.PinService;
+using PinterestClone.BLL.Services.SmsService;
+using PinterestClone.BLL.Services.PhoneService;
+using PinterestClone.BLL.Services.NotificationService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.BoardRepository;
@@ -23,13 +26,15 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Pinterest Clone API",
         Version = "v1",
-        Description = "API для клона Pinterest с авторизацией и CRUD операциями",
+        Description = "API для клона Pinterest з авторизацією та CRUD операціями",
         Contact = new OpenApiContact
         {
             Name = "Pinterest Clone Team"
@@ -59,8 +64,6 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-
-
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -100,6 +103,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
@@ -109,8 +113,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 
+
 builder.Services.AddAutoMapper(typeof(UserProfileMapperProfile).Assembly);
 
+builder.Services.AddScoped<ISmsService, SmsService>();
+builder.Services.AddScoped<IPhoneService, PhoneService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 
@@ -130,12 +138,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()
     .AllowAnyHeader());
-
 
 app.UseStaticFiles();
 

@@ -15,13 +15,13 @@ const LoginForm = () => {
         e.preventDefault()
         try {
             const response = await login({ email, password }).unwrap()
-            dispatch(setCredentials({
-                user: response.user,
-                accessToken: response.accessToken
-            }))
-            console.log('Успішний логін:', response)
-            navigate('/')
             
+            dispatch(setCredentials({
+                user: { email: email },
+                accessToken: response.payload.accessToken
+            }))
+
+            navigate('/')
         } catch (err) {
             console.error('Помилка логіну:', err)
         }
