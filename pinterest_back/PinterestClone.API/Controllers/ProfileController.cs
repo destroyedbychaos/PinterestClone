@@ -1,6 +1,9 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Crypto;
+using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
@@ -13,10 +16,12 @@ namespace PinterestClone.API.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager)
+        public ProfileController(UserManager<User> userManager, IMapper mapper)
         {
             _userManager = userManager;
+            _mapper = mapper;
         }
 
         [HttpPut("update")]
@@ -25,7 +30,7 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            user.UserName = model.UserName ?? user.UserName;
+            user.DisplayName = model.DisplayName ?? user.DisplayName;
             user.Bio = model.Bio ?? user.Bio;
             user.Country = model.Country ?? user.Country;
             user.Language = model.Language ?? user.Language;
@@ -86,5 +91,38 @@ namespace PinterestClone.API.Controllers
 
             return Ok(new { message = "Account deleted successfully." });
         }
+
+        
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserProfileDto>> GetMyProfile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var dto = _mapper.Map<UserProfileDto>(user);
+            return Ok(dto);
+        }
+
+        [HttpGet("{displayName}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<UserProfileDto>> GetUserProfile(string displayName)
+        {
+            var user = _userManager.Users.FirstOrDefault(u => u.DisplayName == displayName);
+            if (user == null) return NotFound();
+
+            if (!user.IsProfilePublic)
+            {
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (currentUserId != user.Id)
+                    return Forbid();
+            }
+
+            var dto = _mapper.Map<UserProfileDto>(user);
+            return Ok(dto);
+        }
+
     }
 }
+

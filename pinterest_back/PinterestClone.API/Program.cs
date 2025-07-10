@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PinterestClone.BLL.MappingProfiles;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
@@ -25,7 +26,6 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors();
 
-// HTTP Client для внешних API
 builder.Services.AddHttpClient();
 
 builder.Services.AddSwaggerGen(c =>
@@ -34,7 +34,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Pinterest Clone API",
         Version = "v1",
-        Description = "API для клона Pinterest с авторизацией и CRUD операциями",
+        Description = "API для клона Pinterest з авторизацією та CRUD операціями",
         Contact = new OpenApiContact
         {
             Name = "Pinterest Clone Team"
@@ -64,8 +64,6 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-
-
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -105,7 +103,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Existing services
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
@@ -115,7 +113,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 
-// New SMS and notification services
+
+builder.Services.AddAutoMapper(typeof(UserProfileMapperProfile).Assembly);
+
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -138,12 +138,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()
     .AllowAnyHeader());
-
 
 app.UseStaticFiles();
 
