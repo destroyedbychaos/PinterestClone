@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PinterestClone.BLL.MappingProfiles;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
@@ -107,6 +108,9 @@ builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
+
+builder.Services.AddAutoMapper(typeof(UserProfileMapperProfile).Assembly);
+
 
 var app = builder.Build();
 
