@@ -1,8 +1,7 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Crypto;
+using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
@@ -16,12 +15,27 @@ namespace PinterestClone.API.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager, IMapper mapper)
+        public ProfileController(UserManager<User> userManager)
         {
             _userManager = userManager;
-            _mapper = mapper;
+        }
+
+        private static UserProfileDto MapToDto(User user)
+        {
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                UserName = user.UserName!,
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
+                Bio = user.Bio,
+                BirthDate = user.BirthDate,
+                Gender = user.Gender,
+                Country = user.Country,
+                Language = user.Language,
+                IsProfilePublic = user.IsProfilePublic
+            };
         }
 
         [HttpPut("update")]
@@ -44,15 +58,16 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Profile updated successfully." });
         }
 
-        
-
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword ?? throw new ArgumentException("Current password is required"), model.NewPassword ?? throw new ArgumentException("New password is required"));
+            var result = await _userManager.ChangePasswordAsync(user, 
+                model.CurrentPassword ?? throw new ArgumentException("Current password is required"), 
+                model.NewPassword ?? throw new ArgumentException("New password is required"));
+            
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
@@ -81,7 +96,9 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var isValid = await _userManager.CheckPasswordAsync(user, model.Password ?? throw new ArgumentException("Password is required"));
+            var isValid = await _userManager.CheckPasswordAsync(user, 
+                model.Password ?? throw new ArgumentException("Password is required"));
+            
             if (!isValid)
                 return BadRequest(new { error = "Invalid password." });
 
@@ -92,8 +109,6 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Account deleted successfully." });
         }
 
-        
-
         [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserProfileDto>> GetMyProfile()
@@ -101,15 +116,16 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var dto = _mapper.Map<UserProfileDto>(user);
-            return Ok(dto);
+            return Ok(MapToDto(user));
         }
 
         [HttpGet("{displayName}")]
         [AllowAnonymous]
         public async Task<ActionResult<UserProfileDto>> GetUserProfile(string displayName)
         {
-            var user = _userManager.Users.FirstOrDefault(u => u.DisplayName == displayName);
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.DisplayName == displayName);
+            
             if (user == null) return NotFound();
 
             if (!user.IsProfilePublic)
@@ -119,10 +135,8 @@ namespace PinterestClone.API.Controllers
                     return Forbid();
             }
 
-            var dto = _mapper.Map<UserProfileDto>(user);
-            return Ok(dto);
+            return Ok(MapToDto(user));
         }
-
     }
 }
 

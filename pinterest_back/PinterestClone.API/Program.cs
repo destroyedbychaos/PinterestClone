@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PinterestClone.BLL.MappingProfiles;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
@@ -34,7 +33,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Pinterest Clone API",
         Version = "v1",
-        Description = "API для клона Pinterest з авторизацією та CRUD операціями",
+        Description = "API для клона Pinterest",
         Contact = new OpenApiContact
         {
             Name = "Pinterest Clone Team"
@@ -112,10 +111,6 @@ builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
-
-
-builder.Services.AddAutoMapper(typeof(UserProfileMapperProfile).Assembly);
-
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

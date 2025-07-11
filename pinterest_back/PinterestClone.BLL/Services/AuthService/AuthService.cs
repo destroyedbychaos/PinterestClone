@@ -7,6 +7,7 @@ using PinterestClone.DAL.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
+using PinterestClone.BLL.Services.NotificationService;
 
 namespace PinterestClone.BLL.Services.AuthService
 {
@@ -15,14 +16,19 @@ namespace PinterestClone.BLL.Services.AuthService
         private readonly UserManager<User> _userManager;
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService;
+        private readonly INotificationService _notificationService;
 
-        public AuthService(UserManager<User> userManager, IUserRepository userRepository, IJwtService jwtService)
+        public AuthService(
+            UserManager<User> userManager, 
+            IUserRepository userRepository, 
+            IJwtService jwtService,
+            INotificationService notificationService)
         {
             _userManager = userManager;
             _userRepository = userRepository;
             _jwtService = jwtService;
+            _notificationService = notificationService;
         }
-
 
         public async Task<ServiceResponse> LoginAsync(LoginVM model)
         {
@@ -47,12 +53,13 @@ namespace PinterestClone.BLL.Services.AuthService
                 return ServiceResponse.BadRequestResponse("Не вдалося згенерувати токени");
             }
 
+            await _notificationService.CreateLoginNotificationAsync(user.Id);
+
             return ServiceResponse.OkResponse("Успіший вхід", tokens.Payload);
         }
 
         public async Task<ServiceResponse> RegisterAsync(RegisterVM model)
         {
-
             if (!await _userRepository.IsUniqueEmailAsync(model.Email))
             {
                 return ServiceResponse.BadRequestResponse($"{model.Email} вже викорстовується");
@@ -67,16 +74,12 @@ namespace PinterestClone.BLL.Services.AuthService
                 BirthDate = model.BirthDate
             };
 
-
-
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
             {
                 return ServiceResponse.BadRequestResponse(result.Errors.First().Description);
             }
-
-
 
             var tokens = await _jwtService.GenerateTokensAsync(user);
 
@@ -87,7 +90,5 @@ namespace PinterestClone.BLL.Services.AuthService
 
             return ServiceResponse.OkResponse($"Користувач {model.Email} успішно зареєстрований", tokens.Payload);
         }
-
-
     }
 }

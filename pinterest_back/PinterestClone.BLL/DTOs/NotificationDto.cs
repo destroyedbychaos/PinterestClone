@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using PinterestClone.DAL.Models;
 
 namespace PinterestClone.BLL.DTOs
@@ -5,20 +6,16 @@ namespace PinterestClone.BLL.DTOs
     public class NotificationDto
     {
         public int Id { get; set; }
+        
+        [Required]
         public string Message { get; set; } = null!;
-        public string? Title { get; set; }
+        
+        [Required]
         public NotificationType Type { get; set; }
-        public NotificationStatus Status { get; set; }
+        
         public DateTime CreatedAt { get; set; }
-        public DateTime? ScheduledAt { get; set; }
-        public DateTime? SentAt { get; set; }
-        public string? ErrorMessage { get; set; }
-        public bool IsSmsEnabled { get; set; }
-        public bool IsEmailEnabled { get; set; }
-        public bool IsInAppEnabled { get; set; }
-        public Guid? PinId { get; set; }
-        public Guid? BoardId { get; set; }
-        public Guid? CommentId { get; set; }
+        
+        public NotificationStatus Status { get; set; }
     }
 
     public class CreateNotificationDto
