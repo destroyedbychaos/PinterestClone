@@ -28,7 +28,7 @@ const Footer = () => {
     ];
 
     return (
-        <footer className="bg-white pt-12 pb-6 mt-12 border-t border-gray-200">
+        <footer className="bg-white pt-12 pb-6 border-t border-gray-200">
             <div className="container mx-auto px-4">
 
                 <div className="flex flex-wrap justify-center mb-8">

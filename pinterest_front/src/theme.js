@@ -2,6 +2,9 @@
 
 
 export const theme = createTheme({
+    typography: {
+        fontFamily: 'Geologica, sans-serif',
+    },
     palette: {
         primary: {
             main: '#6F91D9',
@@ -14,4 +17,8 @@ export const theme = createTheme({
             200: '#B4C6EB',
             50: '#D7E0F4',
         },
+        dark: {
+            200: '#7B8D9B',
+            300: '#52697C',
+        }
     }})
