@@ -64,7 +64,6 @@ namespace PinterestClone.DAL.Data
                 .WithMany(u => u.Likes)
                 .HasForeignKey(l => l.UserId);
 
-            // SMS Verification configuration
             builder.Entity<SmsVerification>()
                 .HasOne(sv => sv.User)
                 .WithMany()
@@ -78,7 +77,6 @@ namespace PinterestClone.DAL.Data
             builder.Entity<SmsVerification>()
                 .HasIndex(sv => sv.UserId);
 
-            // Notification configuration
             builder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
@@ -109,7 +107,6 @@ namespace PinterestClone.DAL.Data
             builder.Entity<Notification>()
                 .HasIndex(n => n.CreatedAt);
 
-            // PinShare configuration
             builder.Entity<PinShare>()
                 .HasOne(ps => ps.Pin)
                 .WithMany()
@@ -134,7 +131,6 @@ namespace PinterestClone.DAL.Data
             builder.Entity<PinShare>()
                 .HasIndex(ps => ps.SharedAt);
 
-            // PinReport configuration
             builder.Entity<PinReport>()
                 .HasOne(pr => pr.Pin)
                 .WithMany()
