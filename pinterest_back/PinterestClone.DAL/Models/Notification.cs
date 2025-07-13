@@ -6,11 +6,11 @@ namespace PinterestClone.DAL.Models
 {
     public enum NotificationType
     {
-        NewPin = 1,
-        PinUpdate = 2,
-        NewBoard = 3,
-        NewComment = 4,
-        NewLike = 5,
+        // NewPin = 1,
+        // PinUpdate = 2,
+        // NewBoard = 3,
+        // NewComment = 4,
+        // NewLike = 5,
         System = 6
     }
 

@@ -33,6 +33,7 @@ namespace PinterestClone.BLL.DTOs
         public Guid? CommentId { get; set; }
     }
 
+
     public class NotificationSettingsDto
     {
         public bool SmsNotificationsEnabled { get; set; }

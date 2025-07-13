@@ -16,3 +16,4 @@ namespace PinterestClone.BLL.DTOs
         public int TotalPages { get; set; }
     }
 }
+
