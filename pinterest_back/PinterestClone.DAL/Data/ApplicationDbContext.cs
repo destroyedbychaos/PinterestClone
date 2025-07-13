@@ -18,6 +18,8 @@ namespace PinterestClone.DAL.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<SmsVerification> SmsVerifications { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<PinShare> PinShares { get; set; }
+        public DbSet<PinReport> PinReports { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -106,6 +108,50 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<Notification>()
                 .HasIndex(n => n.CreatedAt);
+
+            // PinShare configuration
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.Pin)
+                .WithMany()
+                .HasForeignKey(ps => ps.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.SharedByUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.SharedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.SharedWithUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.SharedWithUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinShare>()
+                .HasIndex(ps => new { ps.SharedWithUserId, ps.IsRead });
+
+            builder.Entity<PinShare>()
+                .HasIndex(ps => ps.SharedAt);
+
+            // PinReport configuration
+            builder.Entity<PinReport>()
+                .HasOne(pr => pr.Pin)
+                .WithMany()
+                .HasForeignKey(pr => pr.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinReport>()
+                .HasOne(pr => pr.ReportedByUser)
+                .WithMany()
+                .HasForeignKey(pr => pr.ReportedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PinReport>()
+                .HasIndex(pr => new { pr.PinId, pr.ReportedByUserId });
+
+            builder.Entity<PinReport>()
+                .HasIndex(pr => pr.ReportedAt);
         }
     }
 } 

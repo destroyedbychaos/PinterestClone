@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PinterestClone.DAL.Data;
@@ -11,9 +12,11 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250713201322_AddPinShareFeature")]
+    partial class AddPinShareFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -491,49 +494,6 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Pins");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.PinReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsResolved")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("PinId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReportMessage")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime>("ReportedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReportedByUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResolutionNotes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReportedAt");
-
-                    b.HasIndex("ReportedByUserId");
-
-                    b.HasIndex("PinId", "ReportedByUserId");
-
-                    b.ToTable("PinReports");
-                });
-
             modelBuilder.Entity("PinterestClone.DAL.Models.PinShare", b =>
                 {
                     b.Property<int>("Id")
@@ -855,25 +815,6 @@ namespace PinterestClone.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.PinReport", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.Pin", "Pin")
-                        .WithMany()
-                        .HasForeignKey("PinId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "ReportedByUser")
-                        .WithMany()
-                        .HasForeignKey("ReportedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Pin");
-
-                    b.Navigation("ReportedByUser");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.PinShare", b =>
