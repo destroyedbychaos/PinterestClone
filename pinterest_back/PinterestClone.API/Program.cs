@@ -16,6 +16,11 @@ using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.BoardRepository;
 using PinterestClone.DAL.Repositories.PinRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
+using PinterestClone.DAL.Repositories.PinShareRepository;
+using PinterestClone.DAL.Repositories.PinReportRepository;
+using PinterestClone.BLL.Services.PinShareService;
+using PinterestClone.BLL.Services.PinReportService;
+using PinterestClone.BLL.Services.EmailService;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -117,6 +122,11 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPinShareRepository, PinShareRepository>();
+builder.Services.AddScoped<IPinReportRepository, PinReportRepository>();
+builder.Services.AddScoped<IPinShareService, PinShareService>();
+builder.Services.AddScoped<IPinReportService, PinReportService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
