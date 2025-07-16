@@ -20,6 +20,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PinShare> PinShares { get; set; }
         public DbSet<PinReport> PinReports { get; set; }
+        public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -148,6 +149,15 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<PinReport>()
                 .HasIndex(pr => pr.ReportedAt);
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => new { prc.Email, prc.Code });
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => prc.ExpiresAt);
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => prc.CreatedAt);
         }
     }
 } 
