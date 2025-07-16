@@ -1,6 +1,7 @@
 using PinterestClone.BLL.Services;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.JwtService;
+using PinterestClone.BLL.Services.PasswordResetService;
 using PinterestClone.BLL.Validators;
 using PinterestClone.DAL.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,16 @@ namespace PinterestClone.API.Controllers
     {
         private readonly IAuthService _accountService;
         private readonly IJwtService _jwtService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public AuthController(IAuthService accountService, IJwtService jwtService)
+        public AuthController(
+            IAuthService accountService, 
+            IJwtService jwtService,
+            IPasswordResetService passwordResetService)
         {
             _accountService = accountService;
             _jwtService = jwtService;
+            _passwordResetService = passwordResetService;
         }
 
 
@@ -63,6 +69,51 @@ namespace PinterestClone.API.Controllers
             }
 
             var response = await _jwtService.RefreshTokensAsync(model);
+            return GetResult(response);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPasswordAsync([FromBody] ForgotPasswordVM model)
+        {
+            var validator = new ForgotPasswordValidator();
+            var validation = await validator.ValidateAsync(model);
+
+            if (!validation.IsValid)
+            {
+                return BadRequest(validation.Errors);
+            }
+
+            var response = await _passwordResetService.ForgotPasswordAsync(model);
+            return GetResult(response);
+        }
+
+        [HttpPost("verify-reset-code")]
+        public async Task<IActionResult> VerifyResetCodeAsync([FromBody] VerifyResetCodeVM model)
+        {
+            var validator = new VerifyResetCodeValidator();
+            var validation = await validator.ValidateAsync(model);
+
+            if (!validation.IsValid)
+            {
+                return BadRequest(validation.Errors);
+            }
+
+            var response = await _passwordResetService.VerifyResetCodeAsync(model);
+            return GetResult(response);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPasswordAsync([FromBody] ResetPasswordVM model)
+        {
+            var validator = new ResetPasswordValidator();
+            var validation = await validator.ValidateAsync(model);
+
+            if (!validation.IsValid)
+            {
+                return BadRequest(validation.Errors);
+            }
+
+            var response = await _passwordResetService.ResetPasswordAsync(model);
             return GetResult(response);
         }
     }
