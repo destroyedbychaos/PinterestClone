@@ -1,1 +1,42 @@
+@font-face {
+    font-family: 'Geologica';
+    src: url('../src/assets/fonts/Geologica-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geologica';
+    src: url('../src/assets/fonts/Geologica-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geologica';
+    src: url('../src/assets/fonts/Geologica-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geologica';
+    src: url('../src/assets/fonts/Geologica-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+
 @import "tailwindcss";
+
+@theme {
+    --font-geologica: Geologica, sans-serif;
+}
+
+.font-geologica {
+    font-family: 'Geologica', sans-serif;
+}
