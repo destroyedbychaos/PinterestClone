@@ -6,6 +6,6 @@ namespace PinterestClone.DAL.ViewModels
     {
         [Required(ErrorMessage = "Email обов'язковий")]
         [EmailAddress(ErrorMessage = "Невірний формат email")]
-        public string Email { get; set; }
+        public required string Email { get; set; }
     }
 } 

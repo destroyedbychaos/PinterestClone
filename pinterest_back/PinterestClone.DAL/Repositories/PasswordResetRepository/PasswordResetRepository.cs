@@ -36,7 +36,7 @@ namespace PinterestClone.DAL.Repositories.PasswordResetRepository
             return resetCode;
         }
 
-        public async Task<PasswordResetCode> GetValidResetCodeAsync(string email, string code)
+        public async Task<PasswordResetCode?> GetValidResetCodeAsync(string email, string code)
         {
             return await _context.PasswordResetCodes
                 .FirstOrDefaultAsync(c => 
