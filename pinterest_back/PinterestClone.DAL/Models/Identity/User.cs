@@ -22,8 +22,7 @@ namespace PinterestClone.DAL.Models.Identity
 
         public bool IsProfilePublic { get; set; } = true;
 
-        // SMS notification fields
-        public string? PhoneNumber { get; set; }
+        public new string? PhoneNumber { get; set; }
         public bool IsPhoneNumberVerified { get; set; } = false;
         public bool SmsNotificationsEnabled { get; set; } = true;
         public DateTime? PhoneNumberVerifiedAt { get; set; }
