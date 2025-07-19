@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../../../store/Auth/AuthApi.js';
 import { setCredentials } from '../../../store/slices/AuthSlice.js';
 import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
 import LoginLayout from '../../components/ui/Auth/AuthLayout';
@@ -15,6 +15,7 @@ const LoginForm = () => {
     const [login, { isLoading, error }] = useLoginMutation();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -32,31 +33,41 @@ const LoginForm = () => {
     };
 
     return (
-        <LoginLayout title={'Welcome to Aestify!'}>
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignContent: 'center', gap: '16px' }}>
-                <InputField
-                    label="E-mail address"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="E-mail"
-                    id="email"
-                    required
-                />
-
-                <InputField
-                    label="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    id="password"
-                    required
-                    showPassword={showPassword}
-                    setShowPassword={setShowPassword}
-                />
-
+        <Box sx={{
+            position: 'right',
+            minHeight: '100vh',
+            width: '100%',
+            fontFamily: 'Geologica, sans-serif',
+            backgroundImage: 'url(../../../src/assets/images/image.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'top',
+            backgroundRepeat: 'no-repeat',
+            backgroundOrigin: 'top right',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+        }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: '100vh',
+                    maxWidth: '786px',
+                    maxHeight: '1080px',
+                    gap: '48px',
+                    borderTopRightRadius: '40px',
+                    borderBottomRightRadius: '40px',
+                    padding: '100px 160px',
+                    boxShadow: '3px 0px 38.7px 2px rgba(1, 35, 63, 0.25)',
+                    position: 'relative',
+                    zIndex: 1,
+                }}
+                bgcolor={"white"}
+            >
                 <Typography
+                    onClick={() => navigate('/forgotpassword')}
                     sx={{
                         textAlign: 'right',
                         color: theme.palette.blue?.[500],
@@ -71,10 +82,9 @@ const LoginForm = () => {
 
                 <Button
                     sx={{
-                        borderRadius: "100px",
+                        borderRadius: '100px',
                         padding: '12px 20px',
                         gap: '16px',
-                        mt: 2,
                         textTransform: 'capitalize',
                     }}
                     color="primary"
@@ -82,10 +92,11 @@ const LoginForm = () => {
                     type="submit"
                     disabled={isLoading}
                 >
-                    <Typography color={'white'} fontSize={'18px'}>
+                    <Typography color="white" fontSize="18px">
                         {isLoading ? 'Loging in...' : 'Log in'}
                     </Typography>
                 </Button>
+
 
                 <Typography
                     textAlign={'center'}
