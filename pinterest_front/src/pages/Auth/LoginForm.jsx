@@ -158,6 +158,7 @@ const LoginForm = () => {
                         </Box>
                     </Box>
                     <Typography
+                        onClick={() => navigate('/forgotpassword1')}
                         sx={{
                             textAlign: 'right',
                             color: theme.palette.blue?.[500],
