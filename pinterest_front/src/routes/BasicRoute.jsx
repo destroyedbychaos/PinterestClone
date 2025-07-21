@@ -15,10 +15,13 @@ const BasicRoute = () => {
             <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
                 
-                <Route path="/login" element={<LoginForm/>} />
                 <Route path="/register" element={<RegisterForm/>} />
                 
                 <Route path="*" element={<NotFoundPage />} />
+            </Route>
+            
+            <Route path="/login" element={<LayoutWithoutFooter />}>
+                <Route index element={<LoginForm/>} />
             </Route>
             
             <Route path="/forgotpassword1" element={<LayoutWithoutFooter />}>
