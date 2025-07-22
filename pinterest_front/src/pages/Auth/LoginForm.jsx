@@ -57,6 +57,7 @@ const LoginForm = () => {
                 />
 
                 <Typography
+                    onClick={() => navigate('/forgotpassword')}
                     sx={{
                         textAlign: 'right',
                         color: theme.palette.blue?.[500],
@@ -69,116 +70,22 @@ const LoginForm = () => {
                     Forgot your password?
                 </Typography>
 
-                <Box>
-  <Typography
-    color={theme.palette.blue[500]}
-    paddingLeft="16px"
-    paddingRight="16px"
-    gap="10px"
-    fontWeight="300"
-    fontStyle="Light"
-    fontSize="16px"
-    lineHeight="100%"
-    width="432px"
-    height="20px"
-    sx={{ mb: 1 }}
-  >
-    E-mail address
-  </Typography>
-  <Box
-    sx={{
-      padding: '16px 24px',
-      backgroundColor: '#D7E0F480',
-      borderRadius: '100px',
-      fontWeight: '400',
-      fontStyle: 'Regular',
-      fontSize: '21px',
-      lineHeight: '100%',
-    }}
-  >
-    <input
-      className="input-field w-full focus:outline-none"
-      type="email"
-      color={theme.palette.dark[200]}
-      placeholder="E-mail"
-      id="email"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-      required
-    />
-  </Box>
-
-  <Typography
-    color={theme.palette.blue[500]}
-    paddingLeft="16px"
-    paddingRight="16px"
-    gap="10px"
-    fontWeight="300"
-    fontStyle="Light"
-    fontSize="16px"
-    lineHeight="100%"
-    width="432px"
-    height="20px"
-    sx={{ mb: 1, mt: 2 }}
-  >
-    Password
-  </Typography>
-  <Box
-    sx={{
-      padding: '16px 24px',
-      backgroundColor: '#D7E0F480',
-      borderRadius: '100px',
-      fontWeight: '400',
-      fontStyle: 'Regular',
-      fontSize: '21px',
-      lineHeight: '100%',
-    }}
-  >
-    <input
-      className="input-field w-full focus:outline-none"
-      type="password"
-      color={theme.palette.dark[200]}
-      placeholder="Password"
-      id="password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      required
-    />
-  </Box>
-
-  <Typography
-    onClick={() => navigate('/forgotpassword')}
-    sx={{
-      textAlign: 'right',
-      color: theme.palette.blue?.[500],
-      fontSize: '21px',
-      fontWeight: '500',
-      cursor: 'pointer',
-      fontStyle: 'Medium',
-      mt: 2,
-    }}
-  >
-    Forgot your password?
-  </Typography>
-
-  <Button
-    sx={{
-      borderRadius: '100px',
-      padding: '12px 20px',
-      gap: '16px',
-      mt: 2,
-      textTransform: 'capitalize',
-    }}
-    color="primary"
-    variant="contained"
-    type="submit"
-    disabled={isLoading}
-  >
-    <Typography color="white" fontSize="18px">
-      {isLoading ? 'Loging in...' : 'Log in'}
-    </Typography>
-  </Button>
-</Box>
+                <Button
+                    sx={{
+                        borderRadius: '100px',
+                        padding: '12px 20px',
+                        gap: '16px',
+                        textTransform: 'capitalize',
+                    }}
+                    color="primary"
+                    variant="contained"
+                    type="submit"
+                    disabled={isLoading}
+                >
+                    <Typography color="white" fontSize="18px">
+                        {isLoading ? 'Loging in...' : 'Log in'}
+                    </Typography>
+                </Button>
 
 
                 <Typography
