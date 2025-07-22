@@ -42,18 +42,18 @@ const ForgotPassword = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        height: '100vh',
         display: 'flex',
         fontFamily: 'Geologica, sans-serif',
         backgroundColor: 'white',
+        overflow: 'hidden',
       }}
     >
       <Box
         sx={{
           width: '144px',
-          minHeight: '100vh',
+          height: '100vh',
           backgroundColor: theme.palette.blue?.[50],
-          maxHeight: '810px',
           display: 'flex',
           padding: '44px 0',
           alignItems: 'flex-start',
@@ -66,8 +66,7 @@ const ForgotPassword = () => {
         <Box
           sx={{
             width: '108px',
-            minHeight: '100vh',
-            height: '480px',
+            height: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -120,6 +119,7 @@ const ForgotPassword = () => {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
+              zIndex: 3,
             }}
           >
             <ArrowBackIcon
@@ -131,7 +131,7 @@ const ForgotPassword = () => {
         <Box
           sx={{
             width: '36px',
-            minHeight: '100vh',
+            height: '100vh',
             backgroundColor: 'white',
             zIndex: 2,
             borderRadius: '40px 0 0 0',
@@ -154,7 +154,6 @@ const ForgotPassword = () => {
           textAlign: 'center',
           height: '100vh',
           overflowY: 'auto',
-
         }}
       >
         <Typography
