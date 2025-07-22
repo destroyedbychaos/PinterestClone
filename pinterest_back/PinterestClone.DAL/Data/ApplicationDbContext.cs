@@ -18,6 +18,9 @@ namespace PinterestClone.DAL.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<SmsVerification> SmsVerifications { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<PinShare> PinShares { get; set; }
+        public DbSet<PinReport> PinReports { get; set; }
+        public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -62,7 +65,6 @@ namespace PinterestClone.DAL.Data
                 .WithMany(u => u.Likes)
                 .HasForeignKey(l => l.UserId);
 
-            // SMS Verification configuration
             builder.Entity<SmsVerification>()
                 .HasOne(sv => sv.User)
                 .WithMany()
@@ -76,7 +78,6 @@ namespace PinterestClone.DAL.Data
             builder.Entity<SmsVerification>()
                 .HasIndex(sv => sv.UserId);
 
-            // Notification configuration
             builder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
@@ -106,6 +107,57 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<Notification>()
                 .HasIndex(n => n.CreatedAt);
+
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.Pin)
+                .WithMany()
+                .HasForeignKey(ps => ps.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.SharedByUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.SharedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PinShare>()
+                .HasOne(ps => ps.SharedWithUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.SharedWithUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinShare>()
+                .HasIndex(ps => new { ps.SharedWithUserId, ps.IsRead });
+
+            builder.Entity<PinShare>()
+                .HasIndex(ps => ps.SharedAt);
+
+            builder.Entity<PinReport>()
+                .HasOne(pr => pr.Pin)
+                .WithMany()
+                .HasForeignKey(pr => pr.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinReport>()
+                .HasOne(pr => pr.ReportedByUser)
+                .WithMany()
+                .HasForeignKey(pr => pr.ReportedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<PinReport>()
+                .HasIndex(pr => new { pr.PinId, pr.ReportedByUserId });
+
+            builder.Entity<PinReport>()
+                .HasIndex(pr => pr.ReportedAt);
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => new { prc.Email, prc.Code });
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => prc.ExpiresAt);
+
+            builder.Entity<PasswordResetCode>()
+                .HasIndex(prc => prc.CreatedAt);
         }
     }
 } 

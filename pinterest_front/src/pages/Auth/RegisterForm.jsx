@@ -1,93 +1,155 @@
-﻿import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { useRegisterMutation } from '../../../store/Auth/AuthApi.js'
-import { setCredentials } from '../../../store/slices/AuthSlice.js'
-import { TextField, Button, Box, Typography } from '@mui/material'
+﻿import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useRegisterMutation } from '../../../store/Auth/AuthApi.js';
+import { setCredentials } from '../../../store/slices/AuthSlice.js';
+import { Button, Typography, useTheme, Box } from '@mui/material';
 import { useNavigate } from "react-router";
+import InputField from '../../components/ui/Auth/InputField';
+import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
+import AuthLayout from '../../components/ui/Auth/AuthLayout';
 
 const RegisterForm = () => {
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [firstname, setFirstname] = useState('')
-    const [lastname, setLastname] = useState('')
-    const [register, { isLoading, error }] = useRegisterMutation()
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
+    const theme = useTheme();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [register, { isLoading, error }] = useRegisterMutation();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         try {
-            if (password != confirmPassword)
-            {
-                console.error('Паролі не збігаються')
+            if (password !== confirmPassword) {
+                console.error('Паролі не збігаються');
+                return;
             }
             const response = await register({
                 email,
                 password,
-                firstname,
-                lastname,
-            }).unwrap()
+            }).unwrap();
+
             dispatch(setCredentials({
-                user: response.user,
+                user: { email: email },
                 accessToken: response.accessToken
-            }))
-            console.log('Успішна реєстрація:', response)
-            navigate('/')
+            }));
+
+            localStorage.setItem('isNewUser', 'true');
+            navigate('/');
         } catch (err) {
-            console.error('Помилка реєстрації:', err)
+            console.error('Помилка реєстрації:', err);
         }
-    }
+    };
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 400, mx: 'auto', display: 'flex', flexDirection: 'column', gap: 2, mt: 10 }}>
-            <Typography variant="h5" align="center">Register</Typography>
+        <AuthLayout title="Create an account" subtitle={'Start Your Collection of Inspiration.'}>
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignContent: 'center', gap: '16px' }}>
 
-            <TextField
-                label="FirstName"
-                type="text"
-                value={firstname}
-                onChange={(e) => setFirstname(e.target.value)}
-                variant="outlined"
-                required
-            />
-            <TextField
-                label="LastName"
-                type="text"
-                value={lastname}
-                onChange={(e) => setLastname(e.target.value)}
-                variant="outlined"
-                required
-            />
-            <TextField
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                variant="outlined"
-                required
-            />
-            <TextField
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                variant="outlined"
-                required
-            />
-            <TextField
-                label="ConfirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                variant="outlined"
-                required
-            />
-            <Button color={'error'} variant="contained" type="submit">
-                Sign up
-            </Button>
-        </Box>
-    )
-}
+                <InputField
+                    label="E-mail address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-mail"
+                    id="email"
+                    required
+                />
 
-export default RegisterForm
+                <InputField
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    id="password"
+                    required
+                    showPassword={showPassword}
+                    setShowPassword={setShowPassword}
+                />
+
+                <InputField
+                    label="Confirm password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm password"
+                    id="confirmPassword"
+                    required
+                    showPassword={showConfirmPassword}
+                    setShowPassword={setShowConfirmPassword}
+                />
+                <Button
+                    sx={{
+                        borderRadius: "100px",
+                        padding: '12px 20px',
+                        gap: '16px',
+                        mt: 2,
+                        textTransform: 'capitalize',
+                    }}
+                    color="primary"
+                    variant="contained"
+                    type="submit"
+                    disabled={isLoading}
+                >
+                    <Typography color={'white'} fontSize={'18px'}>
+                        {isLoading ? 'Creating account...' : 'Continue'}
+                    </Typography>
+                </Button>
+                <Typography
+                    textAlign={'center'}
+                    fontStyle='Bold'
+                    fontWeight={'700'}
+                    color={theme.palette.blue[500]}
+                    fontSize={'18px'}>
+                    OR
+                </Typography>
+
+                <SocialLoginButton
+                    icon={<img width={'26px'} height={'26px'} src={'../../../src/assets/images/google.png'} alt="Google" />}
+                    text="Continue with Google"
+                />
+
+                <Box color={theme.palette.blue[500]} sx={{
+                    pl: "60px",
+                    display: 'flex',
+                    textAlign: 'center',
+                    flexDirection: 'column',
+                    width: '375px',
+                    height: '36px',
+                    fontWeight: '300',
+                    fontStyle: 'Light',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    gap: '2px',
+                }}>
+                    <Typography fontSize={'14px'}>
+                        By continuing, you agree to our
+                    </Typography>
+                    <Typography color={theme.palette.text} fontSize={'14px'}>
+                        Terms of Service and Privacy Policy.
+                    </Typography>
+                </Box>
+
+                <Typography
+                    sx={{
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        fontSize: '19px',
+                        fontWeight: '500',
+                        fontStyle: 'Medium',
+                        paddingRight: '10px',
+                        color: theme.palette.blue[500],
+                        mt: 2,
+                    }}
+                    onClick={() => navigate('/login')}
+                >
+                    Already a member? Log in
+                </Typography>
+            </Box>
+        </AuthLayout>
+    );
+};
+
+export default RegisterForm;
