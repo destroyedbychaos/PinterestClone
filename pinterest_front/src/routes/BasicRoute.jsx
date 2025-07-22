@@ -6,7 +6,7 @@ import Layout from "../components/layout/Layout";
 import LayoutWithoutFooter from "../components/layout/LayoutWithoutFooter";
 import LoginForm from "../pages/Auth/LoginForm.jsx";
 import RegisterForm from "../pages/Auth/RegisterForm.jsx";
-import ForgotPassword1 from "../pages/ForgotPassword/ForgotPassword1.jsx";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
 
 
 const BasicRoute = () => {
@@ -24,8 +24,8 @@ const BasicRoute = () => {
                 <Route index element={<LoginForm/>} />
             </Route>
             
-            <Route path="/forgotpassword1" element={<LayoutWithoutFooter />}>
-                <Route index element={<ForgotPassword1/>} />
+            <Route path="/forgotpassword" element={<LayoutWithoutFooter />}>
+                <Route index element={<ForgotPassword/>} />
             </Route>
         </Routes>
     );
