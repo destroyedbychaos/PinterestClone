@@ -20,5 +20,6 @@ export const theme = createTheme({
         dark: {
             200: '#7B8D9B',
             300: '#52697C',
+            500: '#01233F',
         }
     }})

@@ -2,195 +2,152 @@ import { Box } from "@mui/material";
 import { memo } from "react";
 import { useTheme } from '@mui/material/styles';
 import { Link } from "react-router-dom";
+import { Icon as Iconify } from '@iconify/react';
+import icon from '../../assets/images/logo.png';
 
-const SideMenu = memo(({ isUnverified = false }) => {
+const SideMenu = memo(({ isUnverified = true }) => {
     const theme = useTheme();
+
     return (
         <Box sx={{ 
             width: '144px',
-            minHeight:'100vh',
+            minHeight: '100vh',
+            height: '100vh',
             backgroundColor: theme.palette.blue?.[50],
-            maxHeight: '810px',
-            display:'flex', 
-            padding: '44px 0px',
+            display: 'flex', 
+            padding: '44px 0',
             alignItems: 'flex-start',
-            gap:'10px',
-            flexShrink:'0',
-            position: 'relative',
-            zIndex: '0',
-         }}
-        >
+            position: 'relative'
+        }}>
             <Box sx={{
                 width: '108px',
-                minHeight:'100vh', 
-                height: '480px',
-                display:'flex',
-                flexDirection:'column',
-                alignItems:'center', 
-                gap:'46px', 
-                flexShrink:'0',
+                minHeight: '100vh', 
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center', 
+                gap: '44px',
                 justifyContent: 'space-between'
             }}>
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    gap: '46px'
-                }}>
-                    <Box sx={{width:'56px',height:'56px'}}>
-                        <Logo/>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '46px' }}>
+                    <Box sx={{ 
+                        width: 56, 
+                        height: 56,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'white',
+                        borderRadius: '50%',
+                        position: 'relative'
+                    }}>
+                        <img 
+                            src={icon}
+                            alt="Logo"
+                            style={{
+                                width: 35,
+                                height: 35,
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                zIndex: 1
+                            }}
+                        />
                     </Box>
 
-                    <Box sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        gap: '25px',
-                        '& a': {
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '30%',
-                            transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            '&:hover': {
-                                backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                                transform: 'scale(1.1)',
-                            },
-                            '&:active': {
-                                transform: 'scale(0.95)',
-                                backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                            },
-                            '& img': {
-                                width: '35px',
-                                height: '35px',
-                                filter: 'brightness(0) saturate(100%) invert(8%) sepia(56%) saturate(2460%) hue-rotate(183deg) brightness(97%) contrast(101%)',
-                                transition: 'all 0.2s ease',
-                                zIndex: 1,
-                            }
-                        },
-                        '& a:nth-of-type(1)': {
-                            '&:hover': {
-                                backgroundColor: 'rgba(111, 145, 217, 0.1)',
-                            },
-                            '&:active': {
-                                backgroundColor: 'rgba(111, 145, 217, 0.2)',
-                            },
-                            '& img': {
-                                filter: 'brightness(0) saturate(100%) invert(58%) sepia(44%) saturate(669%) hue-rotate(179deg) brightness(90%) contrast(88%)'
-                            }
-                        }
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        gap: '25px'
                     }}>
                         {isUnverified ? (
-                            <Link to="/info">
-                               <infoIcon />
+                            <Link 
+                                to="/info"
+                                className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                            >
+                                <Iconify 
+                                    icon="octicon:unverified-24" 
+                                    width={35}
+                                    height={35}
+                                    color={theme.palette.dark[500]}
+                                />
                             </Link>
                         ) : (
                             <>
-                                <NavLink to="/" icon="https://icons.iconarchive.com/icons/github/octicons/48/home-fill-24-icon.png" alt="Home" hoverFilter="invert(58%) sepia(44%) saturate(669%) hue-rotate(179deg) brightness(90%) contrast(88%)" />
-                                <NavLink to="/add" icon="https://icons.iconarchive.com/icons/github/octicons/48/plus-circle-24-icon.png" alt="Add" />
-                                <NavLink to="/notifications" icon="https://icons.iconarchive.com/icons/github/octicons/48/bell-24-icon.png" alt="Notifications" />
-                                <NavLink to="/comments" icon="https://icons.iconarchive.com/icons/github/octicons/48/comment-discussion-24-icon.png" alt="Comments" />
-                                <NavLink to="/profile" icon="https://icons.iconarchive.com/icons/github/octicons/48/person-24-icon.png" alt="Profile" />
-                                <NavLink to="/history" icon="https://icons.iconarchive.com/icons/github/octicons/48/clock-24-icon.png" alt="History" />
+                                <Link 
+                                    to="/"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-blue-500/10 active:bg-blue-500/20 hover:scale-110 active:scale-95"
+                                >
+                                    <Iconify icon="octicon:home-fill-24" width={35} height={35} color={theme.palette.primary.main} />
+                                </Link>
+                                <Link 
+                                    to="/add"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                >
+                                    <Iconify icon="octicon:plus-circle-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                </Link>
+                                <Link 
+                                    to="/notifications"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                >
+                                    <Iconify icon="octicon:bell-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                </Link>
+                                <Link 
+                                    to="/comments"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                >
+                                    <Iconify icon="octicon:comment-discussion-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                </Link>
+                                <Link 
+                                    to="/profile"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                >
+                                    <Iconify icon="octicon:person-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                </Link>
+                                <Link 
+                                    to="/history"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                >
+                                    <Iconify icon="octicon:clock-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                </Link>
                             </>
                         )}
                     </Box>
                 </Box>
                 
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    marginBottom: '230px',
-                    '& a': {
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '30%',
-                        transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                            transform: 'scale(1.1)',
-                        },
-                        '&:active': {
-                            transform: 'scale(0.95)',
-                            backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                        },
-                        '& img': {
-                            width: '35px',
-                            height: '35px',
-                            filter: 'brightness(0) saturate(100%) invert(8%) sepia(56%) saturate(2460%) hue-rotate(183deg) brightness(97%) contrast(101%)',
-                            transition: 'all 0.2s ease',
-                            zIndex: 1,
-                        }
-                    }
+                <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    marginBottom: '230px'
                 }}>
-                    {isUnverified ? (  '' ) : <NavLink to="/settings" icon="https://icons.iconarchive.com/icons/github/octicons/48/gear-24-icon.png" alt="Settings" />}
+                    {!isUnverified && (
+                        <Link 
+                            to="/settings"
+                            className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                        >
+                            <Iconify 
+                                icon="octicon:gear-24" 
+                                width={35}
+                                height={35}
+                                color={theme.palette.dark[500]}
+                            />
+                        </Link>
+                    )}
                 </Box>
             </Box>
-
+            
             <Box sx={{
                 width: '36px', 
-                minHeight:'100vh',
-                backgroundColor:'white',
-                zIndex:'2',
-                borderRadius: '40px 0px 0px 0px',
+                minHeight: '100vh',
+                backgroundColor: 'white',
                 position: 'absolute',
-                top: '0px',
-                right: '0px',
-            }}></Box>
+                top: 0,
+                right: 0,
+                borderRadius: isUnverified ? '40px 0 0 40px' : '40px 0 0 0'
+            }} />
         </Box>
     );
 });
 
 export default SideMenu;
 
-const NavLink = ({ to, icon, alt, hoverFilter = "", className = "" }) => (
-    <Link 
-      to={to} 
-      className={`flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 hover:bg-[rgba(0,0,0,0.06)] hover:scale-110 active:scale-95 active:bg-[rgba(0,0,0,0.12)] ${className}`}
-    >
-      <img 
-        src={icon} 
-        alt={alt} 
-        className={`w-[35px] h-[35px] filter brightness-0 saturate-100 invert-8 sepia-56 saturate-2460 hue-rotate-183 brightness-97 contrast-101 transition-all duration-200 z-[1] ${hoverFilter}`}
-      />
-    </Link>
-  );
-
-const Logo = () => (
-    <Box sx={{width:'56px',height:'56px'}}>
-       <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="56" height="56" rx="28" fill="white"/>
-                            <g clipPath="url(#clip0_393_397)">
-                            <path d="M45.8465 29.9758L44.028 30.6942L43.317 30.9786V31.727C43.3172 32.2429 43.2796 32.7582 43.2048 33.2686C43.1524 33.6279 42.7348 36.8781 39.5737 39.3208C37.7244 40.7494 34.5984 42.074 30.0932 41.0959C26.7135 40.3625 23.8577 38.1353 21.6403 37.2792C21.1276 37.0816 20.5701 36.9798 20.0313 36.8676C19.4805 36.7533 18.9231 36.6733 18.3624 36.6281C17.6454 36.567 16.9248 36.562 16.2071 36.6131C15.8029 36.6431 15.3913 36.688 14.9872 36.7553C14.6654 36.8077 13.1911 36.9424 11.9989 37.8884C11.6158 38.193 10.8068 39.1546 10.1534 40.3528C10.1534 40.3528 11.3508 35.65 11.9825 35.5018C12.1097 35.4719 12.2294 35.4419 12.3567 35.4195C12.9703 35.2922 13.599 35.195 14.2351 35.1276C14.6093 35.0902 14.9835 35.0603 15.3651 35.0378C15.6944 35.0228 16.0162 35.0079 16.3455 35.0004C16.5326 34.9929 16.7197 34.9929 16.8993 34.9929C17.4157 34.9929 17.9321 35.0079 18.4485 35.0303C18.9648 35.0528 19.4887 35.0902 20.0051 35.1276L20.3942 35.165L20.7984 35.2024C21.1043 35.231 21.4117 35.241 21.7189 35.2324C22.9462 35.2099 24.1586 35.2893 25.2737 34.8178C25.8284 34.5823 26.3617 34.2994 26.8677 33.9721C27.3317 33.6653 27.7957 33.351 28.2372 33.0142C29.144 32.338 29.9881 31.5816 30.7593 30.7541C31.5464 29.9115 32.2321 28.9797 32.8023 27.9776C33.0863 27.4657 33.3363 26.9357 33.5507 26.391C33.6031 26.2489 33.6555 26.1141 33.7004 25.972C33.7453 25.8298 33.7902 25.6876 33.8351 25.5529C33.88 25.4182 33.9174 25.261 33.9548 25.1188C33.9923 24.9766 34.0297 24.8269 34.0596 24.6847C34.1831 24.0982 34.2582 23.5025 34.2841 22.9036C34.304 22.3007 34.2714 21.6973 34.1868 21.1C34.101 20.4987 33.9659 19.9055 33.7827 19.3264C33.6854 19.0345 33.5806 18.7576 33.4684 18.4732C33.4085 18.331 33.3486 18.1963 33.2813 18.0541C33.2139 17.9119 33.1466 17.7772 33.0792 17.6425C32.7967 17.1058 32.4713 16.5928 32.1063 16.1083C31.7443 15.6229 31.3465 15.1651 30.9164 14.7388C30.0745 13.9009 29.1288 13.1741 28.1025 12.576L26.8423 11.8201L25.8619 12.793C25.5355 13.1141 25.2282 13.4539 24.9414 13.8108C24.657 14.1626 24.3876 14.5293 24.1406 14.896C23.6511 15.6329 23.2278 16.4118 22.8759 17.2234C22.1981 18.7989 21.7568 20.4658 21.5662 22.1702C21.3762 23.8281 21.4039 25.5037 21.6485 27.1544C21.7654 27.9691 21.9405 28.7744 22.1724 29.5642C22.3913 30.3532 22.6715 31.1239 23.0106 31.8692C23.2216 31.3281 23.3286 31.0677 23.4035 30.8357C23.4881 30.5529 23.5553 30.2652 23.6048 29.9743C23.6724 29.6313 23.704 29.2821 23.6991 28.9325C23.6886 28.3017 23.6991 27.6798 23.723 27.0571C23.7913 25.5622 24.0094 24.078 24.3741 22.6267C24.7408 21.1898 25.2347 19.8203 25.9083 18.563C26.3266 17.7697 26.823 17.0201 27.3901 16.3254C27.715 16.587 28.0248 16.8668 28.3181 17.1636C28.6315 17.4757 28.924 17.8082 29.1937 18.1589C29.4555 18.5037 29.6931 18.8663 29.9046 19.244C30.1153 19.6166 30.2979 20.0043 30.4509 20.404C30.6021 20.8001 30.7197 21.2082 30.8027 21.6239C30.8861 22.0408 30.9362 22.4637 30.9523 22.8886C30.9659 23.3186 30.9458 23.749 30.8925 24.1758C30.7778 25.0562 30.5305 25.914 30.1591 26.7203C29.7686 27.564 29.2787 28.3579 28.6997 29.0852C28.4079 29.4519 28.0786 29.8111 27.7493 30.1554C27.667 30.2452 27.5846 30.3275 27.4948 30.4098L27.2329 30.6643L26.956 30.9038C26.8662 30.9861 26.7689 31.0684 26.6716 31.1432C26.2974 31.4576 25.9008 31.7644 25.4967 32.0563C25.1226 32.3186 24.7271 32.549 24.3142 32.7448C23.8995 32.9346 23.4687 33.0874 23.027 33.2013C22.5861 33.3122 22.1344 33.3749 21.6799 33.3884C21.4529 33.402 21.2251 33.397 20.9989 33.3734L20.8118 33.3584L20.6098 33.3435L20.2056 33.3135C19.6593 33.2761 19.113 33.2462 18.5667 33.2237C17.3768 33.1863 16.1719 33.1863 14.9595 33.2611L22.801 8.75928H33.2109L38.1877 24.2432C37.2533 24.4731 36.4011 24.9575 35.7255 25.6427C35.4311 25.94 35.177 26.2746 34.9696 26.638C34.5771 27.3241 34.3395 28.0879 34.2736 28.8757C34.2387 29.2442 34.2412 29.6153 34.2811 29.9833C34.3136 30.3391 34.3736 30.6919 34.4607 31.0385L34.4907 31.1657L34.5281 31.2929C34.5486 31.3765 34.5735 31.459 34.6029 31.5399C34.6528 31.7045 34.7127 31.8692 34.7825 32.0338C34.91 32.3522 35.0574 32.6621 35.2241 32.9618C35.0744 28.6878 36.9843 27.4178 37.1639 27.2681C37.3453 27.1256 37.538 26.9979 37.7401 26.8865C37.9448 26.7786 38.1606 26.6933 38.3837 26.632C38.4735 26.6021 38.5633 26.5871 38.6606 26.5647C38.7991 26.5369 38.939 26.5169 39.0797 26.5048C39.1171 26.5048 39.1546 26.4973 39.1845 26.4973C39.6186 26.4749 40.3654 26.5931 40.7995 26.7278C40.9041 26.7586 41.0066 26.7961 41.1063 26.8401C41.464 26.9841 41.7953 27.1864 42.0867 27.4388C42.4674 27.7746 42.7755 28.1846 42.9922 28.6437L43.2018 29.0852L43.6658 29.2424L45.8465 29.9758Z" fill="#6F91D9"/>
-                            <path d="M24.1883 41.4261C24.4053 41.5683 24.6299 41.7105 24.8918 41.8527L23.8515 47.241H10.4481L13.1123 38.9415C13.3668 38.8517 13.6362 38.7769 13.9056 38.702C14.1301 38.6422 14.3472 38.5973 14.5717 38.5524C14.7962 38.5075 15.0207 38.4775 15.2452 38.4551C15.3575 38.4401 15.4697 38.4326 15.582 38.4177C15.6942 38.4027 15.8065 38.4027 15.9187 38.4027C16.1433 38.3877 16.3678 38.3952 16.5923 38.4027C17.0418 38.4163 17.4896 38.4639 17.9319 38.5449C18.3776 38.6229 18.8176 38.7304 19.249 38.8667C19.6836 39.0041 20.1107 39.1639 20.5287 39.3456C20.9553 39.5253 21.3669 39.7273 21.7785 39.9443C21.9881 40.0566 22.1901 40.1614 22.3997 40.2811L22.7065 40.4532L22.8562 40.543L22.8936 40.5655L22.9236 40.5805L22.9834 40.6179L23.5447 40.9846C23.7543 41.1417 23.9638 41.2839 24.1883 41.4261Z" fill="#6F91D9"/>
-                            <path d="M42.9576 39.0762L45.5844 47.241H32.1286L31.4176 43.7086C31.6945 43.7236 31.9714 43.7386 32.2483 43.746C33.3856 43.7662 34.5211 43.6506 35.631 43.4018C36.7429 43.1597 37.8211 42.7827 38.8415 42.2792C39.8558 41.7827 40.7995 41.1535 41.648 40.4083C42.1197 40.0003 42.5577 39.5548 42.9576 39.0762Z" fill="#6F91D9"/>
-                            </g>
-                            <defs>
-                            <clipPath id="clip0_393_397">
-                            <rect width="35.6931" height="38.4816" fill="white" transform="translate(10.1534 8.75928)"/>
-                            </clipPath>
-                            </defs>
-        </svg>                 
-    </Box>
-)
-
-
-const infoIcon  = (
-    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M25.6958 32.1818C25.6958 32.664 25.5161 33.1265 25.1963 33.4675C24.8764 33.8084 24.4425 34 23.9902 34C23.5378 34 23.1039 33.8084 22.7841 33.4675C22.4642 33.1265 22.2845 32.664 22.2845 32.1818C22.2845 31.6996 22.4642 31.2371 22.7841 30.8962C23.1039 30.5552 23.5378 30.3636 23.9902 30.3636C24.4425 30.3636 24.8764 30.5552 25.1963 30.8962C25.5161 31.2371 25.6958 31.6996 25.6958 32.1818ZM21.4027 18.2455C21.5937 17.84 21.8598 17.4745 22.235 17.2091C22.6017 16.9455 23.1476 16.7273 23.9902 16.7273C24.6451 16.7273 25.2967 16.9418 25.7538 17.3073C25.9732 17.4718 26.1509 17.6918 26.2709 17.9476C26.3909 18.2034 26.4494 18.4869 26.4412 18.7727C26.4412 19.6455 26.0694 20.2455 25.3837 20.9291C25.1573 21.151 24.9246 21.3657 24.6861 21.5727L24.1846 22.0255C23.765 22.4127 23.2908 22.8873 22.9258 23.4709L22.7109 23.8164V26.7273C22.7109 27.0889 22.8457 27.4358 23.0856 27.6915C23.3255 27.9472 23.6509 28.0909 23.9902 28.0909C24.3294 28.0909 24.6548 27.9472 24.8947 27.6915C25.1346 27.4358 25.2694 27.0889 25.2694 26.7273V24.6909C25.4229 24.5091 25.6157 24.3127 25.8613 24.0855C25.9687 23.9855 26.1001 23.8691 26.2399 23.7455C26.5231 23.4909 26.8506 23.2 27.1269 22.9236C28.0411 22.0145 28.9997 20.7418 28.9997 18.7727C29.0075 18.0635 28.8564 17.3626 28.5588 16.7282C28.2613 16.0938 27.8259 15.5443 27.2889 15.1255C26.3269 14.3545 25.1125 14 23.9902 14C22.7007 14 21.6483 14.3473 20.8159 14.94C20.0872 15.4648 19.5007 16.1846 19.1154 17.0273C18.9778 17.3487 18.9627 17.7145 19.0731 18.0476C19.1836 18.3807 19.411 18.6551 19.7075 18.813C20.004 18.9709 20.3464 19 20.6626 18.8942C20.9788 18.7883 21.2441 18.5557 21.4027 18.2455Z" fill="#01233F"/>
-        <path d="M20.4709 6.15612C21.4942 5.40501 22.7306 5 24 5C25.2694 5 26.5058 5.40501 27.5291 6.15612L29.8009 7.82485C30.2536 8.1553 30.7807 8.37504 31.3358 8.4593L34.1214 8.88723C35.3761 9.0796 36.5366 9.6672 37.4343 10.5646C38.332 11.462 38.92 12.6223 39.1128 13.8769L39.5407 16.6642C39.625 17.2193 39.8431 17.7464 40.1751 18.1991L41.8439 20.4709C42.595 21.4942 43 22.7306 43 24C43 25.2694 42.595 26.5058 41.8439 27.5291L40.1751 29.8009C39.8425 30.2536 39.6248 30.7804 39.5407 31.3358L39.1128 34.1214C38.9204 35.3761 38.3328 36.5366 37.4354 37.4343C36.538 38.332 35.3777 38.92 34.1231 39.1128L31.3358 39.5407C30.7804 39.6248 30.2536 39.8425 29.8009 40.1751L27.5291 41.8439C26.5058 42.595 25.2694 43 24 43C22.7306 43 21.4942 42.595 20.4709 41.8439L18.1991 40.1751C17.7464 39.8425 17.2196 39.6248 16.6642 39.5407L13.8786 39.1128C12.6239 38.9204 11.4634 38.3328 10.5657 37.4354C9.668 36.538 9.08001 35.3777 8.88723 34.1231L8.4593 31.3358C8.3752 30.7804 8.15748 30.2536 7.82485 29.8009L6.15612 27.5291C5.40501 26.5058 5 25.2694 5 24C5 22.7306 5.40501 21.4942 6.15612 20.4709L7.82485 18.1991C8.15695 17.7464 8.37504 17.2193 8.4593 16.6642L8.88723 13.8786C9.0796 12.6239 9.6672 11.4634 10.5646 10.5657C11.462 9.668 12.6223 9.08001 13.8769 8.88723L16.6642 8.4593C17.2193 8.37504 17.7464 8.15695 18.1991 7.82485L20.4709 6.15612ZM26.062 8.15364C25.464 7.71499 24.7416 7.47847 24 7.47847C23.2584 7.47847 22.536 7.71499 21.938 8.15364L19.6646 9.82238C18.8902 10.3915 17.9893 10.7646 17.0392 10.9095L14.2536 11.3358C13.52 11.4482 12.8414 11.7919 12.3166 12.3166C11.7919 12.8414 11.4482 13.52 11.3358 14.2536L10.9095 17.0392C10.7648 17.9899 10.3918 18.8913 9.82238 19.6662L8.15364 21.938C7.71499 22.536 7.47847 23.2584 7.47847 24C7.47847 24.7416 7.71499 25.464 8.15364 26.062L9.82238 28.3354C10.3915 29.1098 10.7646 30.0107 10.9095 30.9608L11.3358 33.7464C11.4486 34.4797 11.7923 35.1579 12.3171 35.6824C12.8418 36.2068 13.5202 36.5502 14.2536 36.6625L17.0392 37.0921C17.9898 37.2363 18.8912 37.6088 19.6662 38.1776L21.938 39.8464C22.536 40.285 23.2584 40.5215 24 40.5215C24.7416 40.5215 25.464 40.285 26.062 39.8464L28.3354 38.1776C29.1098 37.6085 30.0107 37.2354 30.9608 37.0905L33.7464 36.6642C34.4797 36.5514 35.1579 36.2077 35.6824 35.6829C36.2068 35.1582 36.5502 34.4798 36.6625 33.7464L37.0921 30.9608C37.2363 30.0102 37.6088 29.1088 38.1776 28.3337L39.8464 26.062C40.285 25.464 40.5215 24.7416 40.5215 24C40.5215 23.2584 40.285 22.536 39.8464 21.938L38.1776 19.6646C37.6085 18.8902 37.2354 17.9893 37.0905 17.0392L36.6642 14.2536C36.5518 13.52 36.2081 12.8414 35.6834 12.3166C35.1586 11.7919 34.48 11.4482 33.7464 11.3358L30.9608 10.9095C30.0101 10.7648 29.1087 10.3918 28.3337 9.82238L26.062 8.15364Z" fill="#01233F"/>
-    </svg>
-)

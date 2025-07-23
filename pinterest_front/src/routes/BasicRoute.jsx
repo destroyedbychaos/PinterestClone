@@ -5,6 +5,7 @@ import HomePage from "../pages/Home/HomePage";
 import Layout from "../components/layout/Layout";
 import LoginForm from "../pages/Auth/LoginForm.jsx";
 import RegisterForm from "../pages/Auth/RegisterForm.jsx";
+import ForgotPassword1 from "../pages/ForgotPassword/ForgotPasword.jsx";
 
 const BasicRoute = () => {
     return (
@@ -14,6 +15,7 @@ const BasicRoute = () => {
                 
                 <Route path="/login" element={<LoginForm/>} />
                 <Route path="/register" element={<RegisterForm/>} />
+                <Route path="/forgot-password" element={<ForgotPassword1 />} />
                 
                 <Route path="*" element={<NotFoundPage />} />
             </Route>
