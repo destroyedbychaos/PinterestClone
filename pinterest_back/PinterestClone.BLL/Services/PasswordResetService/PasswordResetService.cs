@@ -33,7 +33,7 @@ namespace PinterestClone.BLL.Services.PasswordResetService
             var user = await _userRepository.GetByEmailAsync(model.Email);
             if (user == null)
             {
-                return ServiceResponse.BadRequestResponse($"Користувача з поштою {model.Email} не знайдено");
+                return ServiceResponse.BadRequestResponse("Користувача з такою поштою не знайдено");
             }
 
             if (await _passwordResetRepository.HasActiveResetCodeAsync(model.Email))
@@ -79,6 +79,9 @@ namespace PinterestClone.BLL.Services.PasswordResetService
                 return ServiceResponse.BadRequestResponse("Невірний код або код застарів");
             }
 
+            resetCode.ExpiresAt = DateTime.UtcNow.AddHours(1);
+            await _passwordResetRepository.UpdateResetCodeAsync(resetCode);
+
             return ServiceResponse.OkResponse("Код верифіковано успішно");
         }
 
@@ -88,13 +91,20 @@ namespace PinterestClone.BLL.Services.PasswordResetService
 
             if (resetCode == null)
             {
-                return ServiceResponse.BadRequestResponse("Невірний код або код застарів");
+                return ServiceResponse.BadRequestResponse("Код верифікації недійсний. Будь ласка, пройдіть верифікацію знову.");
             }
 
             var user = await _userRepository.GetByEmailAsync(model.Email);
             if (user == null)
             {
                 return ServiceResponse.BadRequestResponse("Користувача не знайдено");
+            }
+            
+            var isCurrentPassword = await _userManager.CheckPasswordAsync(user, model.NewPassword);
+            
+            if (isCurrentPassword)
+            {
+                return ServiceResponse.BadRequestResponse("Ви ввели старий пароль. Будь ласка, введіть новий пароль.");
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
