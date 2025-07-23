@@ -26,14 +26,25 @@ const ForgotPassword = () => {
         body: JSON.stringify({ email }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Something went wrong.')
+        if (data.message && data.message.includes('не знайдено')) {
+          setError('Користувача з такою поштою не знайдено')
+        } else if (data.message) {
+          setError(data.message)
+        } else {
+          setError('Щось пішло не так. Спробуйте ще раз.')
+        }
+        return
       }
 
       setSuccess(true)
+      setTimeout(() => {
+        navigate('/verify-code', { state: { email } })
+      }, 1000)
     } catch (err) {
-      setError(err.message)
+      setError('Помилка з\'єднання. Перевірте ваше інтернет-з\'єднання.')
     } finally {
       setLoading(false)
     }
@@ -110,7 +121,7 @@ const ForgotPassword = () => {
           </Box>
 
           <Box
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/login')}
             sx={{
               position: 'absolute',
               top: 20,
@@ -189,7 +200,11 @@ const ForgotPassword = () => {
               type="email"
               placeholder="E-mail"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                        setError('')
+        setSuccess(false)
+              }}
               required
               className="input-field w-full focus:outline-none"
               style={{
@@ -225,6 +240,42 @@ const ForgotPassword = () => {
             )}
           </Button>
         </Box>
+
+
+
+        {error && (
+          <Box
+            sx={{
+              backgroundColor: '#ffebee',
+              color: '#c62828',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              width: 300,
+              textAlign: 'center',
+              fontSize: 14,
+            }}
+          >
+            {error}
+          </Box>
+        )}
+
+
+
+        {success && (
+          <Box
+            sx={{
+              backgroundColor: '#e8f5e8',
+              color: '#2e7d32',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              width: 300,
+              textAlign: 'center',
+              fontSize: 14,
+            }}
+          >
+            Код для скидання пароля надіслано на вашу пошту
+          </Box>
+        )}
 
         <Typography
           sx={{
