@@ -41,7 +41,7 @@ const ForgotPassword1 = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', fontFamily: 'Geologica, sans-serif', backgroundColor: 'white', paddingBottom:'80px',paddingRight:'60px' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', fontFamily: 'Geologica, sans-serif', backgroundColor: 'white', paddingBottom:'80px',paddingRight:'90px' }}>
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',
