@@ -19,14 +19,23 @@ namespace PinterestClone.BLL.Services.PinService
 
         public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
         {
+            string? normalizedTags = null;
+            if (!string.IsNullOrWhiteSpace(createPinDto.Tags))
+            {
+                normalizedTags = string.Join(",",
+                    createPinDto.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim().ToLower())
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                );
+            }
             var pin = new Pin
             {
                 Id = Guid.NewGuid(),
                 Title = createPinDto.Title,
                 Description = createPinDto.Description,
-                // ImageUrl = createPinDto.ImageUrl,
+                ImageUrl = createPinDto.ImageUrl,
                 Link = createPinDto.Link,
-                Tags = createPinDto.Tags,
+                Tags = normalizedTags,
                 CreatedAt = DateTime.UtcNow,
                 UserId = userId
             };
@@ -121,6 +130,7 @@ namespace PinterestClone.BLL.Services.PinService
                 Id = p.Id.ToString(),
                 Title = p.Title,
                 ImageUrl = p.ImageUrl!,
+                Tags = p.Tags,
                 CreatedAt = p.CreatedAt,
                 LikesCount = p.Likes.Count,
                 CommentsCount = p.Comments.Count
@@ -216,9 +226,19 @@ namespace PinterestClone.BLL.Services.PinService
 
             pin.Title = updatePinDto.Title;
             pin.Description = updatePinDto.Description;
-            // pin.ImageUrl = updatePinDto.ImageUrl;
             pin.Link = updatePinDto.Link;
-            pin.Tags = updatePinDto.Tags;
+            if (!string.IsNullOrWhiteSpace(updatePinDto.Tags))
+            {
+                pin.Tags = string.Join(",",
+                    updatePinDto.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim().ToLower())
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                );
+            }
+            else
+            {
+                pin.Tags = null;
+            }
 
             await _pinRepository.UpdatePinAsync(pinId, pin, userId);
             return await GetPinByIdAsync(pinId);
@@ -301,6 +321,25 @@ namespace PinterestClone.BLL.Services.PinService
                 LikesCount = pin.Likes.Count,
                 CommentsCount = pin.Comments.Count
             };
+        }
+
+        public async Task<List<string>> GetAllTagsAsync()
+        {
+            var allTags = await _pinRepository.GetAllPins()
+                .Where(p => p.Tags != null && p.Tags != "")
+                .Select(p => p.Tags)
+                .ToListAsync();
+
+            var tagSet = new HashSet<string>();
+            foreach (var tagsStr in allTags)
+            {
+                var tags = tagsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t.Trim())
+                    .Where(t => !string.IsNullOrWhiteSpace(t));
+                foreach (var tag in tags)
+                    tagSet.Add(tag);
+            }
+            return tagSet.OrderBy(t => t).ToList();
         }
     }
 }

@@ -1,0 +1,36 @@
+.masonry-grid {
+  column-count: 5;
+  column-gap: 24px;
+  width: 100%;
+  margin: 0;
+  padding: 24px 0 24px 0;
+}
+
+.masonry-grid > * {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1400px) {
+  .masonry-grid {
+    column-count: 4;
+  }
+}
+
+@media (max-width: 1100px) {
+  .masonry-grid {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 800px) {
+  .masonry-grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 500px) {
+  .masonry-grid {
+    column-count: 1;
+  }
+}

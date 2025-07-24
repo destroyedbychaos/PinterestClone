@@ -1,0 +1,218 @@
+.discover-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 32px 40px 0 40px;
+  background: transparent;
+}
+
+.discover-header__spacer {
+  flex: 1;
+}
+
+.discover-header__title {
+  color: var(--Dark-900, #000D17);
+  text-align: center;
+  font-family: Geologica, sans-serif;
+  font-size: 51px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.discover-header__right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.discover-header__search {
+  display: flex;
+  width: 558px;
+  height: 64px;
+  padding: 16px 24px;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  border-radius: 100px;
+  background: var(--Light-200, #EAEFF9);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.discover-header__search-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discover-header__search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1.1rem;
+  width: 100%;
+  color: #222;
+}
+
+.discover-header__profile {
+  display: flex;
+  width: 267px;
+  height: 64px;
+  padding: 8px;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-radius: 100px;
+  border: 1px solid var(--Blue-100, #CBD7F1);
+  background: var(--White, #FFF);
+  box-sizing: border-box;
+}
+
+.discover-header__avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.discover-header__profile-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111;
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discover-header__auth-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.discover-header__login-btn,
+.discover-header__signup-btn {
+  background: #f1f3f6;
+  color: #222;
+  border: none;
+  border-radius: 16px;
+  padding: 6px 20px;
+  min-width: 90px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.discover-header__signup-btn {
+  background: #5a6cff;
+  color: #fff;
+}
+
+.discover-header__login-btn:hover {
+  background: #e0e3e8;
+}
+
+.discover-header__signup-btn:hover {
+  background: #3a4ccf;
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: 72px;
+  right: 0;
+  min-width: 320px;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+  padding: 28px 28px 24px 28px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.profile-dropdown-menu__current {
+  color: #7B8D9B;
+  font-size: 1.08rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+  align-self: flex-start;
+}
+.profile-dropdown-menu__user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+.profile-dropdown-menu__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eaeff9;
+}
+.profile-dropdown-menu__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.profile-dropdown-menu__name {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #111;
+}
+.profile-dropdown-menu__username {
+  font-size: 1rem;
+  color: #7B8D9B;
+  font-weight: 500;
+}
+.profile-dropdown-menu__accounts {
+  color: #7B8D9B;
+  font-size: 1.08rem;
+  font-weight: 500;
+  align-self: flex-start;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+.profile-dropdown-menu__btn {
+  width: 100%;
+  background: #EAEFF9;
+  color: #111827;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  margin-top: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.profile-dropdown-menu__btn--logout {
+  background: #f1f3f6;
+  color: #d32f2f;
+}
+.profile-dropdown-menu__btn:hover {
+  background: #dbe6f7;
+}
+
+@media (max-width: 700px) {
+  .discover-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px 10px 0 10px;
+    gap: 12px;
+  }
+  .discover-header__search {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

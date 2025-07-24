@@ -25,11 +25,8 @@ namespace PinterestClone.BLL.Services.SmsService
         {
             try
             {
-                
                 var code = _random.Next(100000, 999999).ToString();
-                
                 _logger.LogInformation("Згенеровано код підтвердження для SMS");
-                
                 return Task.FromResult(ServiceResponse.OkResponse("Код підтвердження згенеровано", code));
             }
             catch (Exception ex)
@@ -44,7 +41,6 @@ namespace PinterestClone.BLL.Services.SmsService
             try
             {
                 var message = $"Ваш код підтвердження для Pinterest: {code}. Код діє 10 хвилин.";
-                
                 return await SendSmsAsync(phoneNumber, message);
             }
             catch (Exception ex)
@@ -59,7 +55,6 @@ namespace PinterestClone.BLL.Services.SmsService
             try
             {
                 var fullMessage = $"Pinterest: {message}";
-                
                 return await SendSmsAsync(phoneNumber, fullMessage);
             }
             catch (Exception ex)
@@ -75,15 +70,11 @@ namespace PinterestClone.BLL.Services.SmsService
             {
                 var isDevelopmentString = _configuration["Development:DisableSms"];
                 var isDevelopment = !string.IsNullOrEmpty(isDevelopmentString) && bool.Parse(isDevelopmentString);
-                
                 if (isDevelopment)
                 {
-                    
                     _logger.LogInformation("SMS на {PhoneNumber}: {Message}", phoneNumber, message);
                     return ServiceResponse.OkResponse("SMS відправлено (режим розробки)", true);
                 }
-
-                
                 return await SendViaVonageAsync(phoneNumber, message);
             }
             catch (Exception ex)
@@ -97,7 +88,6 @@ namespace PinterestClone.BLL.Services.SmsService
         {
             try
             {
-               
                 var apiKey = _configuration["Vonage:ApiKey"];
                 var apiSecret = _configuration["Vonage:ApiSecret"];
                 var fromNumber = _configuration["Vonage:FromNumber"] ?? "Pinterest";
@@ -108,10 +98,8 @@ namespace PinterestClone.BLL.Services.SmsService
                     return ServiceResponse.BadRequestResponse("SMS сервіс не налаштований");
                 }
 
-                
                 var normalizedPhone = NormalizePhoneNumber(phoneNumber);
 
-                
                 var requestData = new
                 {
                     api_key = apiKey,
@@ -126,7 +114,6 @@ namespace PinterestClone.BLL.Services.SmsService
 
                 _logger.LogInformation("Відправка SMS через Vonage на {PhoneNumber}", normalizedPhone);
 
-                
                 var response = await _httpClient.PostAsync("https://rest.nexmo.com/sms/json", content);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -134,22 +121,19 @@ namespace PinterestClone.BLL.Services.SmsService
 
                 if (response.IsSuccessStatusCode)
                 {
-                    
                     var jsonResponse = JsonSerializer.Deserialize<VonageResponse>(responseContent);
-                    
                     if (jsonResponse?.messages != null && jsonResponse.messages.Length > 0)
                     {
                         var firstMessage = jsonResponse.messages[0];
-                        
-                        if (firstMessage.status == "0") 
+                        if (firstMessage.status == "0")
                         {
-                            _logger.LogInformation("SMS успішно відправлено на {PhoneNumber} через Vonage, MessageId: {MessageId}", 
+                            _logger.LogInformation("SMS успішно відправлено на {PhoneNumber} через Vonage, MessageId: {MessageId}",
                                 normalizedPhone, firstMessage.messageId);
                             return ServiceResponse.OkResponse("SMS успішно відправлено", firstMessage.messageId);
                         }
                         else
                         {
-                            _logger.LogError("Vonage повернула помилку: Статус {Status}, Помилка: {Error}", 
+                            _logger.LogError("Vonage повернула помилку: Статус {Status}, Помилка: {Error}",
                                 firstMessage.status, firstMessage.errorText);
                             return ServiceResponse.BadRequestResponse($"Помилка Vonage: {firstMessage.errorText ?? "Невідома помилка"}");
                         }
@@ -175,25 +159,19 @@ namespace PinterestClone.BLL.Services.SmsService
 
         private static string NormalizePhoneNumber(string phoneNumber)
         {
-           
             var digitsOnly = new string(phoneNumber.Where(char.IsDigit).ToArray());
-            
-            
             if (digitsOnly.StartsWith("380"))
             {
                 return digitsOnly;
             }
-            
             if (digitsOnly.StartsWith("0"))
             {
                 return "380" + digitsOnly.Substring(1);
             }
-            
             if (digitsOnly.Length == 9)
             {
                 return "380" + digitsOnly;
             }
-            
             return digitsOnly;
         }
 
