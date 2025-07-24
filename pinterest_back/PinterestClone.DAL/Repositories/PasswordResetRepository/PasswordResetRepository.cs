@@ -74,5 +74,11 @@ namespace PinterestClone.DAL.Repositories.PasswordResetRepository
                     !c.IsUsed && 
                     c.ExpiresAt > DateTime.UtcNow);
         }
+
+        public async Task UpdateResetCodeAsync(PasswordResetCode resetCode)
+        {
+            _context.PasswordResetCodes.Update(resetCode);
+            await _context.SaveChangesAsync();
+        }
     }
 } 

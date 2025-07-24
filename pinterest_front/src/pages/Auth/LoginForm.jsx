@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../../../store/Auth/AuthApi.js';
 import { setCredentials } from '../../../store/slices/AuthSlice.js';
 import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
 import LoginLayout from '../../components/ui/Auth/AuthLayout';
@@ -15,6 +15,7 @@ const LoginForm = () => {
     const [login, { isLoading, error }] = useLoginMutation();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -57,6 +58,7 @@ const LoginForm = () => {
                 />
 
                 <Typography
+                    onClick={() => navigate('/forgotpassword')}
                     sx={{
                         textAlign: 'right',
                         color: theme.palette.blue?.[500],
@@ -71,10 +73,9 @@ const LoginForm = () => {
 
                 <Button
                     sx={{
-                        borderRadius: "100px",
+                        borderRadius: '100px',
                         padding: '12px 20px',
                         gap: '16px',
-                        mt: 2,
                         textTransform: 'capitalize',
                     }}
                     color="primary"
@@ -82,10 +83,11 @@ const LoginForm = () => {
                     type="submit"
                     disabled={isLoading}
                 >
-                    <Typography color={'white'} fontSize={'18px'}>
+                    <Typography color="white" fontSize="18px">
                         {isLoading ? 'Loging in...' : 'Log in'}
                     </Typography>
                 </Button>
+
 
                 <Typography
                     textAlign={'center'}

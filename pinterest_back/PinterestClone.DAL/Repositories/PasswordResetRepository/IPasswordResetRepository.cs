@@ -9,5 +9,6 @@ namespace PinterestClone.DAL.Repositories.PasswordResetRepository
         Task MarkCodeAsUsedAsync(int codeId);
         Task DeleteExpiredCodesAsync();
         Task<bool> HasActiveResetCodeAsync(string email);
+        Task UpdateResetCodeAsync(PasswordResetCode resetCode);
     }
 } 
