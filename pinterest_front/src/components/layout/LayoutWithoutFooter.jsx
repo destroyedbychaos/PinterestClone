@@ -5,8 +5,6 @@ import Header from "./Header";
 const LayoutWithoutFooter = memo(() => {
     return (
         <div className="flex flex-col min-h-screen">
-            <Header />
-
             <main>
                 <div>
                     <Outlet />

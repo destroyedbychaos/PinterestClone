@@ -13,5 +13,6 @@ namespace PinterestClone.BLL.Services.ImageService
         string GetImageUrl(string fileName);
         bool IsValidImage(IFormFile file);
         Task<string> CalculateFileHashAsync(IFormFile file);
+        Task<bool> DeleteImageAsync(string imageUrlOrFileName);
     }
 }
