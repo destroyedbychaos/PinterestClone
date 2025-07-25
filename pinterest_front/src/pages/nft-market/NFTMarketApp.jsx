@@ -31,13 +31,7 @@ const NFTMarketApp = () => {
       sessionStorage.setItem('visitedNFTMarket', 'true');
     }
 
-    // Додаємо глобальну функцію для тестування (тільки в режимі розробки)
-    if (process.env.NODE_ENV === 'development') {
-      window.resetNFTAnimation = () => {
-        sessionStorage.removeItem('visitedNFTMarket');
-        window.location.reload();
-      };
-    }
+
   }, []);
 
   const handleAnimationComplete = () => {
@@ -79,16 +73,7 @@ const NFTMarketApp = () => {
         </Routes>
       </div>
 
-      {/* Кнопка для тестування анімації (тільки в режимі розробки) */}
-      {process.env.NODE_ENV === 'development' && !showAnimation && !showDynamicAnimation && (
-        <button
-          onClick={() => window.resetNFTAnimation()}
-          className="fixed bottom-4 right-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-colors duration-200"
-          title="Скинути анімацію для тестування"
-        >
-          🔄 Тест анімації
-        </button>
-      )}
+
     </div>
   );
 };
