@@ -10,6 +10,7 @@ import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
 import VerifyCode from "../pages/ForgotPassword/VerifyCode.jsx";
 import ResetPassword from "../pages/ForgotPassword/ResetPassword.jsx";
 import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.jsx";
+import NFTMarketApp from "../pages/nft-market/NFTMarketApp.jsx";
 
 
 const BasicRoute = () => {
@@ -44,6 +45,12 @@ const BasicRoute = () => {
             <Route path="/password-reset-success" element={<LayoutWithoutFooter />}>
                 <Route index element={<PasswordResetSuccess/>} />
             </Route>
+            
+            {/* NFT Market Routes */}
+            <Route path="/nft-market/*" element={<NFTMarketApp />} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

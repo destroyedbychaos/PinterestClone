@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { memo, useState } from "react";
 import { useTheme } from '@mui/material/styles';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon as Iconify } from '@iconify/react';
 import icon from '../../assets/images/logo.png';
 
@@ -70,7 +70,13 @@ const CustomIcon = ({ color = "black", isHovered = false }) => (
 
 const SideMenu = memo(({ isUnverified = false }) => {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [isAnalyticsHovered, setIsAnalyticsHovered] = useState(false);
+
+    const handleNFTMarketClick = () => {
+        console.log('NFT Market clicked!');
+        navigate('/nft-market');
+    };
 
     return (
         <Box sx={{ 
@@ -175,6 +181,7 @@ const SideMenu = memo(({ isUnverified = false }) => {
                                     <Iconify icon="octicon:clock-24" width={35} height={35} color={theme.palette.dark[500]} />
                                 </Link>
                                 <Box
+                                    onClick={handleNFTMarketClick}
                                     onMouseEnter={() => setIsAnalyticsHovered(true)}
                                     onMouseLeave={() => setIsAnalyticsHovered(false)}
                                     sx={{

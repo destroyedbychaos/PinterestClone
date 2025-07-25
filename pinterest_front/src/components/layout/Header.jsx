@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+﻿import { Link, useNavigate } from "react-router-dom";
 import { memo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Badge } from "@mui/material";
@@ -15,6 +15,7 @@ const adminPages = [
 
 const Header = memo(() => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useSelector((state) => state.auth);
     
     const isAdmin = user?.role === 'Admin';
@@ -36,6 +37,21 @@ const Header = memo(() => {
     const handleLogout = () => {
         dispatch(logout());
         setUserMenuOpen(false);
+    };
+    
+    const handleNFTMarketClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('NFT Market button clicked!', e);
+        console.log('Attempting to navigate to /nft-market');
+        try {
+            navigate('/nft-market');
+            console.log('Navigation successful');
+        } catch (error) {
+            console.error('Navigation error:', error);
+            // Fallback
+            window.location.href = '/nft-market';
+        }
     };
     
     const closeMenus = () => {
@@ -66,9 +82,28 @@ const Header = memo(() => {
                             <Link to="/explore" className="text-gray-700 hover:text-red-600 font-medium px-3 py-2 rounded-full hover:bg-gray-100">
                                 Explore
                             </Link>
-                                <Link to="/pins" className="text-gray-700 hover:text-red-600 font-medium px-3 py-2 rounded-full hover:bg-gray-100">
-                                    Pins
-                                </Link>
+                            <Link to="/pins" className="text-gray-700 hover:text-red-600 font-medium px-3 py-2 rounded-full hover:bg-gray-100">
+                                Pins
+                            </Link>
+                            <div 
+                                onClick={handleNFTMarketClick}
+                                className="text-gray-700 hover:text-red-600 font-medium px-3 py-2 rounded-full hover:bg-gray-100 flex items-center cursor-pointer"
+                                style={{ 
+                                    userSelect: 'none',
+                                    WebkitUserSelect: 'none',
+                                    MozUserSelect: 'none',
+                                    msUserSelect: 'none'
+                                }}
+                            >
+                                <div className="w-5 h-5 mr-1 flex items-center justify-center">
+                                    <div className="w-4 h-4 border-2 border-current rounded-sm relative">
+                                        <div className="absolute inset-1 bg-current opacity-20"></div>
+                                        <div className="absolute inset-2 bg-current"></div>
+                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-current rounded-full"></div>
+                                    </div>
+                                </div>
+                                <span>NFT Market</span>
+                            </div>
                         </nav>
 
                         <div className="hidden md:flex flex-1 max-w-xl mx-4">
