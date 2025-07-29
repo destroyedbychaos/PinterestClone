@@ -194,7 +194,7 @@ namespace PinterestClone.BLL.Services.Web3AuthService
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                await _userRepository.CreateAsync(user);
+                await _userRepository.CreateAsync(user, Guid.NewGuid().ToString());
             }
 
             return user;
@@ -206,6 +206,7 @@ namespace PinterestClone.BLL.Services.Web3AuthService
             {
                 Id = user.Id,
                 UserName = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
                 Bio = user.Bio,

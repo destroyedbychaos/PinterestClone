@@ -1,46 +1,53 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
-import Navbar from "../../components/nft-market/Navbar.jsx";
-import Index from "./Index.jsx";
-import Profile from "./Profile.jsx";
-import EditProfile from "./EditProfile.jsx";
-import ViewNFT from "./ViewNFT.jsx";
-import CreateNFT from "./CreateNFT.jsx";
-import NotFound from "./NotFound.jsx";
-import TransitionAnimation from "../../components/nft-market/TransitionAnimation.jsx";
-import DynamicTransitionAnimation from "../../components/nft-market/DynamicTransitionAnimation.jsx";
-import "../../pages/nft-market/nft-market.css";
-import "../../pages/nft-market/transition-animations.css";
+import Index from "./index.jsx";
+import NFTIntroAnimation from "../../components/nft-market/NFTIntroAnimation.jsx";
+import MinimalTransitionAnimation from "../../components/nft-market/MinimalTransitionAnimation.jsx";
 
 const NFTMarketApp = () => {
-  const [showAnimation, setShowAnimation] = useState(true);
-  const [isFirstVisit, setIsFirstVisit] = useState(true);
-  const [showDynamicAnimation, setShowDynamicAnimation] = useState(false);
-  const location = useLocation();
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
 
   useEffect(() => {
-    // Перевіряємо, чи це перший візит на NFT маркетплейс
-    const hasVisitedNFTMarket = sessionStorage.getItem('visitedNFTMarket');
-    
-    if (hasVisitedNFTMarket) {
-      // Показуємо динамічну анімацію для повторних відвідувань
-      setShowDynamicAnimation(true);
-      setIsFirstVisit(false);
-    } else {
-      // Показуємо повну анімацію при першому відвідуванні
-      sessionStorage.setItem('visitedNFTMarket', 'true');
+    try {
+      const keys = Object.keys(sessionStorage);
+      keys.forEach(key => {
+        if (key.includes('aestify') || sessionStorage.getItem(key)?.includes?.('/aestify')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch (error) {
+      console.log('Cache cleanup failed:', error);
     }
 
-
+    const hasVisited = sessionStorage.getItem('visitedNFTMarket');
+    const isFromPinterest = sessionStorage.getItem('nft_from_pinterest') === 'true';
+    
+    // Показуємо анімацію завжди
+    if (!hasVisited) {
+      // Перший візит - довга анімація
+      setIsFirstVisit(true);
+      setShowAnimation(true);
+      sessionStorage.setItem('visitedNFTMarket', 'true');
+    } else if (isFromPinterest) {
+      // Повторний візит з Pinterest - коротка анімація
+      setIsFirstVisit(false);
+      setShowAnimation(true);
+    } else {
+      // Повторний візит без переходу з Pinterest - коротка анімація
+      setIsFirstVisit(false);
+      setShowAnimation(true);
+    }
+    
+    // Очищуємо флаг переходу з Pinterest
+    if (isFromPinterest) {
+      sessionStorage.removeItem('nft_from_pinterest');
+    }
   }, []);
 
   const handleAnimationComplete = () => {
     setShowAnimation(false);
-  };
-
-  const handleDynamicAnimationComplete = () => {
-    setShowDynamicAnimation(false);
-    // Миттєво показуємо контент після завершення анімації
+    // Відправляємо подію про завершення анімації
+    window.dispatchEvent(new CustomEvent('nftAnimationComplete'));
     setTimeout(() => {
       const contentElement = document.querySelector('.nft-market-content');
       if (contentElement) {
@@ -48,32 +55,23 @@ const NFTMarketApp = () => {
       }
     }, 10);
   };
-
-  console.log('NFTMarketApp rendered!');
   
   return (
     <div className="min-h-screen bg-gray-900 nft-market">
-      {showAnimation && isFirstVisit && (
-        <TransitionAnimation onComplete={handleAnimationComplete} />
-      )}
-      
-      {showDynamicAnimation && !isFirstVisit && (
-        <DynamicTransitionAnimation onComplete={handleDynamicAnimationComplete} />
-      )}
-      
-      <div className={`nft-market-content transition-all duration-100 ease-out ${(showAnimation || showDynamicAnimation) ? 'opacity-0 scale-99' : 'opacity-100 scale-100'}`}>
-        <Navbar />
-        <Routes>
-          <Route path="" element={<Index />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="profile/edit" element={<EditProfile />} />
-          <Route path="nft/:id" element={<ViewNFT />} />
-          <Route path="create" element={<CreateNFT />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+
+       {showAnimation && (
+         <>
+           {isFirstVisit ? (
+             <NFTIntroAnimation onComplete={handleAnimationComplete} />
+           ) : (
+             <MinimalTransitionAnimation onComplete={handleAnimationComplete} />
+           )}
+         </>
+       )}
+
+      <div className={`nft-market-content transition-all duration-100 ease-out ${showAnimation ? 'opacity-0 scale-99' : 'opacity-100 scale-100'}`}>
+        <Index />
       </div>
-
-
     </div>
   );
 };

@@ -21,11 +21,15 @@ namespace PinterestClone.DAL.Models
 
         public string OwnerWalletAddress { get; set; } = string.Empty;
 
+        public string CreatorWalletAddress { get; set; } = string.Empty;
+
         public decimal Price { get; set; }
 
-        public string Currency { get; set; } = "ETH";
+        public string Currency { get; set; } = "MATIC";
 
         public bool IsForSale { get; set; }
+
+        public bool IsMinted { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

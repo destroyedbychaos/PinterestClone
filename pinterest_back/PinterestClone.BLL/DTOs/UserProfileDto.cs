@@ -8,8 +8,9 @@ namespace PinterestClone.BLL.DTOs
 {
     public class UserProfileDto
     {
-        public string Id { get; set; } = string.Empty;
-        public string UserName { get; set; } = string.Empty;
+        public string Id { get; set; } = default!;
+        public string UserName { get; set; } = default!;
+        public string? Email { get; set; }
         public string? DisplayName { get; set; }
         public string? Email { get; set; }
         public string? AvatarUrl { get; set; }

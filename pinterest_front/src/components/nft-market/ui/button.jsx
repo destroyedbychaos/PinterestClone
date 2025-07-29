@@ -5,9 +5,9 @@ const buttonVariants = {
   variant: {
     default: "bg-primary text-primary-foreground hover:bg-primary/90",
     destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-    outline: "border border-gray-600 bg-transparent hover:bg-gray-800/50 text-white",
+    outline: "border border-gray-600 bg-transparent hover:bg-gray-900/50 text-white",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    ghost: "hover:bg-gray-800/50 text-white",
+          ghost: "hover:bg-gray-900/50 text-white",
     link: "text-primary underline-offset-4 hover:underline",
   },
   size: {

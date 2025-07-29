@@ -37,6 +37,10 @@ using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.NFTService;
 using PinterestClone.DAL.Repositories.NFTRepository;
 using PinterestClone.DAL.Repositories.UserFavoritesRepository;
+using PinterestClone.BLL.Services.BlockchainService;
+using PinterestClone.BLL.Services.MarketplaceService;
+using PinterestClone.DAL.Repositories.MarketplaceRepository;
+using PinterestClone.BLL.Services.IPFSService;
 using System.Text;
 using System;
 using System.Reflection;
@@ -170,6 +174,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INFTService, NFTService>();
 builder.Services.AddScoped<INFTRepository, NFTRepository>();
 builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
+builder.Services.AddScoped<IBlockchainService, BlockchainService>();
+builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
+builder.Services.AddScoped<IMarketplaceRepository, MarketplaceRepository>();
+builder.Services.AddScoped<IIPFSService, IPFSService>();
 
 var app = builder.Build();
 

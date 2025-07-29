@@ -86,5 +86,15 @@ namespace PinterestClone.DAL.Repositories.UserRepository
             var result = await _userManager.UpdateAsync(user);
             return result.Succeeded ? user : null;
         }
+
+        public async Task<User?> GetByWalletAddressAsync(string walletAddress)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == walletAddress);
+        }
+
+        public async Task<IdentityResult> UpdateAsync(User user)
+        {
+            return await _userManager.UpdateAsync(user);
+        }
     }
 }

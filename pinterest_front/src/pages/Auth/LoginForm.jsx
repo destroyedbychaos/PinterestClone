@@ -1,8 +1,6 @@
 ﻿import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useLoginMutation, useGoogleAuthMutation } from '../../../store/Auth/AuthApi.js';
-import { setCredentials } from '../../../store/slices/AuthSlice.js';
-import { Button, Typography, useTheme, Icon, Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { usePinterestAuth } from '@/hooks/usePinterestAuth';
+import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
 import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
@@ -13,9 +11,7 @@ const LoginForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [login, { isLoading, error }] = useLoginMutation();
-    const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
-    const dispatch = useDispatch();
+    const { login, isLoading } = usePinterestAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
@@ -28,84 +24,7 @@ const LoginForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await login({ email, password }).unwrap();
-            dispatch(setCredentials({
-                user: { email: email },
-                accessToken: response.payload.accessToken
-            }));
-            
-            localStorage.setItem('userPassword', password);
-            
-            navigate('/');
-        } catch (err) {
-            console.error('Login error:', err);
-        }
-    };
-
-    const fetchGoogleUserInfo = async (accessToken) => {
-        try {
-            const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
-            const userInfo = await response.json();
-            return userInfo;
-        } catch (error) {
-            console.error('Error fetching Google user info:', error);
-            return null;
-        }
-    };
-
-    const handleGoogleSuccess = async (tokenResponse) => {
-        try {
-            const response = await googleAuth({ 
-                accessToken: tokenResponse.access_token 
-            }).unwrap();
-            console.log('Google auth response:', response);
-            
-            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
-            
-            dispatch(setCredentials({
-                user: response.payload.user || { email: response.payload.user?.email || '' },
-                accessToken: accessToken
-            }));
-            
-            navigate('/');
-        } catch (err) {
-            if (err.status === 400) {
-                const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
-                if (userInfo) {
-                    setGoogleToken(tokenResponse.access_token);
-                    setGoogleUserInfo(userInfo);
-                    setShowGoogleDialog(true);
-                }
-            } else {
-                console.error('Google auth error:', err);
-            }
-        }
-    };
-
-    const handleGoogleRegistration = async () => {
-        if (!birthDate) {
-            alert('Please enter your birth date');
-            return;
-        }
-
-        try {
-            const response = await googleAuth({
-                accessToken: googleToken,
-                email: googleUserInfo.email,
-                firstName: googleUserInfo.given_name,
-                lastName: googleUserInfo.family_name,
-                birthDate: birthDate,
-                profilePicture: googleUserInfo.picture
-            }).unwrap();
-
-            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
-
-            dispatch(setCredentials({
-                user: response.payload.user || { email: response.payload.user?.email || '' },
-                accessToken: accessToken
-            }));
-
-            setShowGoogleDialog(false);
+            await login(email, password);
             navigate('/');
         } catch (err) {
             console.error('Google registration error:', err);

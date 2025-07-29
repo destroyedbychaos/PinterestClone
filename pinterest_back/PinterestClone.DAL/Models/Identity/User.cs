@@ -27,7 +27,6 @@ namespace PinterestClone.DAL.Models.Identity
 
 
         public string? WalletAddress { get; set; }
-        public string? BannerUrl { get; set; }
         public string? Website { get; set; }
         public string? Twitter { get; set; }
         public string? Instagram { get; set; }

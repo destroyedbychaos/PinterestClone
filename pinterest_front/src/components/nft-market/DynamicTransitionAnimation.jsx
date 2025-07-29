@@ -5,7 +5,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
   const [dots, setDots] = useState([]);
 
   useEffect(() => {
-    // Створюємо динамічні точки
+
     const generateDots = () => {
       const newDots = [];
       for (let i = 0; i < 16; i++) {
@@ -23,21 +23,18 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
 
     generateDots();
 
-    // Динамічна анімація по етапах
+
     const animationSequence = async () => {
-      // Етап 1: Поява точок
+
       setStage(1);
       await new Promise(resolve => setTimeout(resolve, 400));
 
-      // Етап 2: Анімація центрального елемента
       setStage(2);
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Етап 3: Фінальна анімація
       setStage(3);
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Завершення
       onComplete();
     };
 
@@ -46,7 +43,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900">
-      {/* Динамічні точки по колу */}
+
       <div className="absolute inset-0">
         {dots.map(dot => (
           <div
@@ -67,7 +64,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
         ))}
       </div>
 
-      {/* Центральний динамічний елемент */}
+
       <div className="absolute inset-0 flex items-center justify-center">
         <div 
           className={`relative transition-all duration-600 ease-out ${
@@ -76,7 +73,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
               : 'opacity-0 scale-90'
           }`}
         >
-          {/* Зовнішнє кільце з обертанням */}
+
           <div 
             className={`w-36 h-36 rounded-full border border-purple-500 transition-all duration-600 ease-out ${
               stage >= 2 
@@ -88,8 +85,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
               boxShadow: stage >= 2 ? '0 0 20px rgba(147, 51, 234, 0.2)' : 'none'
             }}
           />
-          
-          {/* Середнє кільце з протилежним обертанням */}
+
           <div 
             className={`absolute top-1/2 left-1/2 w-20 h-20 rounded-full border-2 border-purple-400 transition-all duration-600 ease-out delay-200 ${
               stage >= 2 
@@ -103,7 +99,7 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
             }}
           />
 
-          {/* Внутрішнє кільце з пульсацією */}
+
           <div 
             className={`absolute top-1/2 left-1/2 w-8 h-8 rounded-full border border-purple-300 transition-all duration-500 ease-out delay-300 ${
               stage >= 2 
@@ -116,7 +112,6 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
             }}
           />
 
-          {/* Центральна точка з ефектом світіння */}
           <div 
             className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full transition-all duration-500 ease-out delay-450 ${
               stage >= 2 
@@ -131,7 +126,6 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Динамічний текст */}
       <div 
         className={`absolute bottom-1/4 left-1/2 transform -translate-x-1/2 text-center transition-all duration-500 ease-out delay-200 ${
           stage >= 2 
@@ -147,7 +141,6 @@ const DynamicTransitionAnimation = ({ onComplete }) => {
         </p>
       </div>
 
-      {/* Фінальна анімація */}
       {stage >= 3 && (
         <div className="absolute inset-0">
           <div 

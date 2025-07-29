@@ -24,9 +24,22 @@ namespace PinterestClone.DAL.Data
         public DbSet<ProfileReport> ProfileReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
-        public DbSet<Nonce> Nonces { get; set; }
+        public DbSet<HiddenPin> HiddenPins { get; set; }
+        public DbSet<SocialPermissions> SocialPermissions { get; set; }
+        public DbSet<BlockedUser> BlockedUsers { get; set; }
+        public DbSet<KeywordFilter> KeywordFilters { get; set; }
+        public DbSet<NotificationSettings> NotificationSettings { get; set; }
+        public DbSet<SecuritySettings> SecuritySettings { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<UserFollow> UserFollows { get; set; }
+        public DbSet<UserBlock> UserBlocks { get; set; }
+        public DbSet<PinViewHistory> PinViewHistories { get; set; }
+        
+
         public DbSet<NFT> NFTs { get; set; }
+        public DbSet<MarketplaceListing> MarketplaceListings { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<Nonce> Nonces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -205,6 +218,125 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<UserFavorite>()
                 .HasIndex(uf => uf.CreatedAt);
+
+            builder.Entity<MarketplaceListing>()
+                .HasOne(ml => ml.NFT)
+                .WithMany()
+                .HasForeignKey(ml => ml.NFTId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.NFTId)
+                .IsUnique();
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.SellerWalletAddress);
+
+            builder.Entity<BlockedUser>(entity =>
+            {
+                entity.HasKey(bu => bu.Id);
+                
+                entity.HasOne(bu => bu.Blocker)
+                    .WithMany()
+                    .HasForeignKey(bu => bu.BlockerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(bu => bu.Blocked)
+                    .WithMany()
+                    .HasForeignKey(bu => bu.BlockedId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(bu => new { bu.BlockerId, bu.BlockedId })
+                    .IsUnique();
+            });
+
+            builder.Entity<KeywordFilter>(entity =>
+            {
+                entity.HasKey(kf => kf.Id);
+                entity.HasOne(kf => kf.User)
+                    .WithMany()
+                    .HasForeignKey(kf => kf.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(kf => kf.UserId);
+            });
+
+            builder.Entity<NotificationSettings>(entity =>
+            {
+                entity.HasKey(ns => ns.Id);
+                entity.HasOne(ns => ns.User)
+                    .WithMany()
+                    .HasForeignKey(ns => ns.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(ns => ns.UserId)
+                    .IsUnique();
+            });
+
+            builder.Entity<SecuritySettings>(entity =>
+            {
+                entity.HasKey(ss => ss.Id);
+                entity.HasOne(ss => ss.User)
+                    .WithMany()
+                    .HasForeignKey(ss => ss.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(ss => ss.UserId)
+                    .IsUnique();
+            });
+
+            builder.Entity<UserSession>(entity =>
+            {
+                entity.HasKey(us => us.Id);
+                entity.HasOne(us => us.User)
+                    .WithMany()
+                    .HasForeignKey(us => us.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(us => us.UserId);
+                entity.HasIndex(us => us.SessionId)
+                    .IsUnique();
+                entity.HasIndex(us => us.IsActive);
+            });
+
+            builder.Entity<NFT>(entity =>
+            {
+                entity.HasKey(nft => nft.Id);
+                entity.HasIndex(nft => nft.CreatorWalletAddress);
+                entity.HasIndex(nft => nft.TokenId);
+                entity.HasIndex(nft => nft.CreatedAt);
+            });
+
+            builder.Entity<MarketplaceListing>(entity =>
+            {
+                entity.HasKey(ml => ml.Id);
+                entity.HasOne<NFT>()
+                    .WithMany()
+                    .HasForeignKey(ml => ml.NFTId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(ml => ml.SellerWalletAddress);
+                entity.HasIndex(ml => ml.ListedAt);
+                entity.HasIndex(ml => ml.IsActive);
+            });
+
+            builder.Entity<UserFavorite>(entity =>
+            {
+                entity.HasKey(uf => uf.Id);
+                entity.HasOne(uf => uf.NFT)
+                    .WithMany()
+                    .HasForeignKey(uf => uf.NFTId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(uf => uf.UserWalletAddress);
+                entity.HasIndex(uf => new { uf.UserWalletAddress, uf.NFTId })
+                    .IsUnique();
+            });
+
+            builder.Entity<Nonce>(entity =>
+            {
+                entity.HasKey(n => n.WalletAddress);
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => n.ExpiresAt);
+            });
         }
     }
 } 

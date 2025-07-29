@@ -119,6 +119,11 @@ namespace PinterestClone.BLL.Services
             return GetResponse(message, false, default, HttpStatusCode.NotFound);
         }
 
+        public static ServiceResponse<T> UnauthorizedResponse(string message)
+        {
+            return GetResponse(message, false, default, HttpStatusCode.Unauthorized);
+        }
+
         public static ServiceResponse<T> ErrorResponse(string message)
         {
             return GetResponse(message, false, default, HttpStatusCode.InternalServerError);

@@ -8,24 +8,30 @@ import { ToastContainer } from 'react-toastify'
 import {ThemeProvider} from "@mui/material";
 import {theme} from "./theme.js";
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { Web3Provider } from './contexts/Web3Context.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
-      <ThemeProvider theme={theme}>
+  <StrictMode>
+    <Provider store={store}>
+      <Web3Provider>
+        <ThemeProvider theme={theme}>
           <ToastContainer
-              position="top-right"
-              autoClose={2000}
-              hideProgressBar
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss={false}
-              draggable={false}
-              pauseOnHover={false}
-              theme="light"
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            toastClassName="custom-toast"
           />
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-            <App />
+            <Web3Provider>
+              <App />
+            </Web3Provider>
           </GoogleOAuthProvider>
       </ThemeProvider>
   </Provider>,

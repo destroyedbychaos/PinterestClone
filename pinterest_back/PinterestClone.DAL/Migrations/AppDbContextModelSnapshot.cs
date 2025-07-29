@@ -504,6 +504,55 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Likes");
                 });
 
+            modelBuilder.Entity("PinterestClone.DAL.Models.MarketplaceListing", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BuyerWalletAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("ListedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NFTId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("SellerWalletAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SoldAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TransactionHash")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ListedAt");
+
+                    b.HasIndex("NFTId")
+                        .IsUnique();
+
+                    b.HasIndex("SellerWalletAddress");
+
+                    b.ToTable("MarketplaceListings");
+                });
+
             modelBuilder.Entity("PinterestClone.DAL.Models.NFT", b =>
                 {
                     b.Property<string>("Id")
@@ -520,6 +569,10 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatorWalletAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
@@ -533,6 +586,9 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsForSale")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMinted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
@@ -1288,6 +1344,17 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("Pin");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.MarketplaceListing", b =>
+                {
+                    b.HasOne("PinterestClone.DAL.Models.NFT", "NFT")
+                        .WithMany()
+                        .HasForeignKey("NFTId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NFT");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Notification", b =>
