@@ -22,6 +22,9 @@ namespace PinterestClone.DAL.Data
         public DbSet<PinReport> PinReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<Nonce> Nonces { get; set; }
+        public DbSet<NFT> NFTs { get; set; }
+        public DbSet<UserFavorite> UserFavorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -159,6 +162,29 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<PasswordResetCode>()
                 .HasIndex(prc => prc.CreatedAt);
+
+            builder.Entity<NFT>()
+                .HasIndex(n => n.OwnerWalletAddress);
+
+            builder.Entity<NFT>()
+                .HasIndex(n => n.CreatedAt);
+
+
+            builder.Entity<UserFavorite>()
+                .HasOne(uf => uf.NFT)
+                .WithMany(n => n.UserFavorites)
+                .HasForeignKey(uf => uf.NFTId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => new { uf.UserWalletAddress, uf.NFTId })
+                .IsUnique();
+
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => uf.UserWalletAddress);
+
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => uf.CreatedAt);
         }
     }
 } 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PinterestClone.DAL.Data;
@@ -11,9 +12,11 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250728224517_AddNoncesTable")]
+    partial class AddNoncesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,64 +410,6 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Likes");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.NFT", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ChainId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ContractAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsForSale")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("OwnerWalletAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("TokenId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("OwnerWalletAddress");
-
-                    b.ToTable("NFTs");
-                });
-
             modelBuilder.Entity("PinterestClone.DAL.Models.Nonce", b =>
                 {
                     b.Property<string>("WalletAddress")
@@ -818,36 +763,6 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserFavorite", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("NFTId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserWalletAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("NFTId");
-
-                    b.HasIndex("UserWalletAddress");
-
-                    b.HasIndex("UserWalletAddress", "NFTId")
-                        .IsUnique();
-
-                    b.ToTable("UserFavorites");
-                });
-
             modelBuilder.Entity("PinterestClone.DAL.Models.Identity.UserClaim", b =>
                 {
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>");
@@ -1114,17 +1029,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserFavorite", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.NFT", "NFT")
-                        .WithMany("UserFavorites")
-                        .HasForeignKey("NFTId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NFT");
-                });
-
             modelBuilder.Entity("PinterestClone.DAL.Models.Identity.UserClaim", b =>
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
@@ -1172,11 +1076,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("Pins");
 
                     b.Navigation("Tokens");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.NFT", b =>
-                {
-                    b.Navigation("UserFavorites");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Pin", b =>

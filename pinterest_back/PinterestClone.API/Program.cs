@@ -23,6 +23,11 @@ using PinterestClone.BLL.Services.PinReportService;
 using PinterestClone.BLL.Services.EmailService;
 using PinterestClone.BLL.Services.PasswordResetService;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
+using PinterestClone.BLL.Services.Web3AuthService;
+using PinterestClone.BLL.Services.UserService;
+using PinterestClone.BLL.Services.NFTService;
+using PinterestClone.DAL.Repositories.NFTRepository;
+using PinterestClone.DAL.Repositories.UserFavoritesRepository;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -128,6 +133,11 @@ builder.Services.AddScoped<IPinReportService, PinReportService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IWeb3AuthService, Web3AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<INFTService, NFTService>();
+builder.Services.AddScoped<INFTRepository, NFTRepository>();
+builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
 
 var app = builder.Build();
 

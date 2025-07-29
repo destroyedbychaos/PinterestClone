@@ -13,5 +13,8 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         Task<bool> IsUniqueUserNameAsync(string userName);
         Task<User?> GetByIdAsync(string id, bool includeRoles = false);
         Task<User?> GetUserAsync(Expression<Func<User, bool>> predicate, bool includes = false);
+        Task<User?> GetByWalletAddressAsync(string walletAddress);
+        Task<User?> CreateAsync(User user);
+        Task<User?> UpdateAsync(User user);
     }
 }

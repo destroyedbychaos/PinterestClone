@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signature Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h1>Web3 Signature Generator</h1>
+    
+    <div>
+        <label>Wallet Address:</label>
+        <input type="text" id="walletAddress" value="0x9F174F4Ff2024A0404A7572f4A43153a377d2f6F" style="width: 400px;">
+    </div>
+    <br>
+    <div>
+        <label>Private Key (for testing):</label>
+        <input type="text" id="privateKey" placeholder="Enter your private key" style="width: 400px;">
+    </div>
+    <br>
+    <div>
+        <label>Nonce:</label>
+        <input type="text" id="nonce" value="ac39ee2141af6737a8a9f5b07a786b563c03683eacb42c41c97a14c921c6e54c" style="width: 400px;">
+    </div>
+    <br>
+    <div>
+        <label>Message to sign:</label>
+        <textarea id="message" rows="3" style="width: 400px;">Sign this message to authenticate with Aestify. Nonce: ac39ee2141af6737a8a9f5b07a786b563c03683eacb42c41c97a14c921c6e54c</textarea>
+    </div>
+    <br>
+    <button onclick="generateSignature()">Generate Signature</button>
+    <br><br>
+    <div>
+        <label>Signature:</label>
+        <textarea id="signature" rows="3" style="width: 400px;" readonly></textarea>
+    </div>
+    <br>
+    <div>
+        <label>Recovered Address:</label>
+        <input type="text" id="recoveredAddress" style="width: 400px;" readonly>
+    </div>
+    <br>
+    <div>
+        <label>cURL Command:</label>
+        <textarea id="curlCommand" rows="5" style="width: 600px;" readonly></textarea>
+    </div>
+
+    <script>
+        function waitForEthers() {
+            if (typeof ethers !== 'undefined') {
+                console.log('Ethers.js loaded successfully');
+                return true;
+            } else {
+                console.log('Waiting for ethers.js...');
+                setTimeout(waitForEthers, 100);
+                return false;
+            }
+        }
+
+        async function generateSignature() {
+            if (!waitForEthers()) {
+                alert('Ethers.js not loaded. Please wait and try again.');
+                return;
+            }
+
+            const walletAddress = document.getElementById('walletAddress').value;
+            const privateKey = document.getElementById('privateKey').value;
+            const nonce = document.getElementById('nonce').value;
+            const message = `Sign this message to authenticate with Aestify. Nonce: ${nonce}`;
+            
+            document.getElementById('message').value = message;
+            
+            if (!walletAddress || !privateKey || !nonce) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            try {
+                const wallet = new ethers.Wallet(privateKey);
+                
+
+                const signature = await wallet.signMessage(message);
+                
+  
+                const recoveredAddress = ethers.utils.verifyMessage(message, signature);
+                
+                document.getElementById('signature').value = signature;
+                document.getElementById('recoveredAddress').value = recoveredAddress;
+                
+
+                const curlCommand = `curl -X 'POST' \\
+  'http://localhost:5228/api/Web3Auth/verify' \\
+  -H 'accept: */*' \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+  "walletAddress": "${walletAddress}",
+  "signature": "${signature}",
+  "nonce": "${nonce}"
+}'`;
+                
+                document.getElementById('curlCommand').value = curlCommand;
+                
+                console.log('Original address:', walletAddress);
+                console.log('Recovered address:', recoveredAddress);
+                console.log('Signature:', signature);
+                console.log('Message:', message);
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+
+        document.getElementById('nonce').addEventListener('input', function() {
+            const nonce = this.value;
+            const message = `Sign this message to authenticate with Aestify. Nonce: ${nonce}`;
+            document.getElementById('message').value = message;
+        });
+
+        window.onload = function() {
+            setTimeout(() => {
+                if (typeof ethers === 'undefined') {
+                    alert('Ethers.js failed to load. Please check your internet connection.');
+                }
+            }, 2000);
+        };
+    </script>
+</body>
+</html> 

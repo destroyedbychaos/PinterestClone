@@ -9,6 +9,11 @@ namespace PinterestClone.API.Controllers
         {
             return StatusCode((int)serviseResponse.StatusCode, serviseResponse);
         }
+
+        protected IActionResult GetResult<T>(ServiceResponse<T> serviceResponse)
+        {
+            return StatusCode((int)serviceResponse.StatusCode, serviceResponse);
+        }
     }
 }
 
