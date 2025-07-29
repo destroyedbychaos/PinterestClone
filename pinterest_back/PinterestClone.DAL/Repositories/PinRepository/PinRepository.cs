@@ -131,5 +131,12 @@ namespace PinterestClone.DAL.Repositories.PinRepository
 
             return true;
         }
+        public async Task<List<Pin>> GetRecommendedPinsAsync(int count)
+        {
+            return await _context.Pins
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .ToListAsync();
+        }
     }
 }

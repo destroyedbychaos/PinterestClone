@@ -347,5 +347,22 @@ namespace PinterestClone.API.Controllers
         {
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
+
+        [HttpGet("recommendations")]
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
+        {
+            try
+            {
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync();
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations: {ex.Message}");
+            }
+        }
+
+
+
     }
 } 
