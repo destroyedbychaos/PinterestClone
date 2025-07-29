@@ -23,7 +23,7 @@ namespace PinterestClone.DAL.Models
 
         public decimal Price { get; set; }
 
-        public string Currency { get; set; } = "ETH";
+        public string Currency { get; set; } = "MATIC";
 
         public bool IsForSale { get; set; }
 

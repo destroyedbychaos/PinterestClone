@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.Services.NFTService;
 using PinterestClone.BLL.DTOs;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using PinterestClone.DAL.Data;
+using PinterestClone.BLL.Services.ImageService;
+using PinterestClone.BLL.Services.BlockchainService;
 
 namespace PinterestClone.API.Controllers
 {
@@ -13,11 +13,289 @@ namespace PinterestClone.API.Controllers
     public class NFTController : BaseController
     {
         private readonly INFTService _nftService;
+        private readonly IImageService _imageService;
+        private readonly IBlockchainService _blockchainService;
 
-        public NFTController(INFTService nftService)
+        public NFTController(INFTService nftService, IImageService imageService, IBlockchainService blockchainService)
         {
             _nftService = nftService;
+            _imageService = imageService;
+            _blockchainService = blockchainService;
         }
+
+        [HttpPost]
+        [Authorize]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateNFT([FromForm] CreateNFTDto createNFTDto, IFormFile? imageFile)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            string imageUrl = string.Empty;
+            if (imageFile != null)
+            {
+                try
+                {
+                    var (filePath, fileName, hash, size) = await _imageService.SaveImageAsync(imageFile);
+                    imageUrl = _imageService.GetImageUrl(fileName);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Error uploading image: {ex.Message}");
+                }
+            }
+            else
+            {
+                return BadRequest("Image file is required");
+            }
+
+            var nftData = new CreateNFTDto
+            {
+                Name = createNFTDto.Name,
+                Description = createNFTDto.Description,
+                Price = createNFTDto.Price,
+                Currency = createNFTDto.Currency,
+                IsForSale = createNFTDto.IsForSale,
+                IPFSMetadata = createNFTDto.IPFSMetadata,
+                IPFSImageHash = createNFTDto.IPFSImageHash
+            };
+
+            var response = await _nftService.CreateNFTAsync(nftData, walletAddress, imageUrl);
+            return GetResult(response);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllNFTs([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var response = await _nftService.GetAllNFTsAsync(page, pageSize);
+            return GetResult(response);
+        }
+
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetNFTById(string id)
+        {
+            var response = await _nftService.GetNFTByIdAsync(id);
+            return GetResult(response);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateNFT(string id, [FromBody] UpdateNFTDto updateNFTDto)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            var response = await _nftService.UpdateNFTAsync(id, updateNFTDto, walletAddress, null);
+            return GetResult(response);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteNFT(string id, [FromQuery] bool burnOnChain = false)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            var response = await _nftService.DeleteNFTAsync(id, walletAddress, burnOnChain);
+            return GetResult(response);
+        }
+
+        [HttpPost("{id}/mint")]
+        [Authorize]
+        public async Task<IActionResult> MintNFT(string id)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            var response = await _nftService.MintNFTAsync(id, walletAddress);
+            return GetResult(response);
+        }
+
+        [HttpPost("{id}/burn")]
+        [Authorize]
+        public async Task<IActionResult> BurnNFT(string id)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            var response = await _nftService.BurnNFTAsync(id, walletAddress);
+            return GetResult(response);
+        }
+
+
+        [HttpGet("matic/balance")]
+        [Authorize]
+        public async Task<IActionResult> GetMATICBalance()
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var balance = await _blockchainService.GetMATICBalanceAsync(walletAddress);
+                var gasPrice = await _blockchainService.GetGasPriceAsync();
+                
+                var response = new MATICBalanceDto
+                {
+                    WalletAddress = walletAddress,
+                    Balance = balance,
+                    Currency = "MATIC"
+                };
+
+                return Ok(new { success = true, data = response, gasPrice = gasPrice });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("matic/gas-estimate/mint")]
+        [Authorize]
+        public async Task<IActionResult> EstimateGasForMint([FromQuery] string tokenUri = "ipfs://metadata")
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var gasLimit = await _blockchainService.EstimateGasForMintAsync(walletAddress, tokenUri);
+                var gasPrice = await _blockchainService.GetGasPriceAsync();
+                var estimatedFee = gasLimit * gasPrice;
+
+                var response = new GasEstimateDto
+                {
+                    GasLimit = gasLimit,
+                    GasPrice = gasPrice,
+                    EstimatedFee = estimatedFee,
+                    Currency = "MATIC"
+                };
+
+                return Ok(new { success = true, data = response });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("matic/gas-estimate/burn")]
+        [Authorize]
+        public async Task<IActionResult> EstimateGasForBurn([FromQuery] string tokenId)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var gasLimit = await _blockchainService.EstimateGasForBurnAsync(tokenId);
+                var gasPrice = await _blockchainService.GetGasPriceAsync();
+                var estimatedFee = gasLimit * gasPrice;
+
+                var response = new GasEstimateDto
+                {
+                    GasLimit = gasLimit,
+                    GasPrice = gasPrice,
+                    EstimatedFee = estimatedFee,
+                    Currency = "MATIC"
+                };
+
+                return Ok(new { success = true, data = response });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost("matic/transfer")]
+        [Authorize]
+        public async Task<IActionResult> TransferMATIC([FromBody] MATICTransferDto transferDto)
+        {
+            var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(walletAddress))
+            {
+                return Unauthorized();
+            }
+
+            if (walletAddress.ToLower() != transferDto.FromAddress.ToLower())
+            {
+                return Unauthorized("You can only transfer from your own wallet");
+            }
+
+            try
+            {
+                var transactionHash = await _blockchainService.TransferMATICAsync(
+                    transferDto.FromAddress, 
+                    transferDto.ToAddress, 
+                    transferDto.Amount
+                );
+
+                transferDto.TransactionHash = transactionHash;
+                transferDto.IsSuccess = true;
+
+                return Ok(new { success = true, data = transferDto });
+            }
+            catch (Exception ex)
+            {
+                transferDto.IsSuccess = false;
+                transferDto.ErrorMessage = ex.Message;
+                return BadRequest(new { success = false, data = transferDto });
+            }
+        }
+
+        [HttpGet("matic/transaction/{transactionHash}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTransactionInfo(string transactionHash)
+        {
+            try
+            {
+                var status = await _blockchainService.GetTransactionStatusAsync(transactionHash);
+                var fee = await _blockchainService.GetTransactionFeeAsync(transactionHash);
+                var isValid = await _blockchainService.ValidateTransactionAsync(transactionHash);
+
+                var response = new TransactionInfoDto
+                {
+                    TransactionHash = transactionHash,
+                    Status = status,
+                    TransactionFee = fee,
+                    Currency = "MATIC"
+                };
+
+                return Ok(new { success = true, data = response, isValid = isValid });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
 
         [HttpGet("my-nfts")]
         [Authorize]

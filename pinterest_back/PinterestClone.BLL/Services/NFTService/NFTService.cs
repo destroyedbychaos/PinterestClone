@@ -2,6 +2,7 @@ using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Repositories.NFTRepository;
 using PinterestClone.DAL.Repositories.UserFavoritesRepository;
 using PinterestClone.DAL.Models;
+using PinterestClone.BLL.Services.BlockchainService;
 
 namespace PinterestClone.BLL.Services.NFTService
 {
@@ -9,14 +10,266 @@ namespace PinterestClone.BLL.Services.NFTService
     {
         private readonly INFTRepository _nftRepository;
         private readonly IUserFavoritesRepository _userFavoritesRepository;
+        private readonly IBlockchainService _blockchainService;
 
-        public NFTService(INFTRepository nftRepository, IUserFavoritesRepository userFavoritesRepository)
+        public NFTService(INFTRepository nftRepository, IUserFavoritesRepository userFavoritesRepository, IBlockchainService blockchainService)
         {
             _nftRepository = nftRepository;
             _userFavoritesRepository = userFavoritesRepository;
+            _blockchainService = blockchainService;
         }
 
-                public async Task<ServiceResponse<UserNFTsResponseDto>> GetUserNFTsAsync(string walletAddress, int page, int pageSize)
+        public async Task<ServiceResponse<NFTDto>> CreateNFTAsync(CreateNFTDto createNFTDto, string walletAddress, string imageUrl)
+        {
+            try
+            {
+                var nft = new NFT
+                {
+                    Name = createNFTDto.Name,
+                    Description = createNFTDto.Description,
+                    ImageUrl = imageUrl,
+                    OwnerWalletAddress = walletAddress,
+                    Price = createNFTDto.Price,
+                    Currency = createNFTDto.Currency,
+                    IsForSale = createNFTDto.IsForSale,
+                    ChainId = "137" 
+                };
+
+                var createdNft = await _nftRepository.CreateAsync(nft);
+                return ServiceResponse<NFTDto>.SuccessResponse(MapToNFTDto(createdNft));
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTDto>.ErrorResponse($"Error creating NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTListDto>> GetAllNFTsAsync(int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                var nfts = await _nftRepository.GetAllAsync(page, pageSize);
+                var totalCount = await _nftRepository.GetAllCountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var nftList = new NFTListDto
+                {
+                    NFTs = nfts.Select(MapToNFTDto).ToList(),
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
+
+                return ServiceResponse<NFTListDto>.SuccessResponse(nftList);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTListDto>.ErrorResponse($"Error getting all NFTs: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTDto>> GetNFTByIdAsync(string nftId)
+        {
+            try
+            {
+                var nft = await _nftRepository.GetByIdAsync(nftId);
+                if (nft == null)
+                {
+                    return ServiceResponse<NFTDto>.NotFoundResponse("NFT not found");
+                }
+
+                return ServiceResponse<NFTDto>.SuccessResponse(MapToNFTDto(nft));
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTDto>.ErrorResponse($"Error getting NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTDto>> UpdateNFTAsync(string nftId, UpdateNFTDto updateNFTDto, string walletAddress, string? imageUrl = null)
+        {
+            try
+            {
+                var existingNft = await _nftRepository.GetByIdAsync(nftId);
+                if (existingNft == null)
+                {
+                    return ServiceResponse<NFTDto>.NotFoundResponse("NFT not found");
+                }
+
+                if (existingNft.OwnerWalletAddress.ToLower() != walletAddress.ToLower())
+                {
+                    return ServiceResponse<NFTDto>.UnauthorizedResponse("You can only update your own NFTs");
+                }
+
+                if (!string.IsNullOrEmpty(existingNft.TokenId))
+                {
+
+                    var nft = new NFT
+                    {
+                        Id = nftId,
+                        Name = existingNft.Name, 
+                        Description = existingNft.Description, 
+                        ImageUrl = existingNft.ImageUrl,
+                        Price = updateNFTDto.Price,
+                        Currency = updateNFTDto.Currency,
+                        IsForSale = updateNFTDto.IsForSale
+                    };
+
+                    var updatedNft = await _nftRepository.UpdateAsync(nft);
+                    if (updatedNft == null)
+                    {
+                        return ServiceResponse<NFTDto>.ErrorResponse("Failed to update NFT");
+                    }
+
+                    return ServiceResponse<NFTDto>.SuccessResponse(MapToNFTDto(updatedNft));
+                }
+                else
+                {
+  
+                    var nft = new NFT
+                    {
+                        Id = nftId,
+                        Name = updateNFTDto.Name,
+                        Description = updateNFTDto.Description,
+                        ImageUrl = existingNft.ImageUrl, 
+                        Price = updateNFTDto.Price,
+                        Currency = updateNFTDto.Currency,
+                        IsForSale = updateNFTDto.IsForSale
+                    };
+
+                    var updatedNft = await _nftRepository.UpdateAsync(nft);
+                    if (updatedNft == null)
+                    {
+                        return ServiceResponse<NFTDto>.ErrorResponse("Failed to update NFT");
+                    }
+
+                    return ServiceResponse<NFTDto>.SuccessResponse(MapToNFTDto(updatedNft));
+                }
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTDto>.ErrorResponse($"Error updating NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<bool>> DeleteNFTAsync(string nftId, string walletAddress, bool burnOnChain = false)
+        {
+            try
+            {
+                var existingNft = await _nftRepository.GetByIdAsync(nftId);
+                if (existingNft == null)
+                {
+                    return ServiceResponse<bool>.NotFoundResponse("NFT not found");
+                }
+
+                if (existingNft.OwnerWalletAddress.ToLower() != walletAddress.ToLower())
+                {
+                    return ServiceResponse<bool>.UnauthorizedResponse("You can only delete your own NFTs");
+                }
+
+                if (burnOnChain && !string.IsNullOrEmpty(existingNft.TokenId))
+                {
+                    var burnResult = await _blockchainService.BurnNFTAsync(existingNft.TokenId, existingNft.ContractAddress, walletAddress);
+                    if (!burnResult.IsSuccess)
+                    {
+                        return ServiceResponse<bool>.ErrorResponse($"Failed to burn NFT on blockchain: {burnResult.ErrorMessage}");
+                    }
+                }
+
+                var result = await _nftRepository.DeleteAsync(nftId);
+                return ServiceResponse<bool>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<bool>.ErrorResponse($"Error deleting NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTMintResponseDto>> MintNFTAsync(string nftId, string walletAddress)
+        {
+            try
+            {
+                var nft = await _nftRepository.GetByIdAsync(nftId);
+                if (nft == null)
+                {
+                    return ServiceResponse<NFTMintResponseDto>.NotFoundResponse("NFT not found");
+                }
+
+                if (nft.OwnerWalletAddress.ToLower() != walletAddress.ToLower())
+                {
+                    return ServiceResponse<NFTMintResponseDto>.UnauthorizedResponse("You can only mint your own NFTs");
+                }
+
+                var metadata = new
+                {
+                    name = nft.Name,
+                    description = nft.Description,
+                    image = nft.ImageUrl,
+                    attributes = new[]
+                    {
+                        new { trait_type = "Price", value = nft.Price.ToString() },
+                        new { trait_type = "Currency", value = nft.Currency },
+                        new { trait_type = "IsForSale", value = nft.IsForSale.ToString() }
+                    }
+                };
+
+
+                var tokenUri = $"{nft.ImageUrl}#metadata";
+
+                var mintResult = await _blockchainService.MintNFTAsync(nftId, walletAddress, tokenUri);
+                
+                if (mintResult.IsSuccess)
+                {
+ 
+                    await _nftRepository.UpdateTokenInfoAsync(nftId, mintResult.TokenId, mintResult.ContractAddress, mintResult.TransactionHash);
+                    
+                    var updatedNft = await _nftRepository.GetByIdAsync(nftId);
+                    if (updatedNft != null)
+                    {
+                        mintResult.TokenId = updatedNft.TokenId ?? mintResult.TokenId;
+                        mintResult.ContractAddress = updatedNft.ContractAddress ?? mintResult.ContractAddress;
+                    }
+                }
+
+                return ServiceResponse<NFTMintResponseDto>.SuccessResponse(mintResult);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTMintResponseDto>.ErrorResponse($"Error minting NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTBurnResponseDto>> BurnNFTAsync(string nftId, string walletAddress)
+        {
+            try
+            {
+                var nft = await _nftRepository.GetByIdAsync(nftId);
+                if (nft == null)
+                {
+                    return ServiceResponse<NFTBurnResponseDto>.NotFoundResponse("NFT not found");
+                }
+
+                if (nft.OwnerWalletAddress.ToLower() != walletAddress.ToLower())
+                {
+                    return ServiceResponse<NFTBurnResponseDto>.UnauthorizedResponse("You can only burn your own NFTs");
+                }
+
+                if (string.IsNullOrEmpty(nft.TokenId))
+                {
+                    return ServiceResponse<NFTBurnResponseDto>.BadRequestResponse("NFT is not minted on blockchain");
+                }
+
+                var burnResult = await _blockchainService.BurnNFTAsync(nft.TokenId, nft.ContractAddress, walletAddress);
+                return ServiceResponse<NFTBurnResponseDto>.SuccessResponse(burnResult);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTBurnResponseDto>.ErrorResponse($"Error burning NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<UserNFTsResponseDto>> GetUserNFTsAsync(string walletAddress, int page, int pageSize)
         {
             try
             {
@@ -82,7 +335,6 @@ namespace PinterestClone.BLL.Services.NFTService
         {
             try
             {
-
                 var nft = await _nftRepository.GetByIdAsync(nftId);
                 if (nft == null)
                 {
@@ -136,7 +388,7 @@ namespace PinterestClone.BLL.Services.NFTService
                 ChainId = nft.ChainId ?? string.Empty,
                 OwnerWalletAddress = nft.OwnerWalletAddress ?? string.Empty,
                 Price = nft.Price,
-                Currency = nft.Currency ?? "ETH",
+                Currency = nft.Currency ?? "MATIC",
                 IsForSale = nft.IsForSale,
                 CreatedAt = nft.CreatedAt,
                 UpdatedAt = nft.UpdatedAt
