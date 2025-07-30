@@ -93,25 +93,37 @@ namespace PinterestClone.BLL.DTOs
         public string WalletAddress { get; set; } = string.Empty;
         public decimal Balance { get; set; }
         public string Currency { get; set; } = "MATIC";
+        public string FormattedBalance { get; set; } = string.Empty;
     }
 
     public class GasEstimateDto
     {
-        public decimal GasLimit { get; set; }
+        public string OperationType { get; set; } = string.Empty;
+        public string? ContractAddress { get; set; }
+        public string? TokenId { get; set; }
+        public string? ToAddress { get; set; }
+        public decimal? Amount { get; set; }
+        public decimal EstimatedGas { get; set; }
         public decimal GasPrice { get; set; }
-        public decimal EstimatedFee { get; set; }
+        public decimal TotalCost { get; set; }
         public string Currency { get; set; } = "MATIC";
     }
 
     public class TransactionInfoDto
     {
         public string TransactionHash { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public decimal GasUsed { get; set; }
-        public decimal GasPrice { get; set; }
+        public string FromAddress { get; set; } = string.Empty;
+        public string ToAddress { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? TokenAddress { get; set; }
+        public string BlockNumber { get; set; } = string.Empty;
+        public string GasUsed { get; set; } = string.Empty;
+        public string GasPrice { get; set; } = string.Empty;
         public decimal TransactionFee { get; set; }
-        public string Currency { get; set; } = "MATIC";
-        public DateTime? Timestamp { get; set; }
+        public bool IsSuccess { get; set; }
+        public string? ErrorMessage { get; set; }
+        public DateTime Timestamp { get; set; }
+        public int Confirmations { get; set; }
     }
 
     public class MATICTransferDto

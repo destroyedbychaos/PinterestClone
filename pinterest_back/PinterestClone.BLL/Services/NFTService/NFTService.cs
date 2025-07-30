@@ -170,10 +170,10 @@ namespace PinterestClone.BLL.Services.NFTService
 
                 if (burnOnChain && !string.IsNullOrEmpty(existingNft.TokenId))
                 {
-                    var burnResult = await _blockchainService.BurnNFTAsync(existingNft.TokenId, existingNft.ContractAddress, walletAddress);
+                    var burnResult = await _blockchainService.BurnNFTAsync(existingNft.Id, walletAddress);
                     if (!burnResult.IsSuccess)
                     {
-                        return ServiceResponse<bool>.ErrorResponse($"Failed to burn NFT on blockchain: {burnResult.ErrorMessage}");
+                        return ServiceResponse<bool>.ErrorResponse($"Failed to burn NFT on blockchain: {burnResult.Message}");
                     }
                 }
 
@@ -215,24 +215,21 @@ namespace PinterestClone.BLL.Services.NFTService
                 };
 
 
-                var tokenUri = $"{nft.ImageUrl}#metadata";
-
-                var mintResult = await _blockchainService.MintNFTAsync(nftId, walletAddress, tokenUri);
+                var mintResult = await _blockchainService.MintNFTAsync(nftId, walletAddress);
                 
                 if (mintResult.IsSuccess)
                 {
- 
-                    await _nftRepository.UpdateTokenInfoAsync(nftId, mintResult.TokenId, mintResult.ContractAddress, mintResult.TransactionHash);
+                    await _nftRepository.UpdateTokenInfoAsync(nftId, mintResult.Data.TokenId, mintResult.Data.ContractAddress, mintResult.Data.TransactionHash);
                     
                     var updatedNft = await _nftRepository.GetByIdAsync(nftId);
                     if (updatedNft != null)
                     {
-                        mintResult.TokenId = updatedNft.TokenId ?? mintResult.TokenId;
-                        mintResult.ContractAddress = updatedNft.ContractAddress ?? mintResult.ContractAddress;
+                        mintResult.Data.TokenId = updatedNft.TokenId ?? mintResult.Data.TokenId;
+                        mintResult.Data.ContractAddress = updatedNft.ContractAddress ?? mintResult.Data.ContractAddress;
                     }
                 }
 
-                return ServiceResponse<NFTMintResponseDto>.SuccessResponse(mintResult);
+                return mintResult;
             }
             catch (Exception ex)
             {
@@ -260,8 +257,8 @@ namespace PinterestClone.BLL.Services.NFTService
                     return ServiceResponse<NFTBurnResponseDto>.BadRequestResponse("NFT is not minted on blockchain");
                 }
 
-                var burnResult = await _blockchainService.BurnNFTAsync(nft.TokenId, nft.ContractAddress, walletAddress);
-                return ServiceResponse<NFTBurnResponseDto>.SuccessResponse(burnResult);
+                var burnResult = await _blockchainService.BurnNFTAsync(nft.Id, walletAddress);
+                return burnResult;
             }
             catch (Exception ex)
             {
@@ -277,19 +274,17 @@ namespace PinterestClone.BLL.Services.NFTService
                 var totalCount = await _nftRepository.GetUserNFTsCountAsync(walletAddress);
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-                var nftList = new NFTListDto
-                {
-                    NFTs = nfts.Select(MapToNFTDto).ToList(),
-                    TotalCount = totalCount,
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalPages = totalPages
-                };
-
                 var response = new UserNFTsResponseDto
                 {
                     WalletAddress = walletAddress,
-                    NFTs = nftList
+                    NFTs = new NFTListDto
+                    {
+                        NFTs = nfts.Select(MapToNFTDto).ToList(),
+                        TotalCount = totalCount,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    }
                 };
 
                 return ServiceResponse<UserNFTsResponseDto>.SuccessResponse(response);
@@ -300,27 +295,58 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
+        // Favorites operations
+        public async Task<ServiceResponse<bool>> AddToFavoritesAsync(string nftId, string walletAddress)
+        {
+            try
+            {
+                var nft = await _nftRepository.GetByIdAsync(nftId);
+                if (nft == null)
+                {
+                    return ServiceResponse<bool>.NotFoundResponse("NFT not found");
+                }
+
+                var success = await _nftRepository.AddToFavoritesAsync(walletAddress, nftId);
+                return ServiceResponse<bool>.SuccessResponse(success);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<bool>.ErrorResponse($"Error adding to favorites: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<bool>> RemoveFromFavoritesAsync(string nftId, string walletAddress)
+        {
+            try
+            {
+                var success = await _nftRepository.RemoveFromFavoritesAsync(walletAddress, nftId);
+                return ServiceResponse<bool>.SuccessResponse(success);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<bool>.ErrorResponse($"Error removing from favorites: {ex.Message}");
+            }
+        }
+
         public async Task<ServiceResponse<UserFavoritesResponseDto>> GetUserFavoritesAsync(string walletAddress, int page, int pageSize)
         {
             try
             {
-                var favorites = await _userFavoritesRepository.GetUserFavoritesAsync(walletAddress, page, pageSize);
-                var totalCount = await _userFavoritesRepository.GetUserFavoritesCountAsync(walletAddress);
+                var favorites = await _nftRepository.GetUserFavoritesAsync(walletAddress, page, pageSize);
+                var totalCount = await _nftRepository.GetUserFavoritesCountAsync(walletAddress);
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-
-                var favoritesList = new NFTListDto
-                {
-                    NFTs = favorites.Select(MapToNFTDto).ToList(),
-                    TotalCount = totalCount,
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalPages = totalPages
-                };
 
                 var response = new UserFavoritesResponseDto
                 {
                     WalletAddress = walletAddress,
-                    Favorites = favoritesList
+                    Favorites = new NFTListDto
+                    {
+                        NFTs = favorites.Select(MapToNFTDto).ToList(),
+                        TotalCount = totalCount,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    }
                 };
 
                 return ServiceResponse<UserFavoritesResponseDto>.SuccessResponse(response);
@@ -331,47 +357,16 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
-        public async Task<ServiceResponse<bool>> AddToFavoritesAsync(string walletAddress, string nftId)
+        public async Task<ServiceResponse<bool>> IsFavoriteAsync(string nftId, string walletAddress)
         {
             try
             {
-                var nft = await _nftRepository.GetByIdAsync(nftId);
-                if (nft == null)
-                {
-                    return ServiceResponse<bool>.NotFoundResponse("NFT not found");
-                }
-
-                var isAlreadyFavorite = await _userFavoritesRepository.IsFavoriteAsync(walletAddress, nftId);
-                if (isAlreadyFavorite)
-                {
-                    return ServiceResponse<bool>.BadRequestResponse("NFT is already in favorites");
-                }
-
-                await _userFavoritesRepository.AddToFavoritesAsync(walletAddress, nftId);
-                return ServiceResponse<bool>.SuccessResponse(true);
+                var isFavorite = await _nftRepository.IsFavoriteAsync(walletAddress, nftId);
+                return ServiceResponse<bool>.SuccessResponse(isFavorite);
             }
             catch (Exception ex)
             {
-                return ServiceResponse<bool>.ErrorResponse($"Error adding to favorites: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResponse<bool>> RemoveFromFavoritesAsync(string walletAddress, string nftId)
-        {
-            try
-            {
-                var isFavorite = await _userFavoritesRepository.IsFavoriteAsync(walletAddress, nftId);
-                if (!isFavorite)
-                {
-                    return ServiceResponse<bool>.BadRequestResponse("NFT is not in favorites");
-                }
-
-                await _userFavoritesRepository.RemoveFromFavoritesAsync(walletAddress, nftId);
-                return ServiceResponse<bool>.SuccessResponse(true);
-            }
-            catch (Exception ex)
-            {
-                return ServiceResponse<bool>.ErrorResponse($"Error removing from favorites: {ex.Message}");
+                return ServiceResponse<bool>.ErrorResponse($"Error checking favorite status: {ex.Message}");
             }
         }
 
@@ -379,13 +374,13 @@ namespace PinterestClone.BLL.Services.NFTService
         {
             return new NFTDto
             {
-                Id = nft.Id ?? string.Empty,
-                Name = nft.Name ?? string.Empty,
-                Description = nft.Description ?? string.Empty,
-                ImageUrl = nft.ImageUrl ?? string.Empty,
+                Id = nft.Id,
+                Name = nft.Name,
+                Description = nft.Description,
+                ImageUrl = nft.ImageUrl,
                 TokenId = nft.TokenId ?? string.Empty,
                 ContractAddress = nft.ContractAddress ?? string.Empty,
-                ChainId = nft.ChainId ?? string.Empty,
+                ChainId = nft.ChainId ?? "137",
                 OwnerWalletAddress = nft.OwnerWalletAddress ?? string.Empty,
                 Price = nft.Price,
                 Currency = nft.Currency ?? "MATIC",

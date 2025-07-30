@@ -123,5 +123,80 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<NFT>> GetUserFavoritesAsync(string walletAddress, int page, int pageSize)
+        {
+            return await _context.NFTs
+                .Include(n => n.UserFavorites)
+                .Where(n => n.UserFavorites.Any(uf => uf.UserWalletAddress == walletAddress))
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUserFavoritesCountAsync(string walletAddress)
+        {
+            return await _context.NFTs
+                .Include(n => n.UserFavorites)
+                .Where(n => n.UserFavorites.Any(uf => uf.UserWalletAddress == walletAddress))
+                .CountAsync();
+        }
+
+        public async Task<bool> AddToFavoritesAsync(string walletAddress, string nftId)
+        {
+            var existingFavorite = await _context.UserFavorites
+                .FirstOrDefaultAsync(uf => uf.UserWalletAddress == walletAddress && uf.NFTId == nftId);
+            
+            if (existingFavorite != null)
+                return false;
+
+            var favorite = new UserFavorite
+            {
+                UserWalletAddress = walletAddress,
+                NFTId = nftId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.UserFavorites.Add(favorite);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveFromFavoritesAsync(string walletAddress, string nftId)
+        {
+            var favorite = await _context.UserFavorites
+                .FirstOrDefaultAsync(uf => uf.UserWalletAddress == walletAddress && uf.NFTId == nftId);
+            
+            if (favorite == null)
+                return false;
+
+            _context.UserFavorites.Remove(favorite);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> IsFavoriteAsync(string walletAddress, string nftId)
+        {
+            return await _context.UserFavorites
+                .AnyAsync(uf => uf.UserWalletAddress == walletAddress && uf.NFTId == nftId);
+        }
+
+        public async Task<List<NFT>> GetByOwnerAsync(string walletAddress, int page, int pageSize)
+        {
+            return await _context.NFTs
+                .Where(n => n.OwnerWalletAddress == walletAddress)
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetCountByOwnerAsync(string walletAddress)
+        {
+            return await _context.NFTs
+                .Where(n => n.OwnerWalletAddress == walletAddress)
+                .CountAsync();
+        }
     }
 } 

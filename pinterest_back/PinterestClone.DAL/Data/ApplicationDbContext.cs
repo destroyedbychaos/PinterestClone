@@ -25,6 +25,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<Nonce> Nonces { get; set; }
         public DbSet<NFT> NFTs { get; set; }
         public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<MarketplaceListing> MarketplaceListings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -185,6 +186,25 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<UserFavorite>()
                 .HasIndex(uf => uf.CreatedAt);
+
+            builder.Entity<MarketplaceListing>()
+                .HasOne(ml => ml.NFT)
+                .WithMany()
+                .HasForeignKey(ml => ml.NFTId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.NFTId)
+                .IsUnique();
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.SellerWalletAddress);
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.IsActive);
+
+            builder.Entity<MarketplaceListing>()
+                .HasIndex(ml => ml.ListedAt);
         }
     }
 } 

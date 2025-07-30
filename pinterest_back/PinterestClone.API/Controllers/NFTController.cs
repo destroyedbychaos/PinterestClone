@@ -152,17 +152,22 @@ namespace PinterestClone.API.Controllers
 
             try
             {
-                var balance = await _blockchainService.GetMATICBalanceAsync(walletAddress);
-                var gasPrice = await _blockchainService.GetGasPriceAsync();
+                var balanceResponse = await _blockchainService.GetMATICBalanceAsync(walletAddress);
+                var gasPriceResponse = await _blockchainService.GetGasPriceAsync();
+                
+                if (!balanceResponse.IsSuccess || !gasPriceResponse.IsSuccess)
+                {
+                    return BadRequest(new { success = false, message = "Failed to get balance or gas price" });
+                }
                 
                 var response = new MATICBalanceDto
                 {
                     WalletAddress = walletAddress,
-                    Balance = balance,
+                    Balance = balanceResponse.Data.Balance,
                     Currency = "MATIC"
                 };
 
-                return Ok(new { success = true, data = response, gasPrice = gasPrice });
+                return Ok(new { success = true, data = response, gasPrice = gasPriceResponse.Data });
             }
             catch (Exception ex)
             {
@@ -182,15 +187,21 @@ namespace PinterestClone.API.Controllers
 
             try
             {
-                var gasLimit = await _blockchainService.EstimateGasForMintAsync(walletAddress, tokenUri);
-                var gasPrice = await _blockchainService.GetGasPriceAsync();
-                var estimatedFee = gasLimit * gasPrice;
+                var gasEstimateResponse = await _blockchainService.EstimateGasForMintAsync(walletAddress);
+                var gasPriceResponse = await _blockchainService.GetGasPriceAsync();
+                
+                if (!gasEstimateResponse.IsSuccess || !gasPriceResponse.IsSuccess)
+                {
+                    return BadRequest(new { success = false, message = "Failed to estimate gas" });
+                }
+                
+                var estimatedFee = gasEstimateResponse.Data.EstimatedGas * gasPriceResponse.Data;
 
                 var response = new GasEstimateDto
                 {
-                    GasLimit = gasLimit,
-                    GasPrice = gasPrice,
-                    EstimatedFee = estimatedFee,
+                    EstimatedGas = gasEstimateResponse.Data.EstimatedGas,
+                    GasPrice = gasPriceResponse.Data,
+                    TotalCost = estimatedFee,
                     Currency = "MATIC"
                 };
 
@@ -214,15 +225,21 @@ namespace PinterestClone.API.Controllers
 
             try
             {
-                var gasLimit = await _blockchainService.EstimateGasForBurnAsync(tokenId);
-                var gasPrice = await _blockchainService.GetGasPriceAsync();
-                var estimatedFee = gasLimit * gasPrice;
+                var gasEstimateResponse = await _blockchainService.EstimateGasForBurnAsync(tokenId);
+                var gasPriceResponse = await _blockchainService.GetGasPriceAsync();
+                
+                if (!gasEstimateResponse.IsSuccess || !gasPriceResponse.IsSuccess)
+                {
+                    return BadRequest(new { success = false, message = "Failed to estimate gas" });
+                }
+                
+                var estimatedFee = gasEstimateResponse.Data.EstimatedGas * gasPriceResponse.Data;
 
                 var response = new GasEstimateDto
                 {
-                    GasLimit = gasLimit,
-                    GasPrice = gasPrice,
-                    EstimatedFee = estimatedFee,
+                    EstimatedGas = gasEstimateResponse.Data.EstimatedGas,
+                    GasPrice = gasPriceResponse.Data,
+                    TotalCost = estimatedFee,
                     Currency = "MATIC"
                 };
 
@@ -251,13 +268,18 @@ namespace PinterestClone.API.Controllers
 
             try
             {
-                var transactionHash = await _blockchainService.TransferMATICAsync(
+                var transferResponse = await _blockchainService.TransferMATICAsync(
                     transferDto.FromAddress, 
                     transferDto.ToAddress, 
                     transferDto.Amount
                 );
 
-                transferDto.TransactionHash = transactionHash;
+                if (!transferResponse.IsSuccess)
+                {
+                    return BadRequest(new { success = false, message = transferResponse.Message });
+                }
+
+                transferDto.TransactionHash = transferResponse.Data.TransactionHash;
                 transferDto.IsSuccess = true;
 
                 return Ok(new { success = true, data = transferDto });
@@ -276,19 +298,24 @@ namespace PinterestClone.API.Controllers
         {
             try
             {
-                var status = await _blockchainService.GetTransactionStatusAsync(transactionHash);
-                var fee = await _blockchainService.GetTransactionFeeAsync(transactionHash);
-                var isValid = await _blockchainService.ValidateTransactionAsync(transactionHash);
+                var statusResponse = await _blockchainService.GetTransactionStatusAsync(transactionHash);
+                var feeResponse = await _blockchainService.GetTransactionFeeAsync(transactionHash);
+                var isValidResponse = await _blockchainService.ValidateTransactionAsync(transactionHash);
+
+                if (!statusResponse.IsSuccess || !feeResponse.IsSuccess || !isValidResponse.IsSuccess)
+                {
+                    return BadRequest(new { success = false, message = "Failed to get transaction info" });
+                }
 
                 var response = new TransactionInfoDto
                 {
                     TransactionHash = transactionHash,
-                    Status = status,
-                    TransactionFee = fee,
-                    Currency = "MATIC"
+                    IsSuccess = statusResponse.Data.IsSuccess,
+                    TransactionFee = feeResponse.Data.TransactionFee,
+                    Timestamp = DateTime.UtcNow
                 };
 
-                return Ok(new { success = true, data = response, isValid = isValid });
+                return Ok(new { success = true, data = response, isValid = isValidResponse.Data });
             }
             catch (Exception ex)
             {

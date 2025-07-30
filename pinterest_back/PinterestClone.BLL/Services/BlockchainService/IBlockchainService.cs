@@ -4,24 +4,42 @@ namespace PinterestClone.BLL.Services.BlockchainService
 {
     public interface IBlockchainService
     {
-        Task<NFTMintResponseDto> MintNFTAsync(string nftId, string walletAddress, string tokenUri);
-        Task<NFTBurnResponseDto> BurnNFTAsync(string tokenId, string contractAddress, string walletAddress);
-        Task<string> GetTokenURIAsync(string tokenId, string contractAddress);
-        Task<string> GetOwnerAsync(string tokenId, string contractAddress);
-        Task<bool> IsApprovedForAllAsync(string owner, string operatorAddress, string contractAddress);
-        Task<string> ApproveAsync(string to, string tokenId, string contractAddress, string walletAddress);
-        Task<string> TransferFromAsync(string from, string to, string tokenId, string contractAddress, string walletAddress);
-        
-        Task<decimal> GetMATICBalanceAsync(string walletAddress);
-        Task<decimal> GetGasPriceAsync();
-        Task<decimal> EstimateGasForMintAsync(string walletAddress, string tokenUri);
-        Task<decimal> EstimateGasForBurnAsync(string tokenId);
-        Task<bool> HasEnoughMATICForTransactionAsync(string walletAddress, decimal gasLimit, decimal gasPrice);
-        Task<string> TransferMATICAsync(string from, string to, decimal amount);
+        Task<ServiceResponse<NFTMintResponseDto>> MintNFTAsync(string nftId, string walletAddress);
+        Task<ServiceResponse<NFTBurnResponseDto>> BurnNFTAsync(string nftId, string walletAddress);
+        Task<ServiceResponse<string>> GetTokenURIAsync(string tokenId, string contractAddress);
+        Task<ServiceResponse<string>> GetOwnerAsync(string tokenId, string contractAddress);
+        Task<ServiceResponse<bool>> IsApprovedForAllAsync(string owner, string operatorAddress, string contractAddress);
+        Task<ServiceResponse<string>> ApproveAsync(string to, string tokenId, string contractAddress, string walletAddress);
+        Task<ServiceResponse<string>> TransferFromAsync(string from, string to, string tokenId, string contractAddress, string walletAddress);
         
 
-        Task<bool> ValidateTransactionAsync(string transactionHash);
-        Task<decimal> GetTransactionFeeAsync(string transactionHash);
-        Task<string> GetTransactionStatusAsync(string transactionHash);
+
+        Task<ServiceResponse<MATICBalanceDto>> GetMATICBalanceAsync(string walletAddress);
+        Task<ServiceResponse<decimal>> GetGasPriceAsync();
+        Task<ServiceResponse<GasEstimateDto>> EstimateGasForMintAsync(string walletAddress);
+        Task<ServiceResponse<GasEstimateDto>> EstimateGasForBurnAsync(string tokenId);
+        Task<ServiceResponse<bool>> HasEnoughMATICForTransactionAsync(string walletAddress, decimal gasEstimate);
+        Task<ServiceResponse<TransactionInfoDto>> TransferMATICAsync(string fromAddress, string toAddress, decimal amount);
+        
+
+
+
+        Task<ServiceResponse<TransactionInfoDto>> ValidateTransactionAsync(string transactionHash);
+        Task<ServiceResponse<TransactionInfoDto>> GetTransactionFeeAsync(string transactionHash);
+        Task<ServiceResponse<TransactionInfoDto>> GetTransactionStatusAsync(string transactionHash);
+        
+
+
+        Task<ServiceResponse<TransactionDataDto>> PreparePurchaseTransactionAsync(string nftId, string buyerAddress, decimal price);
+        
+
+
+
+        Task<ServiceResponse<GasEstimateDto>> EstimateGasForOperationAsync(string operationType, string walletAddress, string? contractAddress = null, string? tokenId = null, string? toAddress = null, decimal? amount = null);
+        Task<ServiceResponse<PaymentResponseDto>> ConfirmTransactionAsync(string transactionHash, string walletAddress);
+        Task<ServiceResponse<PaymentResponseDto>> ProcessWebhookAsync(WebhookDto webhookDto);
+        Task<ServiceResponse<TransactionInfoDto>> GetTransactionInfoAsync(string hash);
+        Task<ServiceResponse<BalanceDto>> GetBalanceAsync(string walletAddress, string? tokenAddress = null);
+        Task<ServiceResponse<PaymentResponseDto>> TransferAsync(string fromAddress, string toAddress, decimal amount, string? tokenAddress = null);
     }
 } 
