@@ -21,6 +21,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<PinShare> PinShares { get; set; }
         public DbSet<PinReport> PinReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
+        public DbSet<Tag> Tags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

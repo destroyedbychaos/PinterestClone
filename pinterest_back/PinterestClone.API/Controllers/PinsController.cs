@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.PinService;
+using PinterestClone.BLL.Services.ImageService;
 using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
@@ -11,10 +12,14 @@ namespace PinterestClone.API.Controllers
     public class PinsController : BaseController
     {
         private readonly IPinService _pinService;
+        private readonly PinterestClone.DAL.Data.AppDbContext _db;
+        private readonly IImageService _imageService;
 
-        public PinsController(IPinService pinService)
+        public PinsController(IPinService pinService, PinterestClone.DAL.Data.AppDbContext db, IImageService imageService)
         {
             _pinService = pinService;
+            _db = db;
+            _imageService = imageService;
         }
         
 
@@ -33,6 +38,9 @@ namespace PinterestClone.API.Controllers
                 {
                     return BadRequest("Потрібно вказати файл зображення");
                 }
+
+                var (_, fileName, _, _) = await _imageService.SaveImageAsync(createPinDto.ImageFile);
+                createPinDto.ImageUrl = _imageService.GetImageUrl(fileName);
 
                 var pin = await _pinService.CreatePinAsync(createPinDto, userId);
                 return Ok(pin);
@@ -82,8 +90,56 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        ///// <summary>
-        ///// </summary>
+        [HttpGet("tags")]
+        public async Task<ActionResult<List<string>>> GetAllTags()
+        {
+            try
+            {
+                var tags = await _pinService.GetAllTagsAsync();
+                return Ok(tags);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting tags: {ex.Message}");
+            }
+        }
+
+        /// <param name="dto"></param>
+        [HttpPost("tags")]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(object), 200)]
+        public async Task<ActionResult> AddTag([FromBody] PinterestClone.BLL.DTOs.TagDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto?.Name))
+                return BadRequest("Tag is required");
+            var exists = _db.Tags.Any(t => t.Name.ToLower() == dto.Name.ToLower());
+            if (exists)
+                return Conflict(new { message = "Tag already exists" });
+            var tag = new PinterestClone.DAL.Models.Tag { Name = dto.Name };
+            _db.Tags.Add(tag);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = $"Tag '{dto.Name}' added", tag });
+        }
+
+
+        [HttpGet("all-tags")]
+        [ProducesResponseType(typeof(List<string>), 200)]
+        public async Task<ActionResult> GetAllTagsCombined()
+        {
+            var dbTags = _db.Tags.Select(t => t.Name).ToList();
+            var pinTags = _db.Pins
+                .Where(p => p.Tags != null && p.Tags != "")
+                .Select(p => p.Tags)
+                .ToList()
+                .SelectMany(tags => tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+            var allTags = dbTags.Concat(pinTags).Select(t => t.ToLower()).Distinct().OrderBy(t => t).ToList();
+            return Ok(allTags);
+        }
+
+
         //[HttpGet("search")]
         //public async Task<ActionResult<PinListDto>> SearchPins(
         //    [FromQuery] string searchTerm,
@@ -112,8 +168,7 @@ namespace PinterestClone.API.Controllers
         //    }
         //}
 
-        ///// <summary>
-        ///// </summary>
+
         //[HttpGet("search-by-image-hash")]
         //public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
         //    [FromQuery] string imageHash,
@@ -224,18 +279,37 @@ namespace PinterestClone.API.Controllers
             return Ok(pin);
         }
 
+        /// <param name="id"></param>
         [HttpDelete("{id}")]
-        [Authorize]
-        public async Task<ActionResult> DeletePin(string id)
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeletePin(string id)
         {
-            var userId = GetCurrentUserId();
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            var pin = await _db.Pins.FindAsync(Guid.Parse(id));
+            if (pin == null)
+                return NotFound();
+            // Видалити зображення
+            if (!string.IsNullOrEmpty(pin.ImageUrl))
+            {
+                await _imageService.DeleteImageAsync(pin.ImageUrl);
+            }
+            _db.Pins.Remove(pin);
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
 
-            var result = await _pinService.DeletePinAsync(id, userId);
-            if (!result)
-                return NotFound("Pin not found or you don't have permission to delete it");
 
+        /// <param name="id"></param>
+        [HttpDelete("tags/{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteTag(int id)
+        {
+            var tag = await _db.Tags.FindAsync(id);
+            if (tag == null)
+                return NotFound();
+            _db.Tags.Remove(tag);
+            await _db.SaveChangesAsync();
             return NoContent();
         }
 
@@ -273,5 +347,22 @@ namespace PinterestClone.API.Controllers
         {
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
+
+        [HttpGet("recommendations")]
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
+        {
+            try
+            {
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync();
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations: {ex.Message}");
+            }
+        }
+
+
+
     }
 } 

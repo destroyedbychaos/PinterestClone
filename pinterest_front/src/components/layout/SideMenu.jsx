@@ -74,12 +74,12 @@ const SideMenu = memo(({ isUnverified = false }) => {
                             </Link>
                         ) : (
                             <>
-                                <Link 
-                                    to="/"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-blue-500/10 active:bg-blue-500/20 hover:scale-110 active:scale-95"
+                                <Box
+                                  onClick={() => window.location.href = '/'}
+                                  className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-blue-500/10 active:bg-blue-500/20 hover:scale-110 active:scale-95 cursor-pointer"
                                 >
-                                    <Iconify icon="octicon:home-fill-24" width={35} height={35} color={theme.palette.primary.main} />
-                                </Link>
+                                  <Iconify icon="octicon:home-fill-24" width={35} height={35} color={theme.palette.primary.main} />
+                                </Box>
                                 <Link 
                                     to="/add"
                                     className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"

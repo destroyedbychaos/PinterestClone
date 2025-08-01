@@ -76,5 +76,35 @@ namespace PinterestClone.BLL.Services.ImageService
             var hashBytes = await Task.Run(() => md5.ComputeHash(stream));
             return Convert.ToHexString(hashBytes).ToLowerInvariant();
         }
+
+        public async Task<bool> DeleteImageAsync(string imageUrlOrFileName)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrlOrFileName))
+                return false;
+
+            string fileName = imageUrlOrFileName;
+            if (fileName.StartsWith("/api/images/"))
+                fileName = fileName.Substring("/api/images/".Length);
+            else if (fileName.StartsWith("/images/"))
+                fileName = fileName.Substring("/images/".Length);
+            fileName = fileName.Replace("\\", "/");
+            if (fileName.Contains("/"))
+                fileName = fileName.Substring(fileName.LastIndexOf('/') + 1);
+
+            var filePath = Path.Combine(_uploadsPath, fileName);
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
     }
 }

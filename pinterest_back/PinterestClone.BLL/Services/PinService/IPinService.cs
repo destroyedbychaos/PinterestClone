@@ -13,5 +13,8 @@ namespace PinterestClone.BLL.Services.PinService
         Task<bool> DeletePinAsync(string pinId, string userId);
         Task<bool> AddPinToBoardAsync(string pinId, string boardId, string userId);
         Task<bool> RemovePinFromBoardAsync(string pinId, string boardId, string userId);
+        Task<List<string>> GetAllTagsAsync();
+        Task<List<PinRecommendationDto>> GetRecommendedPinsAsync();
+
     }
 }
