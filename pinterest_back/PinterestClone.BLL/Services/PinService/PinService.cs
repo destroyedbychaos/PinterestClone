@@ -5,16 +5,23 @@ using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.PinRepository;
+using Microsoft.AspNetCore.Http;
+using PinterestClone.BLL.Services.ImageAnalysisService;
+using PinterestClone.BLL.Services.ImageSearchService;
 
 namespace PinterestClone.BLL.Services.PinService
 {
     public class PinService : IPinService
     {
         private readonly IPinRepository _pinRepository;
+        private readonly IImageAnalysisService _imageAnalysisService;
+        private readonly IImageSearchService _imageSearchService;
 
-        public PinService(IPinRepository pinRepository)
+        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService)
         {
             _pinRepository = pinRepository;
+            _imageAnalysisService = imageAnalysisService;
+            _imageSearchService = imageSearchService;
         }
 
         public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
@@ -333,11 +340,14 @@ namespace PinterestClone.BLL.Services.PinService
             var tagSet = new HashSet<string>();
             foreach (var tagsStr in allTags)
             {
-                var tags = tagsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(t => t.Trim())
-                    .Where(t => !string.IsNullOrWhiteSpace(t));
-                foreach (var tag in tags)
-                    tagSet.Add(tag);
+                if (!string.IsNullOrWhiteSpace(tagsStr))
+                {
+                    var tags = tagsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim())
+                        .Where(t => !string.IsNullOrWhiteSpace(t));
+                    foreach (var tag in tags)
+                        tagSet.Add(tag);
+                }
             }
             return tagSet.OrderBy(t => t).ToList();
         }
@@ -353,5 +363,277 @@ namespace PinterestClone.BLL.Services.PinService
             }).ToList();
         }
 
+        public async Task<PinListDto?> SearchPinsAsync(string searchTerm, bool searchInTitle = true, bool searchInDescription = true, bool exactMatch = false, int pageNumber = 1, int pageSize = 20)
+        {
+            var query = _pinRepository.GetAllPins();
+            var term = searchTerm.ToLower();
+
+            if (exactMatch)
+            {
+                if (searchInTitle)
+                    query = query.Where(p => p.Title.ToLower() == term);
+                if (searchInDescription)
+                    query = query.Where(p => p.Description != null && p.Description.ToLower() == term);
+            }
+            else
+            {
+                if (searchInTitle)
+                    query = query.Where(p => p.Title.ToLower().Contains(term));
+                if (searchInDescription)
+                    query = query.Where(p => p.Description != null && p.Description.ToLower().Contains(term));
+            }
+
+            var totalCount = await query.CountAsync();
+            var pins = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PinListDto
+            {
+                Pins = pins.Select(pin => new PinSimpleDto
+                {
+                    Id = pin.Id.ToString(),
+                    Title = pin.Title,
+                    ImageUrl = pin.ImageUrl!,
+                    Tags = pin.Tags,
+                    CreatedAt = pin.CreatedAt,
+                    LikesCount = pin.Likes.Count,
+                    CommentsCount = pin.Comments.Count
+                }).ToList(),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+            };
+        }
+
+        public async Task<PinListDto?> SearchPinsByImageAsync(string imageHash, int pageNumber = 1, int pageSize = 20)
+        {
+            try
+            {
+
+                var allPins = await _pinRepository.GetAllPins().ToListAsync();
+                var similarPins = new List<(Pin pin, double similarity)>();
+
+                foreach (var pin in allPins)
+                {
+
+                    if (!string.IsNullOrEmpty(pin.Tags))
+                    {
+                        var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
+                        
+
+                        var similarity = pinTags.Count(t => imageHash.Contains(t)) / (double)Math.Max(pinTags.Count, 1);
+                        
+                        if (similarity > 0.1)
+                        {
+                            similarPins.Add((pin, similarity));
+                        }
+                    }
+                }
+
+
+                var sortedPins = similarPins
+                    .OrderByDescending(x => x.similarity)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => x.pin)
+                    .ToList();
+
+                return new PinListDto
+                {
+                    Pins = sortedPins.Select(pin => new PinSimpleDto
+                    {
+                        Id = pin.Id.ToString(),
+                        Title = pin.Title,
+                        ImageUrl = pin.ImageUrl!,
+                        Tags = pin.Tags,
+                        CreatedAt = pin.CreatedAt,
+                        LikesCount = pin.Likes.Count,
+                        CommentsCount = pin.Comments.Count
+                    }).ToList(),
+                    TotalCount = similarPins.Count,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)similarPins.Count / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+
+                var query = _pinRepository.GetAllPins();
+                var totalCount = await query.CountAsync();
+                var pins = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PinListDto
+                {
+                    Pins = pins.Select(pin => new PinSimpleDto
+                    {
+                        Id = pin.Id.ToString(),
+                        Title = pin.Title,
+                        ImageUrl = pin.ImageUrl!,
+                        Tags = pin.Tags,
+                        CreatedAt = pin.CreatedAt,
+                        LikesCount = pin.Likes.Count,
+                        CommentsCount = pin.Comments.Count
+                    }).ToList(),
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                };
+            }
+        }
+
+        public async Task<PinListDto?> FindSimilarImagesAsync(IFormFile imageFile, string? searchArea = null, string? selectionCoords = null)
+        {
+            try
+            {
+                Console.WriteLine($"PinService.FindSimilarImagesAsync called - SearchArea: {searchArea}, SelectionCoords: {selectionCoords}");
+                
+                var searchAreaInfo = new { SearchArea = searchArea, SelectionCoords = selectionCoords };
+                
+                Console.WriteLine("Calling _imageSearchService.AnalyzeImageAsync...");
+
+                var uploadedFeatures = await _imageSearchService.AnalyzeImageAsync(imageFile, searchAreaInfo);
+                Console.WriteLine($"AnalyzeImageAsync completed, found {uploadedFeatures.Count} features: {string.Join(", ", uploadedFeatures)}");
+
+
+                var allPins = await _pinRepository.GetAllPins().ToListAsync();
+                var similarPins = new List<(Pin pin, double similarity)>();
+
+                foreach (var pin in allPins)
+                {
+                    double similarity = 0.0;
+
+
+                    if (!string.IsNullOrEmpty(pin.Tags))
+                    {
+                        var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
+                        
+                        var exactMatches = uploadedFeatures.Intersect(pinTags, StringComparer.OrdinalIgnoreCase).Count();
+                        var partialMatches = uploadedFeatures.Count(uploadedFeature => 
+                            pinTags.Any(pinTag => pinTag.Contains(uploadedFeature) || uploadedFeature.Contains(pinTag)));
+                        
+                        var totalMatches = exactMatches + (partialMatches * 0.6);
+                        var tagSimilarity = totalMatches / (double)Math.Max(uploadedFeatures.Count, pinTags.Count);
+                        similarity += tagSimilarity * 0.30;
+                    }
+
+
+                    var featureSimilarity = await _imageSearchService.CalculateSimilarityAsync(imageFile, pin.ImageUrl!, searchAreaInfo);
+                    similarity += featureSimilarity * 0.40;
+
+                    var uploadedColors = await _imageSearchService.ExtractImageFeaturesAsync(imageFile, searchAreaInfo);
+                    if (uploadedColors.Any() && !string.IsNullOrEmpty(pin.Tags))
+                    {
+                        var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
+                        var colorMatches = uploadedColors.Count(color => pinTags.Contains(color));
+                        var colorSimilarity = colorMatches / (double)Math.Max(uploadedColors.Count, 1);
+                        similarity += colorSimilarity * 0.20;
+                    }
+
+
+                    var styleSimilarity = CalculateStyleSimilarity(uploadedFeatures, pin.Tags);
+                    similarity += styleSimilarity * 0.10;
+                    
+
+                    if (similarity > 0.08) 
+                    {
+                        similarPins.Add((pin, similarity));
+                    }
+                }
+
+
+                var topSimilarPins = similarPins
+                    .OrderByDescending(x => x.similarity)
+                    .Take(30) 
+                    .Select(x => x.pin)
+                    .ToList();
+
+                var result = new PinListDto
+                {
+                    Pins = topSimilarPins.Select(pin => new PinSimpleDto
+                    {
+                        Id = pin.Id.ToString(),
+                        Title = pin.Title,
+                        ImageUrl = pin.ImageUrl!,
+                        Tags = pin.Tags,
+                        CreatedAt = pin.CreatedAt,
+                        LikesCount = pin.Likes.Count,
+                        CommentsCount = pin.Comments.Count
+                    }).ToList(),
+                    TotalCount = topSimilarPins.Count,
+                    PageNumber = 1,
+                    PageSize = 30,
+                    TotalPages = 1
+                };
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка в FindSimilarImagesAsync: {ex.Message}");
+                var query = _pinRepository.GetAllPins();
+                var pins = await query.Take(30).ToListAsync();
+
+                var fallbackResult = new PinListDto
+                {
+                    Pins = pins.Select(pin => new PinSimpleDto
+                    {
+                        Id = pin.Id.ToString(),
+                        Title = pin.Title,
+                        ImageUrl = pin.ImageUrl!,
+                        Tags = pin.Tags,
+                        CreatedAt = pin.CreatedAt,
+                        LikesCount = pin.Likes.Count,
+                        CommentsCount = pin.Comments.Count
+                    }).ToList(),
+                    TotalCount = pins.Count,
+                    PageNumber = 1,
+                    PageSize = 30,
+                    TotalPages = 1
+                };
+                
+                return fallbackResult;
+            }
+        }
+
+        private double CalculateStyleSimilarity(List<string> uploadedFeatures, string? pinTags)
+        {
+            if (string.IsNullOrEmpty(pinTags)) return 0.0;
+
+            var pinTagsList = pinTags.Split(',').Select(t => t.Trim().ToLower()).ToList();
+            var styleKeywords = new Dictionary<string, List<string>>
+            {
+                { "bright-contrast", new List<string> { "bright", "high-contrast", "dramatic" } },
+                { "dark-contrast", new List<string> { "dark", "high-contrast", "dramatic" } },
+                { "complex", new List<string> { "complex", "detailed", "patterned" } },
+                { "simple", new List<string> { "simple", "smooth", "minimalist" } },
+                { "balanced", new List<string> { "medium-brightness", "medium-contrast", "moderate" } },
+                { "warm-palette", new List<string> { "warm-palette", "red", "orange", "yellow", "dominant-red", "dominant-orange", "dominant-yellow" } },
+                { "cool-palette", new List<string> { "cool-palette", "blue", "cyan", "green", "dominant-blue", "dominant-cyan", "dominant-green" } },
+                { "neutral-palette", new List<string> { "neutral-palette", "gray", "black", "white", "dominant-gray", "dominant-black", "dominant-white" } }
+            };
+
+            var styleMatches = 0.0;
+            foreach (var feature in uploadedFeatures)
+            {
+                foreach (var style in styleKeywords)
+                {
+                    if (style.Value.Contains(feature) && pinTagsList.Any(tag => style.Value.Contains(tag)))
+                    {
+                        styleMatches += 0.3;
+                        break;
+                    }
+                }
+            }
+
+            return Math.Min(styleMatches, 1.0);
+        }
     }
 }
