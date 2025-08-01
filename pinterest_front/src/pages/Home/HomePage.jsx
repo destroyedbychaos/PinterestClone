@@ -7,14 +7,7 @@ import MasonryGrid from '../../components/ui/MasonryGrid';
 import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
-import cat from "../../assets/images/cat.png";
-import sunflower from '../../assets/images/sunflower.png';
-import sky from '../../assets/images/sky.png';
-import interior from '../../assets/images/interior.png';
-import fish from '../../assets/images/fish.png';
-import japan from '../../assets/images/japan.png';
-import pizza from '../../assets/images/pizza.png';
-import plants from '../../assets/images/plants.png';
+
 
 const API_BASE = '/api';
 
@@ -24,11 +17,13 @@ const HomePage = () => {
   const [tags, setTags] = useState([]);
   const [activeTag, setActiveTag] = useState('');
   const [pins, setPins] = useState([]);
+  const [searchResults, setSearchResults] = useState([]); // 🆕
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const [recentSearches, setRecentSearches] = useState([]);
 
   useEffect(() => {
     const isNewUser = localStorage.getItem('isNewUser');
@@ -76,87 +71,84 @@ const HomePage = () => {
   const handleLogin = () => navigate('/login');
   const handleSignup = () => navigate('/register');
 
-  const recentSearches = ['Funny cats meme', 'Yellow aesthetic', 'UI design', 'Nature wallpapers', 'Logo ideas A monogram'];
-  const mightLike = [
-  { img: cat, title: 'Cute munchkin kittens' },
-  { img: sunflower, title: 'Sunflowers' },
-  { img: sky, title: 'Beautiful sky pictures' },
-  { img: interior, title: 'Interior design' },
-];
-
-const popular = [
-  { img: fish, title: 'Cool fishes' },
-  { img: japan, title: 'Best Japan photoshots' },
-  { img: pizza, title: 'Food' },
-  { img: plants, title: 'Beautiful flowers and plants' },
-];
+  const displayedPins = searchResults.length > 0 ? searchResults : pins;
 
   return (
-    <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0 }}>
-      <DiscoverHeader
-        user={user}
-        onSearch={setSearch}
-        onLogin={handleLogin}
-        onSignup={handleSignup}
-        onFocusSearch={() => setShowSearchModal(true)}
-        searchRef={searchRef} 
-      />
+    <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0, position: 'relative' }}>
+  <Box
+    sx={{
+      filter: showSearchModal ? 'blur(5px)' : 'none',
+      transition: 'filter 0.3s ease',
+      pointerEvents: showSearchModal ? 'none' : 'auto', 
+    }}
+  >
+    <DiscoverHeader
+      user={user}
+      onSearch={setSearch}
+      onLogin={handleLogin}
+      onSignup={handleSignup}
+      onFocusSearch={() => setShowSearchModal(true)}
+      searchRef={searchRef}
+    />
 
-      <Box sx={{ mt: 4, ml: 0 }}>
-        {tags.length > 0 && (
-          <div className="tags-filter">
-            {tags.map((tag) => (
-              <button
-                key={tag}
-                className={`tags-filter__btn${search === tag ? ' tags-filter__btn--active' : ''}`}
-                onClick={() => {
-                  if (search === tag) setSearch('');
-                  else setSearch(tag);
-                  setActiveTag('');
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        )}
+    <Box sx={{ mt: 4, ml: 0 }}>
+      {tags.length > 0 && (
+        <div className="tags-filter">
+          {tags.map((tag) => (
+            <button
+              key={tag}
+              className={`tags-filter__btn${search === tag ? ' tags-filter__btn--active' : ''}`}
+              onClick={() => {
+                if (search === tag) setSearch('');
+                else setSearch(tag);
+                setActiveTag('');
+                setSearchResults([]);
+              }}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {loading ? (
-          <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
-        ) : (
-          <MasonryGrid
-            pins={pins.map((pin) => {
-              let image = pin.ImageUrl || pin.imageUrl || pin.image;
-              if (image && !/^https?:\/\//.test(image)) {
-                if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\\/]/, '');
-              }
-              return {
-                id: pin.Id || pin.id,
-                image,
-                title: pin.Title || pin.title,
-                description: pin.Description || pin.description,
-                author: pin.UserName || pin.userName || pin.author,
-                tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
-              };
-            })}
-          />
-        )}
-      </Box>
+      {loading ? (
+        <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
+      ) : (
+        <MasonryGrid
+          pins={displayedPins.map((pin) => {
+            let image = pin.ImageUrl || pin.imageUrl || pin.image;
+            if (image && !/^https?:\/\//.test(image)) {
+              if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\\/]/, '');
+            }
+            return {
+              id: pin.Id || pin.id,
+              image,
+              title: pin.Title || pin.title,
+              description: pin.Description || pin.description,
+              author: pin.UserName || pin.userName || pin.author,
+              tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
+            };
+          })}
+        />
+      )}
+    </Box>
+  </Box>
 
-      <OnboardingModal
-        open={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-        onComplete={() => setShowOnboarding(false)}
-      />
+  <OnboardingModal
+    open={showOnboarding}
+    onClose={() => setShowOnboarding(false)}
+    onComplete={() => setShowOnboarding(false)}
+  />
 
-      <SearchModal
-        open={showSearchModal}
-        onClose={() => setShowSearchModal(false)}
-        recentSearches={recentSearches}
-        mightLike={mightLike}
-        popular={popular}
-      />
-    </Container>
+  <SearchModal
+    open={showSearchModal}
+    onClose={() => setShowSearchModal(false)}
+    recentSearches={recentSearches}
+    setRecentSearches={setRecentSearches}
+    onSearchResults={(results) => setSearchResults(results)} 
+  />
+</Container>
+
   );
 };
 

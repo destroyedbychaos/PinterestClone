@@ -18,13 +18,34 @@ const SearchModal = ({
   onClose,
   recentSearches = [],
   setRecentSearches,
-  mightLike = [],
-  popular = [],
+  onSearchResults,
 }) => {
   const modalRef = useRef();
   const [search, setSearch] = useState('');
-  const [pins, setPins] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      fetchRecommendations();
+    }
+  }, [open]);
+
+  const fetchRecommendations = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/pins/recommendations`);
+      const data = await res.json();
+      if (data?.mightLike || data?.popular) {
+        setRecommendations([...data.mightLike || [], ...data.popular || []].slice(0, 8));
+      } else if (Array.isArray(data)) {
+        setRecommendations(data.slice(0, 8));
+      } else {
+        setRecommendations([]);
+      }
+    } catch {
+      setRecommendations([]);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -40,46 +61,44 @@ const SearchModal = ({
     };
   }, [open, onClose]);
 
-  const performSearch = (term) => {
+  const handleSearch = async (term) => {
     const trimmed = term.trim();
-    if (!trimmed) {
-      setPins([]);
-      return;
-    }
+    if (!trimmed) return;
 
     setLoading(true);
-    const url = `${API_BASE}/pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`;
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        const foundPins = data.Pins || data.pins || [];
-        setPins(foundPins);
-      })
-      .catch(() => setPins([]))
-      .finally(() => setLoading(false));
-  };
+    try {
+      const res = await fetch(
+        `${API_BASE}/pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`
+      );
+      const data = await res.json();
+      const foundPins = data.Pins || data.pins || [];
 
-  const handleSearchClick = (term) => {
-    setSearch(term);
-    addRecentSearch(term);
-    performSearch(term);
-  };
+      if (!recentSearches.includes(trimmed)) {
+        setRecentSearches([trimmed, ...recentSearches].slice(0, 10));
+      }
 
-  const addRecentSearch = (term) => {
-    if (!term.trim() || recentSearches.includes(term)) return;
-    setRecentSearches([term, ...recentSearches].slice(0, 10));
-  };
-
-  const removeRecentSearch = (term) => {
-    setRecentSearches(recentSearches.filter((t) => t !== term));
+      onSearchResults?.(foundPins);
+      onClose();
+    } catch {
+      onSearchResults?.([]);
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (search.trim()) {
-      addRecentSearch(search.trim());
-      performSearch(search);
-    }
+    handleSearch(search);
+  };
+
+  const handleSearchClick = (term) => {
+    setSearch(term);
+    handleSearch(term);
+  };
+
+  const removeRecentSearch = (term) => {
+    setRecentSearches(recentSearches.filter((t) => t !== term));
   };
 
   if (!open) return null;
@@ -90,7 +109,7 @@ const SearchModal = ({
       sx={{
         position: 'fixed',
         top: 30,
-        left: '50%',
+        left: '53%',
         transform: 'translateX(-50%)',
         width: '95%',
         maxWidth: 730,
@@ -139,133 +158,109 @@ const SearchModal = ({
         </Box>
       </form>
 
-      {!loading && pins.length === 0 && search.trim() !== '' && (
-        <Typography variant="body2" color="textSecondary" align="center">
-          No results found.
-        </Typography>
-      )}
-
-      <Typography variant="subtitle1" fontWeight={600} mb={1}>
-        Recent searches
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
-        {recentSearches.map((text, index) => (
-          <Box
-            key={index}
-            sx={{
-              px: 2,
-              py: 1,
-              borderRadius: '20px',
-              backgroundColor: '#eaf0fa',
-              color: '#111',
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-            onClick={() => handleSearchClick(text)}
-          >
-            {text}
-            <ClearIcon
-              sx={{ ml: 1, fontSize: 16, cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                removeRecentSearch(text);
-              }}
-            />
-          </Box>
-        ))}
-      </Box>
-
-      <Typography variant="subtitle1" fontWeight={600} mb={1}>
-        You might like
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
-        {mightLike.map((item, index) => (
-          <Box
-            key={index}
-            sx={{ width: 150, cursor: 'pointer' }}
-            onClick={() => handleSearchClick(item.title)}
-          >
-            <Box
-              component="img"
-              src={item.img}
-              alt={item.title}
-              sx={{
-                width: '100%',
-                height: 100,
-                objectFit: 'cover',
-                borderRadius: '12px',
-                mb: 1,
-              }}
-            />
-            <Typography variant="body2" fontWeight={500}>
-              {item.title}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
-      <Typography variant="subtitle1" fontWeight={600} mb={1}>
-        Popular on Aestify
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {popular.map((item, index) => (
-          <Box
-            key={index}
-            sx={{ width: 150, cursor: 'pointer' }}
-            onClick={() => handleSearchClick(item.title)}
-          >
-            <Box
-              component="img"
-              src={item.img}
-              alt={item.title}
-              sx={{
-                width: '100%',
-                height: 100,
-                objectFit: 'cover',
-                borderRadius: '12px',
-                mb: 1,
-              }}
-            />
-            <Typography variant="body2" fontWeight={500}>
-              {item.title}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress size={24} />
         </Box>
       )}
 
-      {!loading && pins.length > 0 && (
-        <Box>
+      {!loading && (
+        <>
           <Typography variant="subtitle1" fontWeight={600} mb={1}>
-            Search Results
+            Recent searches
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {pins.map((pin) => (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
+            {recentSearches.map((text, index) => (
               <Box
-                key={pin.id}
+                key={index}
                 sx={{
-                  p: 1,
-                  borderRadius: 1,
-                  border: '1px solid #ddd',
+                  px: 2,
+                  py: 1,
+                  borderRadius: '20px',
+                  backgroundColor: '#eaf0fa',
+                  color: '#111',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: 14,
+                  fontWeight: 500,
                   cursor: 'pointer',
-                  '&:hover': { backgroundColor: '#f0f0f0' },
                 }}
+                onClick={() => handleSearchClick(text)}
               >
-                <Typography fontWeight={500}>
-                  {pin.title || pin.name || 'No title'}
-                </Typography>
+                {text}
+                <ClearIcon
+                  sx={{ ml: 1, fontSize: 16, cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRecentSearch(text);
+                  }}
+                />
               </Box>
             ))}
           </Box>
-        </Box>
+
+          {recommendations.length > 0 && (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                You might like
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+                {recommendations.slice(0, 4).map((item, index) => (
+                  <Box
+                    key={index}
+                    sx={{ width: 150, cursor: 'pointer' }}
+                    onClick={() => handleSearchClick(item.title || item.name)}
+                  >
+                    <Box
+                      component="img"
+                      src={item.imageUrl || item.ImageUrl || item.image}
+                      alt={item.title || item.name}
+                      sx={{
+                        width: '100%',
+                        height: 100,
+                        objectFit: 'cover',
+                        borderRadius: '12px',
+                        mb: 1,
+                      }}
+                    />
+                    <Typography variant="body2" fontWeight={500}>
+                      {item.title || item.name}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Popular on Aestify
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {recommendations.slice(4, 8).map((item, index) => (
+                  <Box
+                    key={index}
+                    sx={{ width: 150, cursor: 'pointer' }}
+                    onClick={() => handleSearchClick(item.title || item.name)}
+                  >
+                    <Box
+                      component="img"
+                      src={item.imageUrl || item.ImageUrl || item.image}
+                      alt={item.title || item.name}
+                      sx={{
+                        width: '100%',
+                        height: 100,
+                        objectFit: 'cover',
+                        borderRadius: '12px',
+                        mb: 1,
+                      }}
+                    />
+                    <Typography variant="body2" fontWeight={500}>
+                      {item.title || item.name}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
+        </>
       )}
     </Box>
   );

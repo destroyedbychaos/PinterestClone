@@ -18,5 +18,7 @@ namespace PinterestClone.DAL.Repositories.PinRepository
         Task<bool> DeletePinAsync(Pin pin);
         Task<bool> AddPinToBoardAsync(BoardPin boardPin);
         Task<bool> RemovePinFromBoardAsync(string pinId, string boardId, string userId);
+        Task<List<Pin>> GetRecommendedPinsAsync(int count);
+
     }
 }
