@@ -10,9 +10,11 @@ namespace PinterestClone.BLL.DTOs
         public string ContractAddress { get; set; } = string.Empty;
         public string ChainId { get; set; } = string.Empty;
         public string OwnerWalletAddress { get; set; } = string.Empty;
+        public string CreatorWalletAddress { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string? Currency { get; set; }
         public bool IsForSale { get; set; }
+        public bool IsMinted { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -57,6 +59,12 @@ namespace PinterestClone.BLL.DTOs
     {
         public string WalletAddress { get; set; } = string.Empty;
         public NFTListDto Favorites { get; set; } = new();
+    }
+
+    public class MintNFTRequestDto
+    {
+        public int? TokenId { get; set; }
+        public string? TransactionHash { get; set; }
     }
 
     public class NFTMintResponseDto

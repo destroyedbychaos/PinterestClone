@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace PinterestClone.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     public class Web3AuthController : BaseController
     {
         private readonly IWeb3AuthService _web3AuthService;
@@ -24,6 +24,7 @@ namespace PinterestClone.API.Controllers
             {
                 return BadRequest(new { error = "Wallet address is required" });
             }
+            
 
             var response = await _web3AuthService.GetNonceAsync(request.WalletAddress);
             return GetResult(response);

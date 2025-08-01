@@ -37,7 +37,8 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
 
         public async Task<int> GetAllCountAsync()
         {
-            return await _context.NFTs.CountAsync();
+            return await _context.NFTs
+                .CountAsync();
         }
 
         public async Task<NFT?> GetByIdAsync(string nftId)
@@ -95,6 +96,26 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
                 .CountAsync();
         }
 
+        // Методи для отримання створених користувачем NFT
+        public async Task<IEnumerable<NFT>> GetUserCreatedNFTsAsync(string walletAddress, int page, int pageSize)
+        {
+            var skip = (page - 1) * pageSize;
+            
+            return await _context.NFTs
+                .Where(nft => nft.CreatorWalletAddress.ToLower() == walletAddress.ToLower())
+                .OrderByDescending(nft => nft.CreatedAt)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUserCreatedNFTsCountAsync(string walletAddress)
+        {
+            return await _context.NFTs
+                .Where(nft => nft.CreatorWalletAddress.ToLower() == walletAddress.ToLower())
+                .CountAsync();
+        }
+
         public async Task<bool> UpdateTokenInfoAsync(string nftId, string tokenId, string contractAddress, string transactionHash)
         {
             var nft = await _context.NFTs.FindAsync(nftId);
@@ -103,6 +124,7 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
 
             nft.TokenId = tokenId;
             nft.ContractAddress = contractAddress;
+            nft.IsMinted = true; // Встановлюємо що NFT замінчений
             nft.UpdatedAt = DateTime.UtcNow;
 
             _context.NFTs.Update(nft);
@@ -153,6 +175,7 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
 
             var favorite = new UserFavorite
             {
+                Id = Guid.NewGuid().ToString(),
                 UserWalletAddress = walletAddress,
                 NFTId = nftId,
                 CreatedAt = DateTime.UtcNow

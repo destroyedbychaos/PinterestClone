@@ -31,6 +31,7 @@ using PinterestClone.DAL.Repositories.UserFavoritesRepository;
 using PinterestClone.BLL.Services.BlockchainService;
 using PinterestClone.BLL.Services.MarketplaceService;
 using PinterestClone.DAL.Repositories.MarketplaceRepository;
+using PinterestClone.BLL.Services.IPFSService;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -144,6 +145,7 @@ builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
 builder.Services.AddScoped<IBlockchainService, BlockchainService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<IMarketplaceRepository, MarketplaceRepository>();
+builder.Services.AddScoped<IIPFSService, IPFSService>();
 
 var app = builder.Build();
 

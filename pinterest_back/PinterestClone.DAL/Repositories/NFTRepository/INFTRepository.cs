@@ -13,6 +13,8 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
         
         Task<IEnumerable<NFT>> GetUserNFTsAsync(string walletAddress, int page, int pageSize);
         Task<int> GetUserNFTsCountAsync(string walletAddress);
+        Task<IEnumerable<NFT>> GetUserCreatedNFTsAsync(string walletAddress, int page, int pageSize);
+        Task<int> GetUserCreatedNFTsCountAsync(string walletAddress);
         Task<List<NFT>> GetUserFavoritesAsync(string walletAddress, int page, int pageSize);
         Task<int> GetUserFavoritesCountAsync(string walletAddress);
         Task<bool> AddToFavoritesAsync(string walletAddress, string nftId);

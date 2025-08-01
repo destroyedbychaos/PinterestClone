@@ -9,7 +9,7 @@ using PinterestClone.BLL.Services.BlockchainService;
 namespace PinterestClone.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/nfts")]
     public class NFTController : BaseController
     {
         private readonly INFTService _nftService;
@@ -97,6 +97,8 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+
+
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteNFT(string id, [FromQuery] bool burnOnChain = false)
@@ -113,7 +115,7 @@ namespace PinterestClone.API.Controllers
 
         [HttpPost("{id}/mint")]
         [Authorize]
-        public async Task<IActionResult> MintNFT(string id)
+        public async Task<IActionResult> MintNFT(string id, [FromBody] MintNFTRequestDto? mintRequest = null)
         {
             var walletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(walletAddress))
@@ -121,8 +123,18 @@ namespace PinterestClone.API.Controllers
                 return Unauthorized();
             }
 
-            var response = await _nftService.MintNFTAsync(id, walletAddress);
-            return GetResult(response);
+            // Якщо frontend передає дані про мінтинг (tokenId, transactionHash), оновлюємо NFT
+            if (mintRequest != null && !string.IsNullOrEmpty(mintRequest.TransactionHash) && mintRequest.TokenId.HasValue)
+            {
+                var response = await _nftService.UpdateMintedNFTAsync(id, walletAddress, mintRequest.TokenId.Value, mintRequest.TransactionHash);
+                return GetResult(response);
+            }
+            else
+            {
+                // Інакше робимо мінтинг через backend (старий шлях)
+                var response = await _nftService.MintNFTAsync(id, walletAddress);
+                return GetResult(response);
+            }
         }
 
         [HttpPost("{id}/burn")]
@@ -362,7 +374,7 @@ namespace PinterestClone.API.Controllers
                 return Unauthorized();
             }
 
-            var response = await _nftService.AddToFavoritesAsync(walletAddress, nftId);
+            var response = await _nftService.AddToFavoritesAsync(nftId, walletAddress);
             return GetResult(response);
         }
 
@@ -376,7 +388,7 @@ namespace PinterestClone.API.Controllers
                 return Unauthorized();
             }
 
-            var response = await _nftService.RemoveFromFavoritesAsync(walletAddress, nftId);
+            var response = await _nftService.RemoveFromFavoritesAsync(nftId, walletAddress);
             return GetResult(response);
         }
 

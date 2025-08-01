@@ -10,6 +10,7 @@ namespace PinterestClone.BLL.DTOs
     {
         public string Id { get; set; } = default!;
         public string UserName { get; set; } = default!;
+        public string? Email { get; set; }
         public string? DisplayName { get; set; }
         public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }

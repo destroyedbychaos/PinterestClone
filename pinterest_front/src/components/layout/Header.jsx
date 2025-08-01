@@ -3,7 +3,6 @@ import { memo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Badge } from "@mui/material";
 import { Search, Notifications, BookmarkBorder, ExpandMore } from "@mui/icons-material";
-import defaultUserAvatar from "../../assets/images/noImgUser.png";
 import { logout } from "../../../store/slices/AuthSlice.js";
 
 const adminPages = [
@@ -170,20 +169,17 @@ const Header = memo(() => {
                                         className="p-1 rounded-full flex items-center focus:outline-none hover:bg-gray-100"
                                         onClick={toggleUserMenu}
                                     >
-                                        <img
-                                            src={user?.avatar || user?.profileImage || defaultUserAvatar}
-                                            className="h-8 w-8 rounded-full object-cover"
-                                            alt={user?.email || user?.username || "User Profile"}
-                                            onError={(e) => {
-                                                e.target.src = defaultUserAvatar;
-                                            }}
-                                        />
+                                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
                                         <ExpandMore className="text-gray-500 ml-1" fontSize="small" />
                                     </button>
                                     {userMenuOpen && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                                             <div className="px-4 py-2 text-sm text-gray-500 border-b">
-                                                {user?.email || user?.username || user?.email}
+                                                {user?.email || user?.Email}
                                             </div>
                                             <Link
                                                 to="/profile"

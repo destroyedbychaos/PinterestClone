@@ -1,48 +1,58 @@
+import { useState, useEffect } from "react";
 import { Button } from "../../components/nft-market/ui/button.jsx";
-import { Card, CardContent } from "../../components/nft-market/ui/card.jsx";
-import { Badge } from "../../components/nft-market/ui/badge.jsx";
 import { Link } from "react-router-dom";
-
-const mockNFTs = [
-  {
-    id: 1,
-    title: "Cosmic Voyager #001",
-    price: "2.5 ETH",
-    image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=400&h=400&fit=crop",
-    creator: "CryptoArtist",
-    likes: 234,
-    views: 1500
-  },
-  {
-    id: 2,
-    title: "Cyberpunk Dreams",
-    price: "1.8 ETH",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop",
-    creator: "NeonMaster",
-    likes: 189,
-    views: 950
-  },
-  {
-    id: 3,
-    title: "Digital Renaissance",
-    price: "3.2 ETH",
-    image: "https://images.unsplash.com/photo-1635322966219-b75ed372eb01?w=400&h=400&fit=crop",
-    creator: "PixelVisioneer",
-    likes: 342,
-    views: 2100
-  },
-  {
-    id: 4,
-    title: "Abstract Reality",
-    price: "0.9 ETH",
-    image: "https://images.unsplash.com/photo-1636953056323-9c09fdd74fa6?w=400&h=400&fit=crop",
-    creator: "ModernMuse",
-    likes: 156,
-    views: 780
-  }
-];
+import { useNFT } from "../../hooks/useNFT.js";
+import { useAuth } from "../../hooks/useAuth.js";
+import { useWeb3 } from "../../contexts/Web3Context.jsx";
+import MarketplaceNFTCard from "../../components/nft-market/MarketplaceNFTCard.jsx";
+import { toast } from "react-toastify";
 
 const Index = () => {
+  const { getAllNFTs, isLoading } = useNFT();
+  const { isAuthenticated } = useAuth();
+  const { account } = useWeb3();
+  const [nfts, setNfts] = useState([]);
+  const [loadingNFTs, setLoadingNFTs] = useState(true);
+  const [stats, setStats] = useState({
+    totalNFTs: 0,
+    mintedNFTs: 0,
+    totalCreators: 0,
+    totalVolume: 0
+  });
+
+  // Завантаження NFT при завантаженні компонента та зміні авторизації
+  useEffect(() => {
+    loadNFTs();
+  }, [isAuthenticated]);
+
+  const loadNFTs = async () => {
+    try {
+      setLoadingNFTs(true);
+      const data = await getAllNFTs(1, 12); // Завантажуємо 12 NFT для головної сторінки
+      setNfts(data.items || []);
+      
+      // Оновлюємо статистику
+      const totalNFTs = data.totalCount || 0;
+      const mintedNFTs = (data.items || []).filter(nft => nft.isMinted).length;
+      const creators = new Set((data.items || []).map(nft => nft.creatorWalletAddress)).size;
+      const totalVolume = (data.items || [])
+        .filter(nft => nft.isForSale && nft.price)
+        .reduce((sum, nft) => sum + parseFloat(nft.price || 0), 0);
+      
+      setStats({
+        totalNFTs,
+        mintedNFTs,
+        totalCreators: creators,
+        totalVolume: totalVolume.toFixed(2)
+      });
+    } catch (error) {
+      console.error('Error loading NFTs:', error);
+      toast.error('Помилка завантаження NFT');
+      setNfts([]);
+    } finally {
+      setLoadingNFTs(false);
+    }
+  };
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -78,9 +88,11 @@ const Index = () => {
                   Почати створювати
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="text-lg px-10 py-4 rounded-xl border-gray-600 hover:bg-gray-800/50 text-white hover:border-purple-500 transition-all duration-300">
-                Переглянути колекції
-              </Button>
+              <Link to="/nft-market/marketplace">
+                <Button size="lg" variant="outline" className="text-lg px-10 py-4 rounded-xl border-gray-600 hover:bg-gray-800/50 text-white hover:border-purple-500 transition-all duration-300">
+                  Переглянути маркетплейс
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -96,67 +108,55 @@ const Index = () => {
               </svg>
               Щойно додані
             </h2>
-            <Button variant="ghost" className="text-white hover:bg-gray-800/50">
-              Переглянути всі
-            </Button>
+            <Link to="/nft-market/marketplace">
+              <Button variant="ghost" className="text-white hover:bg-gray-800/50">
+                Переглянути всі
+              </Button>
+            </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {mockNFTs.map((nft) => (
-              <Link key={nft.id} to={`/nft-market/nft/${nft.id}`}>
-                <Card className="group hover:scale-105 transition-all duration-300 bg-gray-800/80 backdrop-blur-sm border border-gray-700 hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/20 rounded-xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="relative overflow-hidden">
-                      <img 
-                        src={nft.image} 
-                        alt={nft.title}
-                        className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute top-3 right-3">
-                        <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-1 rounded text-xs font-medium">
-                          Нове
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4">
-                      <h3 className="font-semibold text-lg mb-2 text-white group-hover:text-purple-400 transition-colors">
-                        {nft.title}
-                      </h3>
-                      <p className="text-gray-400 mb-3 text-sm">
-                        Від {nft.creator}
-                      </p>
-                      
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-2xl font-bold text-purple-400">
-                          {nft.price}
-                        </span>
-                        <div className="flex items-center space-x-3 text-sm text-gray-400">
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                            </svg>
-                            {nft.likes}
-                          </div>
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            {nft.views}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 rounded-lg font-medium transition-all duration-300">
-                        Купити зараз
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {loadingNFTs ? (
+            // Skeleton loading
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2">
+              {Array.from({ length: 12 }).map((_, index) => (
+                <div key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden animate-pulse">
+                  <div className="w-full aspect-[4/3] bg-gray-700"></div>
+                  <div className="p-3">
+                    <div className="h-5 bg-gray-700 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-700 rounded mb-2 w-3/4"></div>
+                    <div className="h-6 bg-gray-700 rounded mb-2"></div>
+                    <div className="h-8 bg-gray-700 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : nfts.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2">
+              {nfts.map((nft) => (
+                <MarketplaceNFTCard
+                  key={nft.id}
+                  nft={nft}
+                  isOwner={account && nft.ownerWalletAddress?.toLowerCase() === account.toLowerCase()}
+                  onUpdate={loadNFTs}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+                <div className="mb-6">
+                  <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <h3 className="text-xl font-semibold text-white mb-2">Поки що немає NFT</h3>
+                  <p className="text-gray-400">Станьте першим хто створить NFT на нашому маркетплейсі!</p>
+                </div>
+                <Link to="/nft-market/create">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3">
+                    Створити NFT
+                  </Button>
+                </Link>
+              </div>
+            )}
         </div>
       </section>
 
@@ -165,20 +165,20 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <h3 className="text-4xl font-bold text-purple-400 mb-2">50K+</h3>
+              <h3 className="text-4xl font-bold text-purple-400 mb-2">{stats.totalNFTs}</h3>
+              <p className="text-gray-400">Всього NFT</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-purple-400 mb-2">{stats.mintedNFTs}</h3>
+              <p className="text-gray-400">Замінчені NFT</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-purple-400 mb-2">{stats.totalVolume}</h3>
+              <p className="text-gray-400">MATIC об'єм</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-purple-400 mb-2">{stats.totalCreators}</h3>
               <p className="text-gray-400">Творців</p>
-            </div>
-            <div>
-              <h3 className="text-4xl font-bold text-purple-400 mb-2">2M+</h3>
-              <p className="text-gray-400">NFT продано</p>
-            </div>
-            <div>
-              <h3 className="text-4xl font-bold text-purple-400 mb-2">890K</h3>
-              <p className="text-gray-400">ETH об'єм</p>
-            </div>
-            <div>
-              <h3 className="text-4xl font-bold text-purple-400 mb-2">120K+</h3>
-              <p className="text-gray-400">Користувачів</p>
             </div>
           </div>
         </div>

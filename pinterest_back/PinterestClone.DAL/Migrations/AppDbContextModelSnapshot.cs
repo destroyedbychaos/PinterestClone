@@ -472,6 +472,10 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatorWalletAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
@@ -485,6 +489,9 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsForSale")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMinted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")

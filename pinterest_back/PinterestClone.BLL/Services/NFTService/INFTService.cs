@@ -13,6 +13,7 @@ namespace PinterestClone.BLL.Services.NFTService
         
 
         Task<ServiceResponse<UserNFTsResponseDto>> GetUserNFTsAsync(string walletAddress, int page, int pageSize);
+        Task<ServiceResponse<UserNFTsResponseDto>> GetUserCreatedNFTsAsync(string walletAddress, int page, int pageSize);
         Task<ServiceResponse<UserFavoritesResponseDto>> GetUserFavoritesAsync(string walletAddress, int page, int pageSize);
         Task<ServiceResponse<bool>> AddToFavoritesAsync(string nftId, string walletAddress);
         Task<ServiceResponse<bool>> RemoveFromFavoritesAsync(string nftId, string walletAddress);
@@ -20,6 +21,7 @@ namespace PinterestClone.BLL.Services.NFTService
 
 
 
+        Task<ServiceResponse<NFTDto>> UpdateMintedNFTAsync(string nftId, string walletAddress, int tokenId, string transactionHash);
         Task<ServiceResponse<NFTMintResponseDto>> MintNFTAsync(string nftId, string walletAddress);
         Task<ServiceResponse<NFTBurnResponseDto>> BurnNFTAsync(string nftId, string walletAddress);
     }

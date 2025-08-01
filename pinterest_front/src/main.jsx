@@ -5,25 +5,32 @@ import './index.css'
 import { Provider } from 'react-redux'
 import { store } from '../store'
 import { ToastContainer } from 'react-toastify'
-import {ThemeProvider} from "@mui/material";
-import {theme} from "./theme.js";
+import { ThemeProvider } from "@mui/material";
+import { theme } from "./theme.js";
+import { Web3Provider } from './contexts/Web3Context.jsx';
+import 'react-toastify/dist/ReactToastify.css';
 
 createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
-      <ThemeProvider theme={theme}>
+  <StrictMode>
+    <Provider store={store}>
+      <Web3Provider>
+        <ThemeProvider theme={theme}>
           <ToastContainer
-              position="top-right"
-              autoClose={2000}
-              hideProgressBar
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss={false}
-              draggable={false}
-              pauseOnHover={false}
-              theme="light"
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            toastClassName="custom-toast"
           />
           <App />
-      </ThemeProvider>
-  </Provider>,
+        </ThemeProvider>
+      </Web3Provider>
+    </Provider>
+  </StrictMode>,
 )

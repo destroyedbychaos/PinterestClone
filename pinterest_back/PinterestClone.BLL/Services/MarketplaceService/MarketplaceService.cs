@@ -38,9 +38,14 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                     return ServiceResponse<MarketplaceListingDto>.UnauthorizedResponse("You can only list your own NFTs");
                 }
 
-                if (string.IsNullOrEmpty(nft.TokenId))
+                if (!nft.IsMinted)
                 {
                     return ServiceResponse<MarketplaceListingDto>.ErrorResponse("NFT must be minted before listing for sale");
+                }
+
+                if (string.IsNullOrEmpty(nft.TokenId))
+                {
+                    return ServiceResponse<MarketplaceListingDto>.ErrorResponse("NFT must have a valid TokenId to be listed for sale");
                 }
 
                 var existingListing = await _marketplaceRepository.GetActiveByNFTIdAsync(listNFTDto.NFTId);

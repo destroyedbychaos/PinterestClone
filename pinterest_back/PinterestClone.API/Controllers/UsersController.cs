@@ -2,22 +2,25 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.ImageService;
+using PinterestClone.BLL.Services.NFTService;
 using PinterestClone.BLL.DTOs;
 using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/users")]
     public class UsersController : BaseController
     {
         private readonly IUserService _userService;
         private readonly IImageService _imageService;
+        private readonly INFTService _nftService;
 
-        public UsersController(IUserService userService, IImageService imageService)
+        public UsersController(IUserService userService, IImageService imageService, INFTService nftService)
         {
             _userService = userService;
             _imageService = imageService;
+            _nftService = nftService;
         }
 
         [HttpGet("{walletAddress}")]
@@ -219,6 +222,58 @@ namespace PinterestClone.API.Controllers
             {
                 return BadRequest(new { error = $"Помилка видалення: {ex.Message}" });
             }
+        }
+
+        [HttpGet("{walletAddress}/nfts")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserNFTs(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var response = await _nftService.GetUserNFTsAsync(walletAddress, page, pageSize);
+            return GetResult(response);
+        }
+
+        [HttpGet("{walletAddress}/created-nfts")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserCreatedNFTs(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var response = await _nftService.GetUserCreatedNFTsAsync(walletAddress, page, pageSize);
+            return GetResult(response);
+        }
+
+        [HttpGet("{walletAddress}/favorites")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserFavorites(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var response = await _nftService.GetUserFavoritesAsync(walletAddress, page, pageSize);
+            return GetResult(response);
+        }
+
+        [HttpPost("{walletAddress}/favorites/{nftId}")]
+        [Authorize]
+        public async Task<IActionResult> AddToFavorites(string walletAddress, string nftId)
+        {
+            var currentWalletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentWalletAddress != walletAddress)
+            {
+                return Forbid();
+            }
+
+            var response = await _nftService.AddToFavoritesAsync(nftId, walletAddress);
+            return GetResult(response);
+        }
+
+        [HttpDelete("{walletAddress}/favorites/{nftId}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveFromFavorites(string walletAddress, string nftId)
+        {
+            var currentWalletAddress = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentWalletAddress != walletAddress)
+            {
+                return Forbid();
+            }
+
+            var response = await _nftService.RemoveFromFavoritesAsync(nftId, walletAddress);
+            return GetResult(response);
         }
 
     }

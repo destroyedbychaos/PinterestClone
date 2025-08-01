@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "../../components/nft-market/Navbar.jsx";
 import Index from "./Index.jsx";
+import MarketplacePage from "./MarketplacePage.jsx";
 import Profile from "./Profile.jsx";
 import EditProfile from "./EditProfile.jsx";
 import ViewNFT from "./ViewNFT.jsx";
@@ -65,6 +66,7 @@ const NFTMarketApp = () => {
         <Navbar />
         <Routes>
           <Route path="" element={<Index />} />
+          <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<EditProfile />} />
           <Route path="nft/:id" element={<ViewNFT />} />

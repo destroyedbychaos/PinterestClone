@@ -1,238 +1,639 @@
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/nft-market/ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/nft-market/ui/card.jsx";
 import { Badge } from "../../components/nft-market/ui/badge.jsx";
+import { useWeb3 } from "../../contexts/Web3Context.jsx";
+import { useAuth } from "../../hooks/useAuth.js";
+import { useNFT } from "../../hooks/useNFT.js";
+import { useMarketplace } from "../../hooks/useMarketplace.js";
+import { toast } from "react-toastify";
+import { getFullImageUrl, handleImageError } from "../../utils/imageUtils.js";
 
 const ViewNFT = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { account, isConnected } = useWeb3();
+  const { isAuthenticated } = useAuth();
+  const { getNFTById, addToFavorites, removeFromFavorites, mintNFT, deleteNFT } = useNFT();
+  const { buyNFT, listNFTForSale, cancelListing, getListingStatus } = useMarketplace();
   
-  // Mock NFT data
-  const nft = {
-    id: id,
-    title: "Cosmic Voyager #001",
-    description: "Унікальний цифровий твір мистецтва, що досліджує межі космосу та людської уяви. Створений за допомогою передових цифрових технік та штучного інтелекту.",
-    image: "https://images.unsplash.com/photo-1634193295627-1cdddf751ebf?w=600&h=600&fit=crop",
-    price: "2.5 ETH",
-    priceUsd: "$4,250",
-    creator: {
-      name: "CryptoArtist",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
-      verified: true
-    },
-    owner: {
-      name: "DigitalCollector",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
-    },
-    properties: [
-      { trait: "Background", value: "Cosmic", rarity: "15%" },
-      { trait: "Style", value: "Abstract", rarity: "8%" },
-      { trait: "Color Scheme", value: "Neon", rarity: "23%" },
-      { trait: "Elements", value: "Geometric", rarity: "12%" }
-    ],
-    stats: {
-      views: 1542,
-      likes: 234,
-      listed: "2 дні тому"
+  const [nft, setNft] = useState(null);
+  const [listingData, setListingData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showListingModal, setShowListingModal] = useState(false);
+  const [listingPrice, setListingPrice] = useState("");
+  const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      loadNFT();
+    }
+  }, [id]);
+
+  const loadNFT = async () => {
+    try {
+      setIsLoading(true);
+      const nftData = await getNFTById(id);
+      
+      // Детальне логування отриманих даних
+      console.log('📊 NFT Data loaded:', {
+        id: nftData.id,
+        name: nftData.name,
+        price: nftData.price,
+        priceType: typeof nftData.price,
+        isForSale: nftData.isForSale,
+        isMinted: nftData.isMinted,
+        tokenId: nftData.tokenId,
+        currency: nftData.currency,
+        fullData: nftData
+      });
+      
+      setNft(nftData);
+      
+      // Якщо NFT на продажі, отримуємо ціну з MarketplaceListing
+      if (nftData.isForSale) {
+        try {
+          const listing = await getListingStatus(nftData.id);
+          console.log('💰 Marketplace Listing loaded:', listing);
+          setListingData(listing);
+        } catch (error) {
+          console.warn('Warning: Could not load marketplace listing:', error);
+          // Продовжуємо навіть якщо лістинг не знайдено
+        }
+      } else {
+        setListingData(null);
+      }
+      
+      // TODO: Перевірити чи NFT в улюблених користувача
+    } catch (error) {
+      console.error('Error loading NFT:', error);
+      toast.error('Помилка завантаження NFT');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleFavoriteToggle = async () => {
+    if (!isConnected || !isAuthenticated || !account) {
+      toast.error('Потрібно підключити гаманець та авторизуватись');
+      return;
+    }
+
+    try {
+      setIsUpdatingFavorite(true);
+      if (isFavorite) {
+        await removeFromFavorites(account, nft.id);
+        setIsFavorite(false);
+        toast.success('Видалено з улюблених');
+      } else {
+        await addToFavorites(account, nft.id);
+        setIsFavorite(true);
+        toast.success('Додано до улюблених');
+      }
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+      toast.error('Помилка оновлення улюблених');
+    } finally {
+      setIsUpdatingFavorite(false);
+    }
+  };
+
+  // Покупка NFT
+  const handleBuyNFT = async () => {
+    if (!isConnected || !isAuthenticated) {
+      toast.error('Спочатку підключіть гаманець та увійдіть в систему');
+      return;
+    }
+
+    // Використовуємо ціну з MarketplaceListing якщо є, інакше з NFT
+    const salePrice = listingData?.price || nft.price;
+    const tokenId = nft.tokenId;
+
+    // Детальне логування перед покупкою
+    console.log('🚀 Attempting to buy NFT:', { 
+      nftId: nft.id, 
+      tokenId: tokenId, 
+      nftPrice: nft.price,
+      listingPrice: listingData?.price,
+      finalPrice: salePrice,
+      priceType: typeof salePrice,
+      isForSale: nft.isForSale,
+      isMinted: nft.isMinted,
+      hasListing: !!listingData,
+      listingData: listingData
+    });
+
+    // Перевірки перед покупкою
+    if (!nft.isForSale) {
+      toast.error('Цей NFT не виставлений на продаж');
+      return;
+    }
+
+    if (!nft.isMinted) {
+      toast.error('Цей NFT ще не замінчений');
+      return;
+    }
+
+    if (!tokenId) {
+      toast.error('NFT не має токен ID');
+      return;
+    }
+
+    if (!listingData) {
+      toast.error('Не вдалося отримати інформацію про продаж');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Детальна перевірка ціни
+      const numericPrice = Number(salePrice);
+      if (!salePrice || salePrice === '' || salePrice === null || salePrice === undefined || isNaN(numericPrice) || numericPrice <= 0) {
+        throw new Error(`Ціна NFT некоректна: ${salePrice} (тип: ${typeof salePrice})`);
+      }
+      
+      await buyNFT(nft.id, tokenId, salePrice);
+      toast.success('NFT успішно придбано!');
+      // Перезавантажуємо дані NFT
+      await loadNFT();
+    } catch (error) {
+      console.error('Error buying NFT:', error);
+      toast.error('Помилка при покупці NFT');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Виставлення NFT на продаж
+  const handleListForSale = async () => {
+    if (!listingPrice || parseFloat(listingPrice) <= 0) {
+      toast.error('Введіть коректну ціну');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await listNFTForSale(nft.tokenId, listingPrice);
+      toast.success('NFT виставлено на продаж!');
+      setShowListingModal(false);
+      setListingPrice("");
+      // Перезавантажуємо дані NFT
+      await loadNFT();
+    } catch (error) {
+      console.error('Error listing NFT:', error);
+      toast.error('Помилка при виставленні на продаж');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Мінтинг NFT
+  const handleMintNFT = async () => {
+    if (!isConnected || !isAuthenticated) {
+      toast.error('Спочатку підключіть гаманець та увійдіть в систему');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await mintNFT(nft.id, nft.metadataUrl, nft.royaltyFraction || 0);
+      toast.success('NFT успішно змінтовано!');
+      // Перезавантажуємо дані NFT
+      await loadNFT();
+    } catch (error) {
+      console.error('Error minting NFT:', error);
+      toast.error('Помилка при мінтингу NFT');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Видалення NFT
+  const handleDeleteNFT = async () => {
+    if (!confirm('Ви впевнені, що хочете видалити цей NFT? Цю дію неможливо скасувати.')) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await deleteNFT(nft.id, false); // false = не спалювати на блокчейні
+      toast.success('NFT успішно видалено!');
+      // Перенаправляємо на профіль
+      navigate('/nft-market/profile');
+    } catch (error) {
+      console.error('Error deleting NFT:', error);
+      toast.error('Помилка при видаленні NFT');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('uk-UA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const isOwner = account && nft?.creatorWalletAddress?.toLowerCase() === account.toLowerCase();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="h-96 bg-gray-700 rounded-xl"></div>
+              <div>
+                <div className="h-8 bg-gray-700 rounded mb-4 w-3/4"></div>
+                <div className="h-4 bg-gray-700 rounded mb-6 w-1/2"></div>
+                <div className="h-32 bg-gray-700 rounded mb-6"></div>
+                <div className="h-12 bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!nft) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-white mb-4">NFT не знайдено</h1>
+            <p className="text-gray-400 mb-6">Цей NFT не існує або був видалений.</p>
+            <Link to="/nft-market">
+              <Button>Повернутись до маркетплейсу</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-8">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* NFT Image */}
-          <div className="space-y-4">
-            <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative group">
-                  <img 
-                    src={nft.image} 
-                    alt={nft.title}
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-4 right-4 flex gap-2">
-                      <Button size="sm" variant="outline" className="bg-black/50 backdrop-blur-sm text-white border-gray-600 hover:bg-gray-700">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="relative">
+            <img 
+                              src={getFullImageUrl(nft.imageUrl)} 
+              alt={nft.name}
+              className="w-full h-96 object-cover rounded-xl"
+                              onError={(e) => handleImageError(e, 'NFT')}
+            />
             
-            {/* Properties */}
-            <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  Властивості
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {nft.properties.map((prop, index) => (
-                    <div key={index} className="p-3 bg-gray-700/50 rounded-lg border border-gray-600">
-                      <p className="text-sm text-gray-400">{prop.trait}</p>
-                      <p className="font-semibold text-white">{prop.value}</p>
-                      <p className="text-xs text-purple-400">{prop.rarity} мають</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Action Buttons Overlay */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-900/80 backdrop-blur-sm border-gray-600 hover:bg-gray-800"
+                onClick={() => navigator.share && navigator.share({
+                  title: nft.name,
+                  text: nft.description,
+                  url: window.location.href
+                })}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                </svg>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-gray-900/80 backdrop-blur-sm border-gray-600 hover:bg-gray-800"
+                onClick={handleFavoriteToggle}
+                disabled={isUpdatingFavorite}
+              >
+                <svg 
+                  className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} 
+                  fill={isFavorite ? "currentColor" : "none"} 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </Button>
+            </div>
           </div>
 
           {/* NFT Details */}
           <div className="space-y-6">
-            {/* Title and Actions */}
+            {/* Title and Creator */}
             <div>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2 text-white">{nft.title}</h1>
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <div className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      {nft.stats.views} переглядів
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      {nft.stats.likes} вподобань
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Опубліковано {nft.stats.listed}
+              <h1 className="text-4xl font-bold text-white mb-4">{nft.name}</h1>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={`https://api.dicebear.com/7.x/identicon/svg?seed=${nft.creatorWalletAddress}`}
+                    alt="Creator"
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div>
+                    <p className="text-sm text-gray-400">Створено</p>
+                    <div className="flex items-center gap-2">
+                      <Link 
+                        to={`/nft-market/profile/${nft.creatorWalletAddress}`}
+                        className="text-white font-medium hover:text-purple-400 transition-colors"
+                      >
+                        {nft.creatorWalletAddress ? 
+                          `${nft.creatorWalletAddress.slice(0, 6)}...${nft.creatorWalletAddress.slice(-4)}` : 
+                          'Невідомий'
+                        }
+                      </Link>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" className="text-white border-gray-600 hover:bg-gray-700">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-white border-gray-600 hover:bg-gray-700">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                    </svg>
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-white border-gray-600 hover:bg-gray-700">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                    </svg>
-                  </Button>
-                </div>
+                {nft.ownerWalletAddress && nft.ownerWalletAddress !== nft.creatorWalletAddress && (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/identicon/svg?seed=${nft.ownerWalletAddress}`}
+                      alt="Owner"
+                      className="w-12 h-12 rounded-full"
+                    />
+                    <div>
+                      <p className="text-sm text-gray-400">Власник</p>
+                      <Link 
+                        to={`/nft-market/profile/${nft.ownerWalletAddress}`}
+                        className="text-white font-medium hover:text-purple-400 transition-colors"
+                      >
+                        {`${nft.ownerWalletAddress.slice(0, 6)}...${nft.ownerWalletAddress.slice(-4)}`}
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <p className="text-gray-300 leading-relaxed">
-                {nft.description}
-              </p>
             </div>
 
-            {/* Creator and Owner */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-400 mb-2">Створювач</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden">
-                      <img src={nft.creator.avatar} alt="Creator" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="font-semibold flex items-center gap-1 text-white">
-                        {nft.creator.name}
-                        {nft.creator.verified && (
-                          <span className="text-purple-400">✓</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-400 mb-2">Власник</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden">
-                      <img src={nft.owner.avatar} alt="Owner" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">{nft.owner.name}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Description */}
+            <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">Опис</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300 leading-relaxed">
+                  {nft.description || 'Опис не надано.'}
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Price and Purchase */}
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
-              <CardContent className="p-6">
-                <div className="mb-4">
-                  <p className="text-sm text-gray-400 mb-1">Поточна ціна</p>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-bold text-purple-400">{nft.price}</span>
-                    <span className="text-xl text-gray-400">{nft.priceUsd}</span>
+              <CardHeader>
+                <CardTitle className="text-white">Ціна</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    {(() => {
+                      const displayPrice = listingData?.price || nft.price;
+                      const currency = listingData?.currency || nft.currency || 'MATIC';
+                      return (
+                        <>
+                          <p className="text-3xl font-bold text-purple-400">
+                            {displayPrice ? `${displayPrice} ${currency}` : 'Не продається'}
+                          </p>
+                          {displayPrice && (
+                            <p className="text-gray-400 text-sm">
+                              ≈ ${((parseFloat(displayPrice) || 0) * 0.5).toFixed(2)} USD
+                              {listingData && nft.price !== listingData.price && (
+                                <span className="block text-yellow-400 text-xs">
+                                  Ціна оновлена з маркетплейсу
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Статус</p>
+                    <Badge className={
+                      nft.isForSale 
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                        : nft.isMinted 
+                        ? "bg-gradient-to-r from-green-600 to-blue-600 text-white"
+                        : "bg-gray-600 text-gray-300"
+                    }>
+                      {nft.isForSale ? 'На продажу' : nft.isMinted ? 'Створено' : 'Чернетка'}
+                    </Badge>
                   </div>
                 </div>
-                
-                <hr className="my-4 border-gray-600" />
-                
-                <div className="space-y-3">
-                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg py-6 shadow-lg hover:shadow-purple-500/25 transition-all duration-300">
-                    Купити зараз
-                  </Button>
-                  <Button variant="outline" className="w-full text-lg py-6 text-white border-gray-600 hover:bg-gray-700">
-                    Зробити пропозицію
-                  </Button>
+
+                <div className="flex gap-3">
+                  {/* Логування умов для кнопки купівлі */}
+                  {console.log('🔍 Button visibility check:', {
+                    isForSale: nft.isForSale,
+                    isOwner,
+                    isMinted: nft.isMinted,
+                    hasListing: !!listingData,
+                    listingPrice: listingData?.price,
+                    nftPrice: nft.price,
+                    hasValidPrice: !!(listingData?.price || nft.price) && (listingData?.price || nft.price) > 0,
+                    showBuyButton: nft.isForSale && !isOwner && nft.isMinted && !!listingData
+                  })}
+                  
+                  {nft.isForSale && !isOwner && nft.isMinted && listingData && listingData.price > 0 && (
+                    <Button 
+                      onClick={handleBuyNFT}
+                      disabled={isProcessing}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      {isProcessing ? 'Покупка...' : 'Купити зараз'}
+                    </Button>
+                  )}
+                  
+                  {isOwner && nft.isMinted && !nft.isForSale && (
+                    <Button 
+                      onClick={() => setShowListingModal(true)}
+                      disabled={isProcessing}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      Виставити на продаж
+                    </Button>
+                  )}
+
+                  {isOwner && !nft.isMinted && (
+                    <>
+                      <Button 
+                        onClick={handleMintNFT}
+                        disabled={isProcessing}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white disabled:opacity-50"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        {isProcessing ? 'Мінтинг...' : 'Мінтити NFT'}
+                      </Button>
+                    </>
+                  )}
+
+                  {isOwner && (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="border-gray-600 text-white hover:bg-gray-700"
+                        title="Редагувати NFT (в розробці)"
+                        disabled
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Button>
+                      <Button 
+                        onClick={handleDeleteNFT}
+                        disabled={isProcessing}
+                        variant="outline" 
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white disabled:opacity-50"
+                        title="Видалити NFT"
+                      >
+                        {isProcessing ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
-                  <p className="text-sm text-gray-300 flex items-center gap-2">
-                    <span className="text-yellow-400">💡</span>
-                    Цей NFT може бути відразу придбаний за вказаною ціною
-                  </p>
+                {isOwner && !nft.isMinted && (
+                  <div className="mt-4 p-4 bg-yellow-400/10 border border-yellow-400/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <span className="font-medium">NFT не замінчено</span>
+                    </div>
+                    <p className="text-sm text-yellow-400/80 mt-1">
+                      Це NFT існує тільки в базі даних. Щоб воно стало доступним для покупки та з'явилось на публічних сторінках, потрібно його замінтити на блокчейні.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Stats */}
+            <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">Статистика</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-purple-400">{nft.viewsCount || 0}</p>
+                    <p className="text-sm text-gray-400">Переглядів</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-purple-400">{nft.likesCount || 0}</p>
+                    <p className="text-sm text-gray-400">Вподобань</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Trading History */}
-            <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Історія торгів</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                    <div>
-                      <p className="font-semibold text-white">Виставлено на продаж</p>
-                      <p className="text-sm text-gray-400">DigitalCollector</p>
+            {/* Metadata */}
+            {nft.metadataUrl && (
+              <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Метадані</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Створено:</span>
+                      <span className="text-white">{formatDate(nft.createdAt)}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-white">2.5 ETH</p>
-                      <p className="text-sm text-gray-400">2 дні тому</p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Мережа:</span>
+                      <span className="text-white">Polygon</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Стандарт:</span>
+                      <span className="text-white">ERC-721</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Метадані:</span>
+                      <a 
+                        href={nft.metadataUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        Переглянути IPFS
+                      </a>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Modal для виставлення на продаж */}
+      {showListingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4">Виставити NFT на продаж</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Ціна (MATIC)
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                value={listingPrice}
+                onChange={(e) => setListingPrice(e.target.value)}
+                placeholder="0.001"
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => {
+                  setShowListingModal(false);
+                  setListingPrice("");
+                }}
+                variant="outline" 
+                className="flex-1 border-gray-600 text-white hover:bg-gray-700"
+              >
+                Скасувати
+              </Button>
+              <Button 
+                onClick={handleListForSale}
+                disabled={isProcessing || !listingPrice}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50"
+              >
+                {isProcessing ? 'Виставляю...' : 'Виставити'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ViewNFT; 
+export default ViewNFT;

@@ -3,6 +3,7 @@ using PinterestClone.DAL.Repositories.NFTRepository;
 using PinterestClone.DAL.Repositories.UserFavoritesRepository;
 using PinterestClone.DAL.Models;
 using PinterestClone.BLL.Services.BlockchainService;
+using PinterestClone.BLL.Services.ImageService;
 
 namespace PinterestClone.BLL.Services.NFTService
 {
@@ -11,12 +12,14 @@ namespace PinterestClone.BLL.Services.NFTService
         private readonly INFTRepository _nftRepository;
         private readonly IUserFavoritesRepository _userFavoritesRepository;
         private readonly IBlockchainService _blockchainService;
+        private readonly IImageService _imageService;
 
-        public NFTService(INFTRepository nftRepository, IUserFavoritesRepository userFavoritesRepository, IBlockchainService blockchainService)
+        public NFTService(INFTRepository nftRepository, IUserFavoritesRepository userFavoritesRepository, IBlockchainService blockchainService, IImageService imageService)
         {
             _nftRepository = nftRepository;
             _userFavoritesRepository = userFavoritesRepository;
             _blockchainService = blockchainService;
+            _imageService = imageService;
         }
 
         public async Task<ServiceResponse<NFTDto>> CreateNFTAsync(CreateNFTDto createNFTDto, string walletAddress, string imageUrl)
@@ -29,6 +32,7 @@ namespace PinterestClone.BLL.Services.NFTService
                     Description = createNFTDto.Description,
                     ImageUrl = imageUrl,
                     OwnerWalletAddress = walletAddress,
+                    CreatorWalletAddress = walletAddress,
                     Price = createNFTDto.Price,
                     Currency = createNFTDto.Currency,
                     IsForSale = createNFTDto.IsForSale,
@@ -177,12 +181,58 @@ namespace PinterestClone.BLL.Services.NFTService
                     }
                 }
 
+                // Видаляємо зображення NFT з папки wwwroot/images
+                if (!string.IsNullOrEmpty(existingNft.ImageUrl))
+                {
+                    try
+                    {
+                        await _imageService.DeleteImageAsync(existingNft.ImageUrl);
+                    }
+                    catch (Exception imageEx)
+                    {
+                        // Логуємо помилку, але не зупиняємо процес видалення NFT
+                        Console.WriteLine($"Warning: Failed to delete NFT image: {imageEx.Message}");
+                    }
+                }
+
                 var result = await _nftRepository.DeleteAsync(nftId);
                 return ServiceResponse<bool>.SuccessResponse(result);
             }
             catch (Exception ex)
             {
                 return ServiceResponse<bool>.ErrorResponse($"Error deleting NFT: {ex.Message}");
+            }
+        }
+
+        public async Task<ServiceResponse<NFTDto>> UpdateMintedNFTAsync(string nftId, string walletAddress, int tokenId, string transactionHash)
+        {
+            try
+            {
+                var nft = await _nftRepository.GetByIdAsync(nftId);
+                if (nft == null)
+                {
+                    return ServiceResponse<NFTDto>.NotFoundResponse("NFT not found");
+                }
+
+                if (nft.OwnerWalletAddress.ToLower() != walletAddress.ToLower())
+                {
+                    return ServiceResponse<NFTDto>.UnauthorizedResponse("You can only update your own NFTs");
+                }
+
+                // Оновлюємо NFT з даними з blockchain
+                await _nftRepository.UpdateTokenInfoAsync(nftId, tokenId.ToString(), "", transactionHash);
+                
+                // Позначаємо NFT як заміньчений
+                nft.IsMinted = true;
+                nft.UpdatedAt = DateTime.UtcNow;
+                await _nftRepository.UpdateAsync(nft);
+                
+                var updatedNft = await _nftRepository.GetByIdAsync(nftId);
+                return ServiceResponse<NFTDto>.SuccessResponse(MapToNFTDto(updatedNft));
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<NFTDto>.ErrorResponse($"Error updating minted NFT: {ex.Message}");
             }
         }
 
@@ -295,6 +345,35 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
+        public async Task<ServiceResponse<UserNFTsResponseDto>> GetUserCreatedNFTsAsync(string walletAddress, int page, int pageSize)
+        {
+            try
+            {
+                var nfts = await _nftRepository.GetUserCreatedNFTsAsync(walletAddress, page, pageSize);
+                var totalCount = await _nftRepository.GetUserCreatedNFTsCountAsync(walletAddress);
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var response = new UserNFTsResponseDto
+                {
+                    WalletAddress = walletAddress,
+                    NFTs = new NFTListDto
+                    {
+                        NFTs = nfts.Select(MapToNFTDto).ToList(),
+                        TotalCount = totalCount,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    }
+                };
+
+                return ServiceResponse<UserNFTsResponseDto>.SuccessResponse(response);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse<UserNFTsResponseDto>.ErrorResponse($"Error getting user created NFTs: {ex.Message}");
+            }
+        }
+
         // Favorites operations
         public async Task<ServiceResponse<bool>> AddToFavoritesAsync(string nftId, string walletAddress)
         {
@@ -370,6 +449,8 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
+
+
         private NFTDto MapToNFTDto(NFT nft)
         {
             return new NFTDto
@@ -382,9 +463,11 @@ namespace PinterestClone.BLL.Services.NFTService
                 ContractAddress = nft.ContractAddress ?? string.Empty,
                 ChainId = nft.ChainId ?? "137",
                 OwnerWalletAddress = nft.OwnerWalletAddress ?? string.Empty,
+                CreatorWalletAddress = nft.CreatorWalletAddress ?? string.Empty,
                 Price = nft.Price,
                 Currency = nft.Currency ?? "MATIC",
                 IsForSale = nft.IsForSale,
+                IsMinted = nft.IsMinted,
                 CreatedAt = nft.CreatedAt,
                 UpdatedAt = nft.UpdatedAt
             };

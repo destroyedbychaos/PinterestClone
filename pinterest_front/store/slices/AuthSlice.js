@@ -3,14 +3,26 @@
 const loadState = () => {
     try {
         const serializedState = localStorage.getItem('authState');
-        if (serializedState === null) {
+        const authToken = localStorage.getItem('authToken');
+        
+        if (serializedState === null && !authToken) {
             return {
                 user: null,
                 token: null,
                 isAuthenticated: false,
             };
         }
-        return JSON.parse(serializedState);
+        
+        if (serializedState) {
+            return JSON.parse(serializedState);
+        }
+        
+        // Якщо є токен, але немає стану, повертаємо базовий стан
+        return {
+            user: null,
+            token: authToken,
+            isAuthenticated: false,
+        };
     } catch (err) {
         console.error("Could not load state", err);
         return {
@@ -33,7 +45,7 @@ const authSlice = createSlice({
             state.token = accessToken;
             state.isAuthenticated = true;
             
-            localStorage.setItem('token', accessToken);
+            localStorage.setItem('authToken', accessToken);
             localStorage.setItem('authState', JSON.stringify({
                 user,
                 token: accessToken,
@@ -44,7 +56,7 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            localStorage.removeItem('token');
+            localStorage.removeItem('authToken');
             localStorage.removeItem('authState');
         },
     },

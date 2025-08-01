@@ -70,9 +70,9 @@ const DiscoverHeader = ({ user, onSearch, onLogin, onSignup }) => {
                 </svg>
               </span>
             )}
-            <span className="discover-header__profile-name">
-              {user.displayName || user.userName || user.email}
-            </span>
+                                      <span className="discover-header__profile-name">
+                {user.email || user.Email}
+              </span>
             {showMenu && (
               <div
                 className="profile-dropdown-menu"
@@ -92,10 +92,10 @@ const DiscoverHeader = ({ user, onSearch, onLogin, onSignup }) => {
                       </svg>
                     </span>
                   )}
-                  <div className="profile-dropdown-menu__info">
-                    <div className="profile-dropdown-menu__name">{user.displayName || user.userName || user.email}</div>
-                    <div className="profile-dropdown-menu__username">@{user.userName || user.displayName || user.email}</div>
-                  </div>
+                                     <div className="profile-dropdown-menu__info">
+                     <div className="profile-dropdown-menu__name">{user.email || user.Email}</div>
+                     <div className="profile-dropdown-menu__username">{user.email || user.Email}</div>
+                   </div>
                 </div>
                 <div className="profile-dropdown-menu__accounts">Your accounts</div>
                 <button className="profile-dropdown-menu__btn" onClick={() => { setShowMenu(false); navigate('/register'); }}>Add account</button>
