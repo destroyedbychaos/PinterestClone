@@ -1,8 +1,9 @@
 .pin-card {
   border-radius: 20px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  overflow: hidden;
+  overflow: visible;
   transition: box-shadow 0.2s;
+  position: relative;
 }
 
 .pin-card:hover {
@@ -15,6 +16,126 @@
   object-fit: cover;
   max-height: 350px;
   min-height: 180px;
+  border-radius: 20px;
+}
+
+
+.pin-card__menu-button {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: scale(0.8);
+  z-index: 10;
+
+  transform-origin: center;
+}
+
+.pin-card:hover .pin-card__menu-button {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pin-card__menu-button:hover {
+  background: rgba(255, 255, 255, 1);
+
+  transform: scale(1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pin-card__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 999;
+}
+
+
+.pin-card__menu {
+  display: flex;
+  padding: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  position: absolute;
+  border-radius: 40px;
+  background: #FFF;
+  box-shadow: -1px 10px 16px 1px rgba(1, 35, 63, 0.25);
+  z-index: 9999;
+  animation: menuSlideIn 0.3s ease-out;
+  pointer-events: auto;
+  position: fixed;
+  transform: translate3d(0, 0, 0);
+  min-width: 280px;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+.pin-card__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 0;
+  width: 100%;
+}
+
+.pin-card__menu-item:hover {
+  background-color: #f8f9fa;
+  transform: translateX(4px);
+}
+
+.pin-card__menu-item:first-child {
+  border-radius: 40px 40px 0 0;
+}
+
+.pin-card__menu-item:last-child {
+  border-radius: 0 0 40px 40px;
+}
+
+.pin-card__menu-item svg {
+  color: #666;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.pin-card__menu-item span {
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
 }
 
 .pin-card__content {
@@ -62,4 +183,37 @@
   font-size: 0.8rem;
   padding: 2px 8px;
   margin-left: 2px;
+}
+
+
+@media (max-width: 768px) {
+  .pin-card__menu-button {
+    width: 36px;
+    height: 36px;
+    bottom: 8px;
+    right: 8px;
+  }
+  
+  .pin-card__menu {
+    padding: 16px;
+    min-width: 240px;
+  }
+  
+  .pin-card__menu-item {
+    padding: 14px 18px;
+    font-size: 14px;
+    gap: 14px;
+  }
+
+  .pin-card__menu-item svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+
+@media (max-width: 1024px) {
+  .pin-card__menu {
+    min-width: 260px;
+  }
 }

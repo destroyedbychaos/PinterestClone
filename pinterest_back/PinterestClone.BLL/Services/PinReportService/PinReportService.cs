@@ -31,9 +31,11 @@ namespace PinterestClone.BLL.Services.PinReportService
         {
             try
             {
+                Console.WriteLine($"ReportPinAsync called with PinId: '{reportPinDto.PinId}', ReportMessage: '{reportPinDto.ReportMessage}'");
                 
                 if (!Guid.TryParse(reportPinDto.PinId, out var pinId))
                 {
+                    Console.WriteLine($"Failed to parse PinId as GUID: '{reportPinDto.PinId}'");
                     return ServiceResponse.BadRequestResponse("Invalid pin ID format");
                 }
 

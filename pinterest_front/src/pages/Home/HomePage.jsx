@@ -15,9 +15,13 @@ const HomePage = () => {
     const [tags, setTags] = useState([]);
     const [activeTag, setActiveTag] = useState('');
     const [pins, setPins] = useState([]);
+    const [hiddenPinIds, setHiddenPinIds] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const navigate = useNavigate();
+    
+    
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const isNewUser = localStorage.getItem('isNewUser');
@@ -61,6 +65,39 @@ const HomePage = () => {
             .catch(() => setTags([]));
     }, []);
 
+
+    useEffect(() => {
+        if (token) {
+            console.log('Fetching hidden pin IDs for authenticated user...');
+            fetch(`${API_BASE}/HiddenPins/hidden-ids`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => {
+                console.log('Hidden pins response status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Hidden pins response:', data);
+                if (data.success && data.payload) {
+                    console.log('Setting hidden pin IDs:', data.payload);
+                    setHiddenPinIds(data.payload);
+                } else {
+                    console.log('No hidden pins data in response');
+                    setHiddenPinIds([]);
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching hidden pins:', error);
+                setHiddenPinIds([]);
+            });
+        } else {
+            console.log('No token found, not fetching hidden pins');
+            setHiddenPinIds([]);
+        }
+    }, [token]);
+
     const handleOnboardingComplete = (userData) => {
         setShowOnboarding(false);
     };
@@ -70,6 +107,14 @@ const HomePage = () => {
     };
     const handleSignup = () => {
         navigate('/register');
+    };
+
+    const handlePinHidden = (pinId) => {
+        setHiddenPinIds(prev => [...prev, pinId]);
+        setPins(prev => prev.filter(pin => {
+            const currentPinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+            return currentPinId !== pinId;
+        }));
     };
 
     return (
@@ -99,24 +144,41 @@ const HomePage = () => {
                 {loading ? (
                     <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
                 ) : (
-                    <MasonryGrid pins={pins.map(pin => {
-                        let image = pin.ImageUrl || pin.imageUrl || pin.image;
-                        if (image) {
-                            if (/^https?:\/\//.test(image)) {
-                            } else if (image.startsWith('/images/')) {
-                            } else if (!image.startsWith('/')) {
-                                image = '/images/' + image.replace(/^.*[\\\/]/, '');
-                            }
-                        }
-                        return {
-                            id: pin.Id || pin.id,
-                            image,
-                            title: pin.Title || pin.title,
-                            description: pin.Description || pin.description,
-                            author: pin.UserName || pin.userName || pin.author,
-                            tags: (pin.Tags || pin.tags || '').split(',').map(t => t.trim()).filter(Boolean),
-                        }
-                    })} />
+                    <MasonryGrid 
+                        pins={(() => {
+                            console.log('Total pins:', pins.length);
+                            console.log('Hidden pin IDs:', hiddenPinIds);
+                            const filteredPins = pins.filter(pin => {
+                                const pinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+                                const isHidden = hiddenPinIds.includes(pinId);
+                                if (isHidden) {
+                                    console.log('Filtering out hidden pin:', pinId, 'from pin:', pin);
+                                }
+                                return !isHidden;
+                            });
+                            console.log('Filtered pins:', filteredPins.length);
+                            return filteredPins;
+                        })()
+                            .map(pin => {
+                                let image = pin.ImageUrl || pin.imageUrl || pin.image;
+                                if (image) {
+                                    if (/^https?:\/\//.test(image)) {
+                                    } else if (image.startsWith('/images/')) {
+                                    } else if (!image.startsWith('/')) {
+                                        image = '/images/' + image.replace(/^.*[\\\/]/, '');
+                                    }
+                                }
+                                return {
+                                    id: pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString(),
+                                    image,
+                                    title: pin.Title || pin.title,
+                                    description: pin.Description || pin.description,
+                                    author: pin.UserName || pin.userName || pin.author,
+                                    tags: (pin.Tags || pin.tags || '').split(',').map(t => t.trim()).filter(Boolean),
+                                }
+                            })} 
+                        onPinHidden={handlePinHidden}
+                    />
                 )}
             </Box>
             <OnboardingModal
