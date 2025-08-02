@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.InkML;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
@@ -352,6 +353,23 @@ namespace PinterestClone.BLL.Services.PinService
                 ImageUrl = p.ImageUrl ?? ""
             }).ToList();
         }
+        public async Task<List<string>> GetSearchSuggestionsAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<string>();
 
+            query = query.Trim().ToLower();
+
+            var titleMatches = await _pinRepository.GetTitleMatchesAsync(query, 5);
+            var tagMatches = await _pinRepository.GetTagMatchesAsync(query, 5);
+
+            var combined = titleMatches
+                .Concat(tagMatches)
+                .Distinct()
+                .Take(10)
+                .ToList();
+
+            return combined;
+        }
     }
 }

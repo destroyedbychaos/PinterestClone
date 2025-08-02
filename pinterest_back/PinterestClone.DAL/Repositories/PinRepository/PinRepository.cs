@@ -138,5 +138,39 @@ namespace PinterestClone.DAL.Repositories.PinRepository
                 .Take(count)
                 .ToListAsync();
         }
+
+        public async Task<List<string>> GetTitleMatchesAsync(string query, int limit)
+        {
+            return await _context.Pins
+                .Where(p => p.Title.ToLower().Contains(query))
+                .Select(p => p.Title)
+                .Distinct()
+                .Take(limit)
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetTagMatchesAsync(string query, int limit)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<string>();
+
+            query = query.ToLower();
+
+            var allTagStrings = await _context.Pins
+                .Where(p => !string.IsNullOrEmpty(p.Tags))
+                .Select(p => p.Tags)
+                .ToListAsync();
+
+            var matchedTags = allTagStrings
+                .SelectMany(tagsString => tagsString.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(t => t.Trim().ToLower())
+                .Where(t => t.Contains(query))
+                .Distinct()
+                .Take(limit)
+                .ToList();
+
+            return matchedTags;
+        }
+
     }
 }

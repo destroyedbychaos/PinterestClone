@@ -361,7 +361,12 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error loading recommendations: {ex.Message}");
             }
         }
-
+        [HttpGet("search-suggestions")]
+        public async Task<IActionResult> GetSearchSuggestions([FromQuery] string q)
+        {
+            var suggestions = await _pinService.GetSearchSuggestionsAsync(q);
+            return Ok(suggestions);
+        }
 
 
     }
