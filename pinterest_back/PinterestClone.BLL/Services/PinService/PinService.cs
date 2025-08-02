@@ -341,5 +341,17 @@ namespace PinterestClone.BLL.Services.PinService
             }
             return tagSet.OrderBy(t => t).ToList();
         }
+        public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync()
+        {
+            var pins = await _pinRepository.GetRecommendedPinsAsync(8);
+
+            return pins.Select(p => new PinRecommendationDto
+            {
+                Id = p.Id.ToString(),
+                Title = p.Title,
+                ImageUrl = p.ImageUrl ?? ""
+            }).ToList();
+        }
+
     }
 }
