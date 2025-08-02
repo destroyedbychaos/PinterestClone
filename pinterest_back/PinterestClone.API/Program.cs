@@ -22,7 +22,9 @@ using PinterestClone.BLL.Services.PinShareService;
 using PinterestClone.BLL.Services.PinReportService;
 using PinterestClone.BLL.Services.EmailService;
 using PinterestClone.BLL.Services.PasswordResetService;
+using PinterestClone.BLL.Services.HiddenPinService;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
+using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -128,6 +130,8 @@ builder.Services.AddScoped<IPinReportService, PinReportService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
+builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 
 var app = builder.Build();
 
