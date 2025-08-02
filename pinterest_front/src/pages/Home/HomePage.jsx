@@ -5,25 +5,29 @@ import { useNavigate } from 'react-router-dom';
 import OnboardingModal from '../../components/OnboardingModal';
 import MasonryGrid from '../../components/ui/MasonryGrid';
 import TagsFilter from '../../components/ui/TagsFilter';
+import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
+import ImageSearchModal from '../../components/ImageSearchModal';
+import { IconButton } from '@mui/material';
+import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
 
 
 const API_BASE = '/api';
 
 const HomePage = () => {
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const { user } = useSelector((state) => state.auth);
-  const [tags, setTags] = useState([]);
-  const [activeTag, setActiveTag] = useState('');
-  const [pins, setPins] = useState([]);
-  const [searchResults, setSearchResults] = useState([]); // 🆕
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [showSearchModal, setShowSearchModal] = useState(false);
-  const searchRef = useRef(null);
-  const navigate = useNavigate();
-  const [recentSearches, setRecentSearches] = useState([]);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const { user } = useSelector((state) => state.auth);
+    const [tags, setTags] = useState([]);
+    const [activeTag, setActiveTag] = useState('');
+    const [pins, setPins] = useState([]);
+    const [hiddenPinIds, setHiddenPinIds] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [search, setSearch] = useState('');
+    const navigate = useNavigate();
+    
+    
+    const token = localStorage.getItem('token');
 
   useEffect(() => {
     const isNewUser = localStorage.getItem('isNewUser');
@@ -58,97 +62,133 @@ const HomePage = () => {
       .catch(() => setTags([]));
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSearchModal(false);
-      }
+
+    useEffect(() => {
+        if (token) {
+            console.log('Fetching hidden pin IDs for authenticated user...');
+            fetch(`${API_BASE}/HiddenPins/hidden-ids`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => {
+                console.log('Hidden pins response status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Hidden pins response:', data);
+                if (data.success && data.payload) {
+                    console.log('Setting hidden pin IDs:', data.payload);
+                    setHiddenPinIds(data.payload);
+                } else {
+                    console.log('No hidden pins data in response');
+                    setHiddenPinIds([]);
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching hidden pins:', error);
+                setHiddenPinIds([]);
+            });
+        } else {
+            console.log('No token found, not fetching hidden pins');
+            setHiddenPinIds([]);
+        }
+    }, [token]);
+
+    const handleOnboardingComplete = (userData) => {
+        setShowOnboarding(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
-  const handleLogin = () => navigate('/login');
-  const handleSignup = () => navigate('/register');
+    const handleLogin = () => {
+        navigate('/login');
+    };
+    const handleSignup = () => {
+        navigate('/register');
+    };
 
-  const displayedPins = searchResults.length > 0 ? searchResults : pins;
+  const handlePinHidden = (pinId) => {
+    setHiddenPinIds((prev) => [...prev, pinId]);
+    setPins((prev) => prev.filter((pin) => {
+      const currentPinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+      return currentPinId !== pinId;
+    }));
+  };
+
+  const displayedPins = (searchResults.length > 0 ? searchResults : pins).filter((pin) => {
+    const pinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+    return !hiddenPinIds.includes(pinId);
+  });
 
   return (
     <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0, position: 'relative' }}>
-  <Box
-    sx={{
-      filter: showSearchModal ? 'blur(5px)' : 'none',
-      transition: 'filter 0.3s ease',
-      pointerEvents: showSearchModal ? 'none' : 'auto', 
-    }}
-  >
-    <DiscoverHeader
-      user={user}
-      onSearch={setSearch}
-      onLogin={handleLogin}
-      onSignup={handleSignup}
-      onFocusSearch={() => setShowSearchModal(true)}
-      searchRef={searchRef}
-    />
+      <Box
+        sx={{
+          filter: showSearchModal ? 'blur(5px)' : 'none',
+          transition: 'filter 0.3s ease',
+          pointerEvents: showSearchModal ? 'none' : 'auto',
+        }}
+      >
+        <DiscoverHeader
+          user={user}
+          onSearch={setSearch}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+          onFocusSearch={() => setShowSearchModal(true)}
+          searchRef={searchRef}
+        />
 
-    <Box sx={{ mt: 4, ml: 0 }}>
-      {tags.length > 0 && (
-        <div className="tags-filter">
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              className={`tags-filter__btn${search === tag ? ' tags-filter__btn--active' : ''}`}
-              onClick={() => {
+        <Box sx={{ mt: 4, ml: 0 }}>
+          {tags.length > 0 && (
+            <TagsFilter
+              tags={tags}
+              activeTag={search}
+              onTagSelect={(tag) => {
                 if (search === tag) setSearch('');
                 else setSearch(tag);
                 setActiveTag('');
                 setSearchResults([]);
               }}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      )}
+            />
+          )}
 
-      {loading ? (
-        <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
-      ) : (
-        <MasonryGrid
-          pins={displayedPins.map((pin) => {
-            let image = pin.ImageUrl || pin.imageUrl || pin.image;
-            if (image && !/^https?:\/\//.test(image)) {
-              if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\\/]/, '');
-            }
-            return {
-              id: pin.Id || pin.id,
-              image,
-              title: pin.Title || pin.title,
-              description: pin.Description || pin.description,
-              author: pin.UserName || pin.userName || pin.author,
-              tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
-            };
-          })}
-        />
-      )}
-    </Box>
-  </Box>
+          {loading ? (
+            <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
+          ) : (
+            <MasonryGrid
+              pins={displayedPins.map((pin) => {
+                let image = pin.ImageUrl || pin.imageUrl || pin.image;
+                if (image && !/^https?:\/\//.test(image)) {
+                  image = '/images/' + image.replace(/^.*[\\/]/, '');
+                }
+                return {
+                  id: pin.Id || pin.id,
+                  image,
+                  title: pin.Title || pin.title,
+                  description: pin.Description || pin.description,
+                  author: pin.UserName || pin.userName || pin.author,
+                  tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
+                };
+              })}
+              onPinHidden={handlePinHidden}
+            />
+          )}
+        </Box>
+      </Box>
 
-  <OnboardingModal
-    open={showOnboarding}
-    onClose={() => setShowOnboarding(false)}
-    onComplete={() => setShowOnboarding(false)}
-  />
+      <OnboardingModal
+        open={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={() => setShowOnboarding(false)}
+      />
 
-  <SearchModal
-    open={showSearchModal}
-    onClose={() => setShowSearchModal(false)}
-    recentSearches={recentSearches}
-    setRecentSearches={setRecentSearches}
-    onSearchResults={(results) => setSearchResults(results)} 
-  />
-</Container>
-
+      <SearchModal
+        open={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        recentSearches={recentSearches}
+        setRecentSearches={setRecentSearches}
+        onSearchResults={(results) => setSearchResults(results)}
+      />
+    </Container>
   );
 };
 

@@ -1,4 +1,5 @@
 using PinterestClone.BLL.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -15,6 +16,12 @@ namespace PinterestClone.BLL.Services.PinService
         Task<bool> RemovePinFromBoardAsync(string pinId, string boardId, string userId);
         Task<List<string>> GetAllTagsAsync();
         Task<List<PinRecommendationDto>> GetRecommendedPinsAsync();
+        
+
+
+        Task<PinListDto?> SearchPinsAsync(string searchTerm, bool searchInTitle = true, bool searchInDescription = true, bool exactMatch = false, int pageNumber = 1, int pageSize = 20);
+        Task<PinListDto?> SearchPinsByImageAsync(string imageHash, int pageNumber = 1, int pageSize = 20);
+        Task<PinListDto?> FindSimilarImagesAsync(IFormFile imageFile, string? searchArea = null, string? selectionCoords = null);
 
     }
 }

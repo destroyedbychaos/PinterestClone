@@ -1,0 +1,128 @@
+.notification-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 500px;
+  z-index: 10001;
+  animation: toastSlideIn 0.3s ease-out;
+  border: 1px solid #e0e0e0;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.notification-toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.notification-toast--success {
+  border-left: 4px solid #10b981;
+}
+
+.notification-toast--success .notification-toast__icon {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.notification-toast--error {
+  border-left: 4px solid #ef4444;
+}
+
+.notification-toast--error .notification-toast__icon {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.notification-toast--warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.notification-toast--warning .notification-toast__icon {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.notification-toast--info {
+  border-left: 4px solid #01233F;
+}
+
+.notification-toast--info .notification-toast__icon {
+  color: #01233F;
+  background: rgba(1, 35, 63, 0.1);
+}
+
+.notification-toast__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-toast__message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+}
+
+.notification-toast__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: #999;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-toast__close:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+@media (max-width: 480px) {
+  .notification-toast {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+} 
