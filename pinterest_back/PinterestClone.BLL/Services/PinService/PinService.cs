@@ -499,15 +499,12 @@ namespace PinterestClone.BLL.Services.PinService
                 
                 Console.WriteLine("Calling _imageSearchService.FindSimilarImagesAsync...");
 
-                // Отримуємо список схожих зображень з ImageSearchService
                 var similarImagePaths = await _imageSearchService.FindSimilarImagesAsync(imageFile, searchAreaInfo);
                 Console.WriteLine($"FindSimilarImagesAsync completed, found {similarImagePaths.Count} similar images");
 
-                // Отримуємо всі піни
                 var allPins = await _pinRepository.GetAllPins().ToListAsync();
                 var similarPins = new List<Pin>();
 
-                // Знаходимо піни, які відповідають знайденим зображенням
                 foreach (var imagePath in similarImagePaths)
                 {
                     var fileName = Path.GetFileName(imagePath);
@@ -516,7 +513,6 @@ namespace PinterestClone.BLL.Services.PinService
                     similarPins.AddRange(matchingPins);
                 }
 
-                // Якщо не знайдено схожих зображень, повертаємо випадкові піни
                 if (!similarPins.Any())
                 {
                     similarPins = allPins.Take(30).ToList();
@@ -573,3 +569,4 @@ namespace PinterestClone.BLL.Services.PinService
 
     }
 }
+

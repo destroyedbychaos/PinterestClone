@@ -50,7 +50,6 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                 
 
                 using var sift = new SIFT();
-                
 
                 using var queryKeyPoints = new VectorOfKeyPoint();
                 using var queryDescriptors = new Mat();
@@ -137,13 +136,11 @@ namespace PinterestClone.BLL.Services.ImageSearchService
         {
             try
             {
-
                 var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
                 using (var stream = new FileStream(tempUploadPath, FileMode.Create))
                 {
                     await uploadedImage.CopyToAsync(stream);
                 }
-
 
                 var existingImagePath = Path.Combine(_imageStoragePath, Path.GetFileName(existingImageUrl));
                 
@@ -151,7 +148,6 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                 {
                     return 0.0;
                 }
-
 
                 using var queryImage = new Mat(tempUploadPath, Emgu.CV.CvEnum.ImreadModes.Color);
                 using var existingImage = new Mat(existingImagePath, Emgu.CV.CvEnum.ImreadModes.Color);
@@ -169,7 +165,6 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                     return 0.0;
                 }
                 
-
                 using var sift = new SIFT();
                 
                 using var queryKeyPoints = new VectorOfKeyPoint();
@@ -187,13 +182,11 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                     return 0.0;
                 }
 
-
                 using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2, false);
 
                 using var matches = new VectorOfDMatch();
                 matcher.Match(queryDescriptors, existingDescriptors, matches);
                 
-
                 var goodMatches = 0;
                 for (int i = 0; i < matches.Size; i++)
                 {
@@ -203,7 +196,6 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                     }
                 }
                 var similarity = matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
-
 
                 if (File.Exists(tempUploadPath))
                 {
