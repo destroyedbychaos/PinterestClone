@@ -497,67 +497,34 @@ namespace PinterestClone.BLL.Services.PinService
                 
                 var searchAreaInfo = new { SearchArea = searchArea, SelectionCoords = selectionCoords };
                 
-                Console.WriteLine("Calling _imageSearchService.AnalyzeImageAsync...");
+                Console.WriteLine("Calling _imageSearchService.FindSimilarImagesAsync...");
 
-                var uploadedFeatures = await _imageSearchService.AnalyzeImageAsync(imageFile, searchAreaInfo);
-                Console.WriteLine($"AnalyzeImageAsync completed, found {uploadedFeatures.Count} features: {string.Join(", ", uploadedFeatures)}");
+                // Отримуємо список схожих зображень з ImageSearchService
+                var similarImagePaths = await _imageSearchService.FindSimilarImagesAsync(imageFile, searchAreaInfo);
+                Console.WriteLine($"FindSimilarImagesAsync completed, found {similarImagePaths.Count} similar images");
 
-
+                // Отримуємо всі піни
                 var allPins = await _pinRepository.GetAllPins().ToListAsync();
-                var similarPins = new List<(Pin pin, double similarity)>();
+                var similarPins = new List<Pin>();
 
-                foreach (var pin in allPins)
+                // Знаходимо піни, які відповідають знайденим зображенням
+                foreach (var imagePath in similarImagePaths)
                 {
-                    double similarity = 0.0;
-
-
-                    if (!string.IsNullOrEmpty(pin.Tags))
-                    {
-                        var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
-                        
-                        var exactMatches = uploadedFeatures.Intersect(pinTags, StringComparer.OrdinalIgnoreCase).Count();
-                        var partialMatches = uploadedFeatures.Count(uploadedFeature => 
-                            pinTags.Any(pinTag => pinTag.Contains(uploadedFeature) || uploadedFeature.Contains(pinTag)));
-                        
-                        var totalMatches = exactMatches + (partialMatches * 0.6);
-                        var tagSimilarity = totalMatches / (double)Math.Max(uploadedFeatures.Count, pinTags.Count);
-                        similarity += tagSimilarity * 0.30;
-                    }
-
-
-                    var featureSimilarity = await _imageSearchService.CalculateSimilarityAsync(imageFile, pin.ImageUrl!, searchAreaInfo);
-                    similarity += featureSimilarity * 0.40;
-
-                    var uploadedColors = await _imageSearchService.ExtractImageFeaturesAsync(imageFile, searchAreaInfo);
-                    if (uploadedColors.Any() && !string.IsNullOrEmpty(pin.Tags))
-                    {
-                        var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
-                        var colorMatches = uploadedColors.Count(color => pinTags.Contains(color));
-                        var colorSimilarity = colorMatches / (double)Math.Max(uploadedColors.Count, 1);
-                        similarity += colorSimilarity * 0.20;
-                    }
-
-
-                    var styleSimilarity = CalculateStyleSimilarity(uploadedFeatures, pin.Tags);
-                    similarity += styleSimilarity * 0.10;
-                    
-
-                    if (similarity > 0.08) 
-                    {
-                        similarPins.Add((pin, similarity));
-                    }
+                    var fileName = Path.GetFileName(imagePath);
+                    var matchingPins = allPins.Where(pin => pin.ImageUrl != null && 
+                        (pin.ImageUrl.Contains(fileName) || pin.ImageUrl.EndsWith(fileName))).ToList();
+                    similarPins.AddRange(matchingPins);
                 }
 
-
-                var topSimilarPins = similarPins
-                    .OrderByDescending(x => x.similarity)
-                    .Take(30) 
-                    .Select(x => x.pin)
-                    .ToList();
+                // Якщо не знайдено схожих зображень, повертаємо випадкові піни
+                if (!similarPins.Any())
+                {
+                    similarPins = allPins.Take(30).ToList();
+                }
 
                 var result = new PinListDto
                 {
-                    Pins = topSimilarPins.Select(pin => new PinSimpleDto
+                    Pins = similarPins.Select(pin => new PinSimpleDto
                     {
                         Id = pin.Id.ToString(),
                         Title = pin.Title,
@@ -567,7 +534,7 @@ namespace PinterestClone.BLL.Services.PinService
                         LikesCount = pin.Likes.Count,
                         CommentsCount = pin.Comments.Count
                     }).ToList(),
-                    TotalCount = topSimilarPins.Count,
+                    TotalCount = similarPins.Count,
                     PageNumber = 1,
                     PageSize = 30,
                     TotalPages = 1
@@ -603,37 +570,6 @@ namespace PinterestClone.BLL.Services.PinService
             }
         }
 
-        private double CalculateStyleSimilarity(List<string> uploadedFeatures, string? pinTags)
-        {
-            if (string.IsNullOrEmpty(pinTags)) return 0.0;
 
-            var pinTagsList = pinTags.Split(',').Select(t => t.Trim().ToLower()).ToList();
-            var styleKeywords = new Dictionary<string, List<string>>
-            {
-                { "bright-contrast", new List<string> { "bright", "high-contrast", "dramatic" } },
-                { "dark-contrast", new List<string> { "dark", "high-contrast", "dramatic" } },
-                { "complex", new List<string> { "complex", "detailed", "patterned" } },
-                { "simple", new List<string> { "simple", "smooth", "minimalist" } },
-                { "balanced", new List<string> { "medium-brightness", "medium-contrast", "moderate" } },
-                { "warm-palette", new List<string> { "warm-palette", "red", "orange", "yellow", "dominant-red", "dominant-orange", "dominant-yellow" } },
-                { "cool-palette", new List<string> { "cool-palette", "blue", "cyan", "green", "dominant-blue", "dominant-cyan", "dominant-green" } },
-                { "neutral-palette", new List<string> { "neutral-palette", "gray", "black", "white", "dominant-gray", "dominant-black", "dominant-white" } }
-            };
-
-            var styleMatches = 0.0;
-            foreach (var feature in uploadedFeatures)
-            {
-                foreach (var style in styleKeywords)
-                {
-                    if (style.Value.Contains(feature) && pinTagsList.Any(tag => style.Value.Contains(tag)))
-                    {
-                        styleMatches += 0.3;
-                        break;
-                    }
-                }
-            }
-
-            return Math.Min(styleMatches, 1.0);
-        }
     }
 }
