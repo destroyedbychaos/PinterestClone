@@ -4,6 +4,7 @@ import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import OnboardingModal from '../../components/OnboardingModal';
 import MasonryGrid from '../../components/ui/MasonryGrid';
+import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 
@@ -125,22 +126,16 @@ const HomePage = () => {
 
         <Box sx={{ mt: 4, ml: 0 }}>
           {tags.length > 0 && (
-            <div className="tags-filter">
-              {tags.map((tag) => (
-                <button
-                  key={tag}
-                  className={`tags-filter__btn${search === tag ? ' tags-filter__btn--active' : ''}`}
-                  onClick={() => {
-                    if (search === tag) setSearch('');
-                    else setSearch(tag);
-                    setActiveTag('');
-                    setSearchResults([]);
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+            <TagsFilter
+              tags={tags}
+              activeTag={search}
+              onTagSelect={(tag) => {
+                if (search === tag) setSearch('');
+                else setSearch(tag);
+                setActiveTag('');
+                setSearchResults([]);
+              }}
+            />
           )}
 
           {loading ? (
