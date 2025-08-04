@@ -11,6 +11,13 @@ using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.SmsService;
 using PinterestClone.BLL.Services.PhoneService;
 using PinterestClone.BLL.Services.NotificationService;
+using PinterestClone.BLL.Services.PinShareService;
+using PinterestClone.BLL.Services.PinReportService;
+using PinterestClone.BLL.Services.EmailService;
+using PinterestClone.BLL.Services.PasswordResetService;
+using PinterestClone.BLL.Services.HiddenPinService;
+using PinterestClone.BLL.Services.ImageAnalysisService;
+using PinterestClone.BLL.Services.ImageSearchService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.BoardRepository;
@@ -18,14 +25,10 @@ using PinterestClone.DAL.Repositories.PinRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
 using PinterestClone.DAL.Repositories.PinShareRepository;
 using PinterestClone.DAL.Repositories.PinReportRepository;
-using PinterestClone.BLL.Services.PinShareService;
-using PinterestClone.BLL.Services.PinReportService;
-using PinterestClone.BLL.Services.EmailService;
-using PinterestClone.BLL.Services.PasswordResetService;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
-using PinterestClone.BLL.Services.ImageAnalysisService;
-using PinterestClone.BLL.Services.ImageSearchService;
+using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,14 +118,14 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
-builder.Services.AddScoped<IPinService, PinService>();
-builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPinService, PinService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IPinShareRepository, PinShareRepository>();
 builder.Services.AddScoped<IPinReportRepository, PinReportRepository>();
 builder.Services.AddScoped<IPinShareService, PinShareService>();
@@ -130,8 +133,11 @@ builder.Services.AddScoped<IPinReportService, PinReportService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
+builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+
 
 var app = builder.Build();
 
