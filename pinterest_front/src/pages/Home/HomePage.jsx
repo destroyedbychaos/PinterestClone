@@ -7,6 +7,7 @@ import MasonryGrid from '../../components/ui/MasonryGrid';
 import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
+import ImageSearchModal from '../../components/ImageSearchModal';
 
 const API_BASE = '/api';
 
@@ -18,10 +19,12 @@ const HomePage = () => {
   const [pins, setPins] = useState([]);
   const [hiddenPinIds, setHiddenPinIds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [imageSearchLoading, setImageSearchLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -95,10 +98,12 @@ const HomePage = () => {
 
   const handlePinHidden = (pinId) => {
     setHiddenPinIds((prev) => [...prev, pinId]);
-    setPins((prev) => prev.filter((pin) => {
-      const currentPinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
-      return currentPinId !== pinId;
-    }));
+    setPins((prev) =>
+      prev.filter((pin) => {
+        const currentPinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+        return currentPinId !== pinId;
+      })
+    );
   };
 
   const displayedPins = (searchResults.length > 0 ? searchResults : pins).filter((pin) => {
@@ -110,9 +115,9 @@ const HomePage = () => {
     <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0, position: 'relative' }}>
       <Box
         sx={{
-          filter: showSearchModal ? 'blur(5px)' : 'none',
+          filter: showSearchModal || showImageSearch ? 'blur(5px)' : 'none',
           transition: 'filter 0.3s ease',
-          pointerEvents: showSearchModal ? 'none' : 'auto',
+          pointerEvents: showSearchModal || showImageSearch ? 'none' : 'auto',
         }}
       >
         <DiscoverHeader
@@ -122,6 +127,10 @@ const HomePage = () => {
           onSignup={handleSignup}
           onFocusSearch={() => setShowSearchModal(true)}
           searchRef={searchRef}
+          onImageSearch={() => {
+            setShowImageSearch(true);
+            setShowSearchModal(false);
+          }}
         />
 
         <Box sx={{ mt: 4, ml: 0 }}>
@@ -138,14 +147,57 @@ const HomePage = () => {
             />
           )}
 
-          {loading ? (
-            <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
+          {searchResults.length > 0 && (
+            <div
+              style={{
+                textAlign: 'center',
+                marginTop: 20,
+                marginBottom: 20,
+                padding: '16px',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setSearchResults([]);
+                  setSearch('');
+                  setActiveTag('');
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: 'transparent',
+                  color: '#666',
+                  border: '1px solid #ddd',
+                  borderRadius: '24px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'inherit',
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = '#f8f9fa';
+                  e.target.style.borderColor = '#ccc';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.borderColor = '#ddd';
+                }}
+              >
+                ✕ Очистити результати пошуку
+              </button>
+            </div>
+          )}
+
+          {(loading || imageSearchLoading) ? (
+            <div style={{ textAlign: 'center', marginTop: 40 }}>
+              {imageSearchLoading ? 'Пошук схожих зображень...' : 'Завантаження...'}
+            </div>
           ) : (
             <MasonryGrid
               pins={displayedPins.map((pin) => {
                 let image = pin.ImageUrl || pin.imageUrl || pin.image;
                 if (image && !/^https?:\/\//.test(image)) {
-                  image = '/images/' + image.replace(/^.*[\\/]/, '');
+                  if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\/]/, '');
                 }
                 return {
                   id: pin.Id || pin.id,
@@ -174,6 +226,19 @@ const HomePage = () => {
         recentSearches={recentSearches}
         setRecentSearches={setRecentSearches}
         onSearchResults={(results) => setSearchResults(results)}
+        showImageSearch={showImageSearch}
+        setShowImageSearch={setShowImageSearch}
+      />
+
+      <ImageSearchModal
+        open={showImageSearch}
+        onClose={() => setShowImageSearch(false)}
+        onSearchResults={(results) => {
+          setSearchResults(results);
+          setShowImageSearch(false);
+          setImageSearchLoading(false);
+        }}
+        onSearchStart={() => setImageSearchLoading(true)}
       />
     </Container>
   );

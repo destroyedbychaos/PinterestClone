@@ -23,11 +23,4 @@ namespace PinterestClone.BLL.DTOs
 
         public string? ImageUrl { get; set; }
     }
-
-    
-    public class FindSimilarImagesDto
-    {
-        [Required]
-        public IFormFile ImageFile { get; set; } = null!;
-    }
 } 
