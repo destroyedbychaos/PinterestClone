@@ -114,12 +114,8 @@ namespace PinterestClone.BLL.Services.PinService
             {
                 var tagList = tags.Split(',').Select(t => t.Trim().ToLower()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
 
-                query = query.Where(p =>
-                    p.Tags != null &&
-                    tagList.Any(tag =>
-                        p.Tags.ToLower().Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(t => t.Trim())
-                        .Contains(tag)));
+                query = query.Where(p => p.Tags != null && tagList.Any(tag => 
+                    p.Tags.ToLower().Contains(tag)));
             }
 
             query = ApplySorting(query, sortBy, isAscending);

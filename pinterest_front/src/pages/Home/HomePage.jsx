@@ -43,6 +43,7 @@ const HomePage = () => {
     const tagParam = activeTag ? activeTag.trim().toLowerCase() : '';
     if (tagParam) url += `&tags=${encodeURIComponent(tagParam)}`;
     if (search) url += `&searchTerm=${encodeURIComponent(search)}`;
+    
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
@@ -57,7 +58,8 @@ const HomePage = () => {
     fetch(`${API_BASE}/pins/all-tags`)
       .then((res) => res.json())
       .then((data) => {
-        setTags(data);
+        const limitedTags = data.slice(0, 6);
+        setTags(limitedTags);
       })
       .catch(() => setTags([]));
   }, []);
@@ -113,7 +115,7 @@ const HomePage = () => {
 
   return (
     <Container maxWidth={false} sx={{ padding: 0 }}>
-      <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
         <DiscoverHeader
           user={user}
           onSearch={setSearch}

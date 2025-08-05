@@ -1,6 +1,6 @@
 .tags-filter {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 16px;
   margin: 32px 0 24px 0;

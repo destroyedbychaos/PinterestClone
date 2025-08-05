@@ -83,6 +83,7 @@ namespace PinterestClone.API.Controllers
                 if (pageNumber < 1) pageNumber = 1;
 
                 var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags, sortBy, isAscending);
+                
                 return Ok(pins);
             }
             catch (Exception ex)
@@ -137,6 +138,7 @@ namespace PinterestClone.API.Controllers
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList();
             var allTags = dbTags.Concat(pinTags).Select(t => t.ToLower()).Distinct().OrderBy(t => t).ToList();
+            
             return Ok(allTags);
         }
 
