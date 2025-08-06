@@ -10,6 +10,12 @@
   box-shadow: 0 6px 24px rgba(0,0,0,0.15);
 }
 
+.pin-card:hover .pin-card__save-button {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
 .pin-card__image {
   width: 100%;
   display: block;
@@ -19,6 +25,192 @@
   border-radius: 20px;
 }
 
+
+.pin-card__save-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  height: 56px;
+  max-width: 240px;
+  padding: 16px;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border-radius: 40px;
+  border: none;
+  background: var(--Blue-500, #6F91D9);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  overflow: hidden;
+  width: 56px;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+
+.pin-card__save-button:hover {
+  width: 56px;
+  max-width: 56px;
+  padding: 16px;
+  border-radius: 40px;
+  background: var(--Blue-500, #6F91D9);
+  color: #ffffff;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.pin-card__save-button--saved {
+  background: #666666;
+  color: #ffffff;
+  border-color: #666666;
+}
+
+.pin-card__save-button--saved:hover {
+  background: #666666;
+  color: #ffffff;
+  border-color: #666666;
+}
+
+.pin-card__save-text {
+  display: none;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-left: 0;
+  order: 1;
+  pointer-events: none;
+}
+
+.pin-card__save-button:hover .pin-card__save-text {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pin-card__save-chevron {
+  display: none;
+  transition: opacity 0.3s ease;
+  margin-left: 0;
+  opacity: 0;
+  order: 2;
+  pointer-events: none;
+}
+
+.pin-card__save-button:hover .pin-card__save-chevron {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+.pin-card__secondary-button {
+  position: absolute;
+  top: 12px;
+  right: 68px; 
+  display: inline-flex;
+  height: 55px;
+  max-width: 420px;
+  padding: 16px;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  border-radius: 40px;
+  border: 2px solid var(--Blue-500, #6F91D9);
+  background: var(--Blue-700, #4B6394);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 9;
+  opacity: 0;
+  transform: translateX(20px) scale(0.8);
+  pointer-events: none;
+}
+
+.pin-card__save-button:hover + .pin-card__secondary-button,
+.pin-card__secondary-button:hover {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.pin-card__secondary-button:hover {
+  background: var(--Blue-600, #5A7BB8);
+  border-color: var(--Blue-600, #5A7BB8);
+  box-shadow: 0 4px 16px rgba(111, 145, 217, 0.3);
+}
+
+
+.pin-card__secondary-button--saved {
+  background: #666666 !important;
+  border-color: #666666 !important;
+  color: #ffffff;
+}
+
+.pin-card__secondary-button--saved:hover {
+  background: #555555 !important;
+  border-color: #555555 !important;
+  box-shadow: 0 4px 16px rgba(102, 102, 102, 0.3);
+}
+
+
+.pin-card__save-button--saved {
+  background: var(--Blue-500, #6F91D9) !important;
+  border: none !important;
+}
+
+.pin-card__secondary-icon {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.pin-card__secondary-button:hover .pin-card__secondary-icon {
+  transform: scale(1.1);
+}
+
+.pin-card__secondary-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.pin-card__secondary-button:hover .pin-card__secondary-chevron {
+  transform: scale(1.1);
+}
+
+.pin-card__save-icon {
+  flex-shrink: 0;
+  width: 25px;
+  height: 24px;
+  order: 3;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: none;
+  pointer-events: none;
+}
+
+.pin-card__save-button:hover .pin-card__save-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
 
 .pin-card__menu-button {
   position: absolute;
@@ -41,18 +233,18 @@
   opacity: 0;
   transform: scale(0.8);
   z-index: 10;
-
+  pointer-events: none;
   transform-origin: center;
 }
 
 .pin-card:hover .pin-card__menu-button {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
 }
 
 .pin-card__menu-button:hover {
   background: rgba(255, 255, 255, 1);
-
   transform: scale(1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -186,7 +378,27 @@
 }
 
 
+
+
 @media (max-width: 768px) {
+  .pin-card__save-button {
+    top: 8px;
+    right: 8px;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+  }
+  
+  .pin-card__save-button:hover {
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+  
+  .pin-card__save-icon {
+    width: 21px;
+    height: 20px;
+  }
+  
   .pin-card__menu-button {
     width: 36px;
     height: 36px;

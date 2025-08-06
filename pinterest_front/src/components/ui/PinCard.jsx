@@ -9,13 +9,14 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showReportModal, setShowReportModal] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
+  const [isSaved, setIsSaved] = useState(false);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
+  const saveButtonRef = useRef(null);
 
   const handleMenuToggle = (e) => {
     e.stopPropagation();
     if (!showMenu) {
-
       const buttonRect = buttonRef.current.getBoundingClientRect();
       const menuWidth = 280; 
       
@@ -39,11 +40,44 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
     setNotification({ show: false, message: '', type: 'info' });
   };
 
+  const handleSavePin = () => {
+    if (isSaved) {
+      setIsSaved(false);
+      showNotification('Пін видалено з збережених', 'info');
+    } else {
+
+      setTimeout(() => {
+        setIsSaved(true);
+        showNotification('Пін збережено в "Profile"', 'success');
+      }, 1000);
+    }
+  };
+
+  const handleSecondaryAction = () => {
+    if (isSaved) {
+      setIsSaved(false);
+      showNotification('Пін видалено з збережених', 'info');
+    } else {
+      setIsSaved(true);
+      showNotification('Пін збережено в "Profile"', 'success');
+    }
+  };
+
+  const handleSecondaryButtonClick = () => {
+    if (isSaved) {
+      setIsSaved(false);
+      showNotification('Пін видалено з збережених', 'info');
+    } else {
+      setIsSaved(true);
+      showNotification('Пін збережено в "Profile"', 'success');
+    }
+  };
+
   const handleSeeMoreLikeThis = () => {
     setShowMenu(false);
     showNotification('Добре, будемо показувати таких пінів більше', 'success');
   };
-
+      
   const handleSeeFewerLikeThis = async () => {
     setShowMenu(false);
     try {
@@ -168,7 +202,6 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
     }
   };
 
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showMenu && menuRef.current && !menuRef.current.contains(event.target) && !buttonRef.current.contains(event.target)) {
@@ -182,6 +215,11 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
     };
   }, [showMenu]);
 
+  const getSaveButtonClass = () => {
+    if (isSaved) return 'pin-card__save-button pin-card__save-button--saved';
+    return 'pin-card__save-button';
+  };
+
   return (
     <div className="pin-card">
       <img
@@ -191,6 +229,43 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
         onError={e => { e.target.style.background = '#eee'; e.target.src = ''; }}
       />
       
+
+      <button
+        ref={saveButtonRef}
+        className={getSaveButtonClass()}
+        onClick={handleSavePin}
+        aria-label="Save pin"
+      >
+        {isSaved ? (
+          <>
+            <span className="pin-card__save-text">Profile</span>
+            <svg className="pin-card__save-icon" width="25" height="24" viewBox="0 0 25 24" fill="none">
+              <path d="M16.7131 1.55305L23.0461 7.88605C23.2521 8.09181 23.4034 8.34569 23.4864 8.62469C23.5695 8.90369 23.5816 9.199 23.5217 9.48387C23.4619 9.76875 23.3319 10.0342 23.1435 10.2561C22.9552 10.4781 22.7145 10.6496 22.4431 10.755L20.8131 11.388C19.9984 11.7052 19.268 12.2064 18.679 12.8526C18.0901 13.4988 17.6585 14.2724 17.4181 15.113L16.2871 19.072C16.2035 19.3651 16.0447 19.6312 15.8266 19.844C15.6085 20.0568 15.3386 20.209 15.0436 20.2855C14.7486 20.3619 14.4388 20.36 14.1447 20.28C13.8507 20.1999 13.5827 20.0445 13.3671 19.829L9.59914 16.061L4.00414 21.655C3.93454 21.7246 3.85191 21.7799 3.76098 21.8175C3.67004 21.8552 3.57257 21.8746 3.47414 21.8746C3.37571 21.8746 3.27825 21.8552 3.18731 21.8175C3.09637 21.7799 3.01374 21.7246 2.94414 21.655C2.87454 21.5854 2.81933 21.5028 2.78166 21.4119C2.744 21.3209 2.72461 21.2235 2.72461 21.125C2.72461 21.0266 2.744 20.9291 2.78166 20.8382C2.81933 20.7473 2.87454 20.6646 2.94414 20.595L8.53814 15L4.77014 11.232C4.55469 11.0165 4.39924 10.7485 4.31919 10.4545C4.23914 10.1604 4.23726 9.85058 4.31373 9.5556C4.39021 9.26061 4.54239 8.99071 4.75521 8.7726C4.96803 8.55449 5.23412 8.39573 5.52714 8.31205L9.48614 7.18105C10.3268 6.94066 11.1004 6.50913 11.7466 5.92018C12.3928 5.33123 12.894 4.60083 13.2111 3.78605L13.8441 2.15605C13.9496 1.88472 14.1211 1.64399 14.343 1.45566C14.565 1.26732 14.8304 1.13733 15.1153 1.07746C15.4002 1.01758 15.6955 1.02972 15.9745 1.11276C16.2535 1.1958 16.5074 1.34713 16.7131 1.55305ZM5.83114 10.171L14.4281 18.768C14.4589 18.7988 14.4972 18.821 14.5392 18.8324C14.5811 18.8438 14.6254 18.8441 14.6675 18.8332C14.7096 18.8223 14.7482 18.8006 14.7793 18.7702C14.8105 18.7398 14.8332 18.7019 14.8451 18.66L15.9761 14.701C16.28 13.638 16.8257 12.6595 17.5704 11.8423C18.3151 11.0251 19.2388 10.3911 20.2691 9.99005L21.8991 9.35605C21.9377 9.34091 21.972 9.31642 21.9987 9.28477C22.0255 9.25312 22.044 9.21532 22.0525 9.17475C22.061 9.13419 22.0593 9.09214 22.0476 9.05239C22.0358 9.01264 22.0144 8.97644 21.9851 8.94705L15.6521 2.61405C15.6227 2.58482 15.5865 2.56336 15.5468 2.5516C15.5071 2.53985 15.465 2.53815 15.4244 2.54668C15.3839 2.55521 15.3461 2.5737 15.3144 2.60047C15.2828 2.62724 15.2583 2.66146 15.2431 2.70005L14.6091 4.33005C14.2081 5.36041 13.5741 6.28406 12.7569 7.02879C11.9396 7.77352 10.9612 8.31916 9.89814 8.62305L5.93914 9.75405C5.89732 9.76603 5.85935 9.78872 5.82899 9.81988C5.79862 9.85104 5.77691 9.88958 5.76601 9.93169C5.7551 9.97381 5.75537 10.018 5.76679 10.06C5.77822 10.102 5.8004 10.1403 5.83114 10.171Z" fill="white"/>
+            </svg>
+          </>
+        ) : (
+          <>
+            <svg className="pin-card__save-icon" width="25" height="24" viewBox="0 0 25 24" fill="none">
+              <path d="M16.7131 1.55305L23.0461 7.88605C23.2521 8.09181 23.4034 8.34569 23.4864 8.62469C23.5695 8.90369 23.5816 9.199 23.5217 9.48387C23.4619 9.76875 23.3319 10.0342 23.1435 10.2561C22.9552 10.4781 22.7145 10.6496 22.4431 10.755L20.8131 11.388C19.9984 11.7052 19.268 12.2064 18.679 12.8526C18.0901 13.4988 17.6585 14.2724 17.4181 15.113L16.2871 19.072C16.2035 19.3651 16.0447 19.6312 15.8266 19.844C15.6085 20.0568 15.3386 20.209 15.0436 20.2855C14.7486 20.3619 14.4388 20.36 14.1447 20.28C13.8507 20.1999 13.5827 20.0445 13.3671 19.829L9.59914 16.061L4.00414 21.655C3.93454 21.7246 3.85191 21.7799 3.76098 21.8175C3.67004 21.8552 3.57257 21.8746 3.47414 21.8746C3.37571 21.8746 3.27825 21.8552 3.18731 21.8175C3.09637 21.7799 3.01374 21.7246 2.94414 21.655C2.87454 21.5854 2.81933 21.5028 2.78166 21.4119C2.744 21.3209 2.72461 21.2235 2.72461 21.125C2.72461 21.0266 2.744 20.9291 2.78166 20.8382C2.81933 20.7473 2.87454 20.6646 2.94414 20.595L8.53814 15L4.77014 11.232C4.55469 11.0165 4.39924 10.7485 4.31919 10.4545C4.23914 10.1604 4.23726 9.85058 4.31373 9.5556C4.39021 9.26061 4.54239 8.99071 4.75521 8.7726C4.96803 8.55449 5.23412 8.39573 5.52714 8.31205L9.48614 7.18105C10.3268 6.94066 11.1004 6.50913 11.7466 5.92018C12.3928 5.33123 12.894 4.60083 13.2111 3.78605L13.8441 2.15605C13.9496 1.88472 14.1211 1.64399 14.343 1.45566C14.565 1.26732 14.8304 1.13733 15.1153 1.07746C15.4002 1.01758 15.6955 1.02972 15.9745 1.11276C16.2535 1.1958 16.5074 1.34713 16.7131 1.55305ZM5.83114 10.171L14.4281 18.768C14.4589 18.7988 14.4972 18.821 14.5392 18.8324C14.5811 18.8438 14.6254 18.8441 14.6675 18.8332C14.7096 18.8223 14.7482 18.8006 14.7793 18.7702C14.8105 18.7398 14.8332 18.7019 14.8451 18.66L15.9761 14.701C16.28 13.638 16.8257 12.6595 17.5704 11.8423C18.3151 11.0251 19.2388 10.3911 20.2691 9.99005L21.8991 9.35605C21.9377 9.34091 21.972 9.31642 21.9987 9.28477C22.0255 9.25312 22.044 9.21532 22.0525 9.17475C22.061 9.13419 22.0593 9.09214 22.0476 9.05239C22.0358 9.01264 22.0144 8.97644 21.9851 8.94705L15.6521 2.61405C15.6227 2.58482 15.5865 2.56336 15.5468 2.5516C15.5071 2.53985 15.465 2.53815 15.4244 2.54668C15.3839 2.55521 15.3461 2.5737 15.3144 2.60047C15.2828 2.62724 15.2583 2.66146 15.2431 2.70005L14.6091 4.33005C14.2081 5.36041 13.5741 6.28406 12.7569 7.02879C11.9396 7.77352 10.9612 8.31916 9.89814 8.62305L5.93914 9.75405C5.89732 9.76603 5.85935 9.78872 5.82899 9.81988C5.79862 9.85104 5.77691 9.88958 5.76601 9.93169C5.7551 9.97381 5.75537 10.018 5.76679 10.06C5.77822 10.102 5.8004 10.1403 5.83114 10.171Z" fill="white"/>
+            </svg>
+            <span className="pin-card__save-text">Profile</span>
+            <svg className="pin-card__save-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </>
+        )}
+      </button>
+
+      <button
+        className={`pin-card__secondary-button ${isSaved ? 'pin-card__secondary-button--saved' : ''}`}
+        onClick={handleSecondaryButtonClick}
+        aria-label="Secondary action"
+      >
+        <span>Profile</span>
+        <svg className="pin-card__secondary-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
 
       <button
         ref={buttonRef}
@@ -207,7 +282,6 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
 
       {showMenu && (
         <>
-
           <div className="pin-card__overlay" onClick={handleMenuClose} />
           
           <div 
@@ -249,7 +323,6 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
           </div>
         </>
       )}
-
 
       <ReportModal
         isOpen={showReportModal}
