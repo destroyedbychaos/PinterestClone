@@ -2,6 +2,7 @@
 import { Route, Routes } from "react-router-dom";
 import NotFoundPage from "../components/NotFoundPage";
 import HomePage from "../pages/Home/HomePage";
+import SavedPins from "../pages/Saved/SavedPins.jsx";
 import Layout from "../components/layout/Layout";
 import LayoutWithoutFooter from "../components/layout/LayoutWithoutFooter";
 import LoginForm from "../pages/Auth/LoginForm.jsx";
@@ -23,6 +24,9 @@ const BasicRoute = () => {
             
             <Route path="/register" element={<LayoutWithoutFooter />}>
                 <Route index element={<RegisterForm/>} />
+            </Route>
+            <Route path="/saved" element={<Layout />}>
+                <Route index element={<SavedPins/>} />
             </Route>
             
             <Route path="/login" element={<LayoutWithoutFooter />}>

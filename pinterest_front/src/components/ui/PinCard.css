@@ -166,10 +166,7 @@
 }
 
 
-.pin-card__save-button--saved {
-  background: var(--Blue-500, #6F91D9) !important;
-  border: none !important;
-}
+.pin-card__save-button--saved { background: #666666 !important; border: none !important; }
 
 .pin-card__secondary-icon {
   width: 24px;

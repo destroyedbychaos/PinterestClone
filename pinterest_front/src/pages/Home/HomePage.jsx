@@ -18,6 +18,7 @@ const HomePage = () => {
   const [activeTag, setActiveTag] = useState('');
   const [pins, setPins] = useState([]);
   const [hiddenPinIds, setHiddenPinIds] = useState([]);
+  const [savedPinIds, setSavedPinIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageSearchLoading, setImageSearchLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -80,8 +81,17 @@ const HomePage = () => {
           }
         })
         .catch(() => setHiddenPinIds([]));
+
+      fetch(`${API_BASE}/pins/saved-ids`, { headers: { Authorization: `Bearer ${token}` }})
+        .then(res => res.json())
+        .then(ids => {
+          if (Array.isArray(ids)) setSavedPinIds(ids);
+          else setSavedPinIds([]);
+        })
+        .catch(() => setSavedPinIds([]));
     } else {
       setHiddenPinIds([]);
+      setSavedPinIds([]);
     }
   }, [token]);
 
@@ -188,16 +198,20 @@ const HomePage = () => {
                 if (image && !/^https?:\/\//.test(image)) {
                   if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\/]/, '');
                 }
+                const currentId = (pin.Id || pin.id || '').toString();
                 return {
-                  id: pin.Id || pin.id,
+                  id: currentId,
                   image,
                   title: pin.Title || pin.title,
                   description: pin.Description || pin.description,
                   author: pin.UserName || pin.userName || pin.author,
                   tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
+                  isSaved: savedPinIds.includes(currentId)
                 };
               })}
               onPinHidden={handlePinHidden}
+              onPinUnsave={(id) => setSavedPinIds(prev => prev.filter(x => x !== id))}
+              onPinSave={(id) => setSavedPinIds(prev => prev.includes(id) ? prev : [...prev, id])}
             />
           )}
         </Box>

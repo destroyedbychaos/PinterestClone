@@ -5,6 +5,8 @@ using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.ImageService;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using PinterestClone.DAL.Models;
 
 namespace PinterestClone.API.Controllers
 {
@@ -288,7 +290,7 @@ namespace PinterestClone.API.Controllers
             var pin = await _db.Pins.FindAsync(Guid.Parse(id));
             if (pin == null)
                 return NotFound();
-            // Видалити зображення
+
             if (!string.IsNullOrEmpty(pin.ImageUrl))
             {
                 await _imageService.DeleteImageAsync(pin.ImageUrl);
@@ -341,6 +343,135 @@ namespace PinterestClone.API.Controllers
                 return BadRequest("Failed to remove pin from board");
 
             return Ok(new { message = "Pin successfully removed from board" });
+        }
+
+
+        [HttpPost("{pinId}/save")]
+        [Authorize]
+        public async Task<ActionResult> SavePin(string pinId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            if (!Guid.TryParse(pinId, out var guidPin))
+                return BadRequest("Invalid pin id");
+
+            var exists = await _db.Likes.AnyAsync(l => l.PinId == guidPin && l.UserId == userId);
+            if (!exists)
+            {
+                await _db.Likes.AddAsync(new Like { Id = Guid.NewGuid(), PinId = guidPin, UserId = userId });
+                await _db.SaveChangesAsync();
+            }
+            return Ok(new { message = "Pin saved" });
+        }
+
+        [HttpDelete("{pinId}/save")]
+        [Authorize]
+        public async Task<ActionResult> UnsavePin(string pinId)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            if (!Guid.TryParse(pinId, out var guidPin))
+                return BadRequest("Invalid pin id");
+
+            var like = await _db.Likes.FirstOrDefaultAsync(l => l.PinId == guidPin && l.UserId == userId);
+            if (like != null)
+            {
+                _db.Likes.Remove(like);
+                await _db.SaveChangesAsync();
+            }
+            return Ok(new { message = "Pin removed from saved" });
+        }
+
+        [HttpGet("saved")]
+        [Authorize]
+        public async Task<ActionResult<PinListDto>> GetSavedPins(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? tags = null,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false)
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var query = _db.Pins
+                .Include(p => p.User)
+                .Include(p => p.BoardPins).ThenInclude(bp => bp.Board)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .Where(p => _db.Likes.Any(l => l.PinId == p.Id && l.UserId == userId));
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(p =>
+                    (p.Title != null && p.Title.ToLower().Contains(term)) ||
+                    (p.Description != null && p.Description.ToLower().Contains(term)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(tags))
+            {
+                var tagList = tags.Split(',').Select(t => t.Trim().ToLower()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+                query = query.Where(p => p.Tags != null && tagList.Any(tag => p.Tags!.ToLower().Contains(tag)));
+            }
+
+            query = sortBy?.ToLower() switch
+            {
+                "createdat" or "created" => isAscending ? query.OrderBy(p => p.CreatedAt) : query.OrderByDescending(p => p.CreatedAt),
+                "popularity" or "likes" => isAscending ? query.OrderBy(p => p.Likes.Count) : query.OrderByDescending(p => p.Likes.Count),
+                "title" or "name" => isAscending ? query.OrderBy(p => p.Title) : query.OrderByDescending(p => p.Title),
+                "comments" => isAscending ? query.OrderBy(p => p.Comments.Count) : query.OrderByDescending(p => p.Comments.Count),
+                _ => query.OrderByDescending(p => p.CreatedAt)
+            };
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var dto = new PinListDto
+            {
+                Pins = items.Select(p => new PinSimpleDto
+                {
+                    Id = p.Id.ToString(),
+                    Title = p.Title,
+                    ImageUrl = p.ImageUrl!,
+                    Tags = p.Tags,
+                    CreatedAt = p.CreatedAt,
+                    LikesCount = p.Likes.Count,
+                    CommentsCount = p.Comments.Count,
+                    UserName = p.User!.UserName ?? string.Empty
+                }).ToList(),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+
+            return Ok(dto);
+        }
+
+        [HttpGet("saved-ids")]
+        [Authorize]
+        public async Task<ActionResult<List<string>>> GetSavedPinIds()
+        {
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var ids = await _db.Likes
+                .Where(l => l.UserId == userId)
+                .Select(l => l.PinId.ToString())
+                .ToListAsync();
+            return Ok(ids);
         }
 
         private string? GetCurrentUserId()
