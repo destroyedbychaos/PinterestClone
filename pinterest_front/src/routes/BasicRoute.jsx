@@ -10,6 +10,7 @@ import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
 import VerifyCode from "../pages/ForgotPassword/VerifyCode.jsx";
 import ResetPassword from "../pages/ForgotPassword/ResetPassword.jsx";
 import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.jsx";
+import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
 
 
 const BasicRoute = () => {
@@ -43,6 +44,9 @@ const BasicRoute = () => {
             
             <Route path="/password-reset-success" element={<LayoutWithoutFooter />}>
                 <Route index element={<PasswordResetSuccess/>} />
+            </Route>
+            <Route path="/profile-boards" element={<LayoutWithoutFooter />}>
+                <Route index element={<ProfileBoards/>} />
             </Route>
         </Routes>
     );
