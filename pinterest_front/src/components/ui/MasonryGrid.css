@@ -1,36 +1,36 @@
 .masonry-grid {
-  column-count: 5;
-  column-gap: 24px;
+  column-count: 6;
+  column-gap: 20px;
   width: 100%;
   margin: 0;
-  padding: 24px 0 24px 0;
+  padding: 16px 24px 24px 24px;
 }
 
 .masonry-grid > * {
   break-inside: avoid;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 1400px) {
   .masonry-grid {
-    column-count: 4;
+    column-count: 5;
   }
 }
 
 @media (max-width: 1100px) {
   .masonry-grid {
-    column-count: 3;
+    column-count: 4;
   }
 }
 
 @media (max-width: 800px) {
   .masonry-grid {
-    column-count: 2;
+    column-count: 3;
   }
 }
 
 @media (max-width: 500px) {
   .masonry-grid {
-    column-count: 1;
+    column-count: 2;
   }
 }

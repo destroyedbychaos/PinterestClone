@@ -42,7 +42,7 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
           </span>
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search your Aests"
             className="discover-header__search-input"
             onChange={e => onSearch(e.target.value)}
             onFocus={() => {
