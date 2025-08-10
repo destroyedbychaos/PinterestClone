@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
-using AutoMapper;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
@@ -17,14 +16,29 @@ namespace PinterestClone.API.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager, IMapper mapper)
+        public ProfileController(UserManager<User> userManager)
         {
             _userManager = userManager;
-            _mapper = mapper;
         }
-        
+
+        private static UserProfileDto MapToDto(User user)
+        {
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                UserName = user.UserName!,
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
+                BannerUrl = user.BannerUrl,
+                Bio = user.Bio,
+                BirthDate = user.BirthDate,
+                Gender = user.Gender,
+                Country = user.Country,
+                Language = user.Language,
+                IsProfilePublic = user.IsProfilePublic
+            };
+        }
 
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileVM model)
@@ -188,7 +202,7 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            return Ok(_mapper.Map<UserProfileDto>(user));
+            return Ok(MapToDto(user));
         }
 
         [HttpGet("{displayName}")]
@@ -207,7 +221,7 @@ namespace PinterestClone.API.Controllers
                     return Forbid();
             }
 
-            return Ok(_mapper.Map<UserProfileDto>(user));
+            return Ok(MapToDto(user));
         }
     }
 }
