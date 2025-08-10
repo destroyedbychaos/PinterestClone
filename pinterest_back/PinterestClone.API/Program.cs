@@ -28,7 +28,10 @@ using PinterestClone.DAL.Repositories.PinReportRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using System.Text;
-
+using System;
+using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using PinterestClone.BLL.MappingProfiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -138,6 +141,12 @@ builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 
+//automapper
+ 
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddMaps(typeof(PinMappingProfile).Assembly);
+});
 
 var app = builder.Build();
 

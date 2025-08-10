@@ -8,6 +8,7 @@ using PinterestClone.DAL.Repositories.PinRepository;
 using Microsoft.AspNetCore.Http;
 using PinterestClone.BLL.Services.ImageAnalysisService;
 using PinterestClone.BLL.Services.ImageSearchService;
+using AutoMapper;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -16,12 +17,14 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IPinRepository _pinRepository;
         private readonly IImageAnalysisService _imageAnalysisService;
         private readonly IImageSearchService _imageSearchService;
+        private readonly IMapper _mapper;
 
-        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService)
+        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper)
         {
             _pinRepository = pinRepository;
             _imageAnalysisService = imageAnalysisService;
             _imageSearchService = imageSearchService;
+            _mapper = mapper;
         }
 
         public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
@@ -35,41 +38,14 @@ namespace PinterestClone.BLL.Services.PinService
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                 );
             }
-            var pin = new Pin
-            {
-                Id = Guid.NewGuid(),
-                Title = createPinDto.Title,
-                Description = createPinDto.Description,
-                ImageUrl = createPinDto.ImageUrl,
-                Link = createPinDto.Link,
-                Tags = normalizedTags,
-                CreatedAt = DateTime.UtcNow,
-                UserId = userId
-            };
+            var pin = _mapper.Map<Pin>(createPinDto);
+            pin.UserId = userId;
 
             var result = await _pinRepository.CreatePinAsync(pin, userId);
             if (result == null)
                 return null;
 
-            return new PinResponseDto
-            {
-                Id = result.Id.ToString(),
-                Title = result.Title,
-                Description = result.Description,
-                ImageUrl = result.ImageUrl!,
-                Link = result.Link,
-                Tags = result.Tags,
-                CreatedAt = result.CreatedAt,
-                UserId = result.UserId,
-                UserName = result.User?.UserName ?? "",
-                Boards = result.BoardPins.Select(bp => new BoardSimpleDto
-                {
-                    Id = bp.Board!.Id.ToString(),
-                    Name = bp.Board.Name
-                }).ToList(),
-                LikesCount = result.Likes.Count,
-                CommentsCount = result.Comments.Count
-            };
+            return _mapper.Map<PinResponseDto>(result);
         }
 
         public async Task<PinResponseDto?> GetPinByIdAsync(string pinId)
@@ -77,25 +53,7 @@ namespace PinterestClone.BLL.Services.PinService
             var pin = await _pinRepository.GetPinByIdAsync(pinId);
             if (pin == null) return null;
 
-            return new PinResponseDto
-            {
-                Id = pin.Id.ToString(),
-                Title = pin.Title,
-                Description = pin.Description,
-                ImageUrl = pin.ImageUrl!,
-                Link = pin.Link,
-                Tags = pin.Tags,
-                CreatedAt = pin.CreatedAt,
-                UserId = pin.UserId,
-                UserName = pin.User?.UserName ?? "",
-                Boards = pin.BoardPins.Select(bp => new BoardSimpleDto
-                {
-                    Id = bp.Board!.Id.ToString(),
-                    Name = bp.Board.Name
-                }).ToList(),
-                LikesCount = pin.Likes.Count,
-                CommentsCount = pin.Comments.Count
-            };
+            return _mapper.Map<PinResponseDto>(pin);
         }
 
         public async Task<PinListDto?> GetPinsAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null, string? tags = null, string? sortBy = "createdAt", bool isAscending = false)
@@ -128,16 +86,7 @@ namespace PinterestClone.BLL.Services.PinService
                 .Take(pageSize)
                 .ToListAsync();
 
-            var pinDtos = pins.Select(p => new PinSimpleDto
-            {
-                Id = p.Id.ToString(),
-                Title = p.Title,
-                ImageUrl = p.ImageUrl!,
-                Tags = p.Tags,
-                CreatedAt = p.CreatedAt,
-                LikesCount = p.Likes.Count,
-                CommentsCount = p.Comments.Count
-            }).ToList();
+            var pinDtos = _mapper.Map<List<PinSimpleDto>>(pins.ToList());
 
             return new PinListDto
             {
@@ -161,17 +110,7 @@ namespace PinterestClone.BLL.Services.PinService
             var pins = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new PinSimpleDto
-                {
-                    Id = p.Id.ToString(),
-                    Title = p.Title,
-                    Description = p.Description,
-                    ImageUrl = p.ImageUrl!,
-                    Tags = p.Tags,
-                    CreatedAt = p.CreatedAt,
-                    UserName = p.User!.UserName ?? "",
-                    LikesCount = p.Likes.Count
-                })
+                .Select(p => _mapper.Map<PinSimpleDto>(p))
                 .ToListAsync();
 
             return new PinListDto
@@ -196,18 +135,7 @@ namespace PinterestClone.BLL.Services.PinService
             var pins = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new PinSimpleDto
-                {
-                    Id = p.Id.ToString(),
-                    Title = p.Title,
-                    Description = p.Description,
-                    ImageUrl = p.ImageUrl!,
-                    Tags = p.Tags,
-                    CreatedAt = p.CreatedAt,
-                    UserName = p.User!.UserName ?? "",
-                    LikesCount = p.Likes.Count,
-                    CommentsCount = p.Comments.Count
-                })
+                .Select(p => _mapper.Map<PinSimpleDto>(p))
                 .ToListAsync();
 
             return new PinListDto
@@ -227,21 +155,7 @@ namespace PinterestClone.BLL.Services.PinService
             if (pin == null || pin.UserId != userId)
                 return null;
 
-            pin.Title = updatePinDto.Title;
-            pin.Description = updatePinDto.Description;
-            pin.Link = updatePinDto.Link;
-            if (!string.IsNullOrWhiteSpace(updatePinDto.Tags))
-            {
-                pin.Tags = string.Join(",",
-                    updatePinDto.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(t => t.Trim().ToLower())
-                        .Where(t => !string.IsNullOrWhiteSpace(t))
-                );
-            }
-            else
-            {
-                pin.Tags = null;
-            }
+            _mapper.Map(updatePinDto, pin);
 
             await _pinRepository.UpdatePinAsync(pinId, pin, userId);
             return await GetPinByIdAsync(pinId);
@@ -298,32 +212,14 @@ namespace PinterestClone.BLL.Services.PinService
             };
         }
 
-        private async Task<PinResponseDto?> GetPinResponseAsync(string pinId)
+        public async Task<PinResponseDto?> GetPinResponseAsync(string pinId)
         {
             var pin = await _pinRepository.GetPinByIdAsync(pinId);
 
             if (pin == null)
                 return null;
 
-            return new PinResponseDto
-            {
-                Id = pin.Id.ToString(),
-                Title = pin.Title,
-                Description = pin.Description,
-                ImageUrl = pin.ImageUrl!,
-                Link = pin.Link,
-                Tags = pin.Tags,
-                CreatedAt = pin.CreatedAt,
-                UserId = pin.UserId,
-                UserName = pin.User!.UserName ?? "",
-                Boards = pin.BoardPins.Select(bp => new BoardSimpleDto
-                {
-                    Id = bp.Board!.Id.ToString(),
-                    Name = bp.Board.Name
-                }).ToList(),
-                LikesCount = pin.Likes.Count,
-                CommentsCount = pin.Comments.Count
-            };
+            return _mapper.Map<PinResponseDto>(pin);
         }
 
         public async Task<List<string>> GetAllTagsAsync()
@@ -350,13 +246,7 @@ namespace PinterestClone.BLL.Services.PinService
         public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync()
         {
             var pins = await _pinRepository.GetRecommendedPinsAsync(8);
-
-            return pins.Select(p => new PinRecommendationDto
-            {
-                Id = p.Id.ToString(),
-                Title = p.Title,
-                ImageUrl = p.ImageUrl ?? ""
-            }).ToList();
+            return _mapper.Map<List<PinRecommendationDto>>(pins);
         }
 
         public async Task<PinListDto?> SearchPinsAsync(string searchTerm, bool searchInTitle = true, bool searchInDescription = true, bool exactMatch = false, int pageNumber = 1, int pageSize = 20)
@@ -387,16 +277,7 @@ namespace PinterestClone.BLL.Services.PinService
 
             return new PinListDto
             {
-                Pins = pins.Select(pin => new PinSimpleDto
-                {
-                    Id = pin.Id.ToString(),
-                    Title = pin.Title,
-                    ImageUrl = pin.ImageUrl!,
-                    Tags = pin.Tags,
-                    CreatedAt = pin.CreatedAt,
-                    LikesCount = pin.Likes.Count,
-                    CommentsCount = pin.Comments.Count
-                }).ToList(),
+                Pins = _mapper.Map<List<PinSimpleDto>>(pins),
                 TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
@@ -439,16 +320,7 @@ namespace PinterestClone.BLL.Services.PinService
 
                 return new PinListDto
                 {
-                    Pins = sortedPins.Select(pin => new PinSimpleDto
-                    {
-                        Id = pin.Id.ToString(),
-                        Title = pin.Title,
-                        ImageUrl = pin.ImageUrl!,
-                        Tags = pin.Tags,
-                        CreatedAt = pin.CreatedAt,
-                        LikesCount = pin.Likes.Count,
-                        CommentsCount = pin.Comments.Count
-                    }).ToList(),
+                    Pins = _mapper.Map<List<PinSimpleDto>>(sortedPins),
                     TotalCount = similarPins.Count,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
@@ -467,16 +339,7 @@ namespace PinterestClone.BLL.Services.PinService
 
                 return new PinListDto
                 {
-                    Pins = pins.Select(pin => new PinSimpleDto
-                    {
-                        Id = pin.Id.ToString(),
-                        Title = pin.Title,
-                        ImageUrl = pin.ImageUrl!,
-                        Tags = pin.Tags,
-                        CreatedAt = pin.CreatedAt,
-                        LikesCount = pin.Likes.Count,
-                        CommentsCount = pin.Comments.Count
-                    }).ToList(),
+                    Pins = _mapper.Map<List<PinSimpleDto>>(query),
                     TotalCount = totalCount,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
@@ -516,16 +379,7 @@ namespace PinterestClone.BLL.Services.PinService
 
                 var result = new PinListDto
                 {
-                    Pins = similarPins.Select(pin => new PinSimpleDto
-                    {
-                        Id = pin.Id.ToString(),
-                        Title = pin.Title,
-                        ImageUrl = pin.ImageUrl!,
-                        Tags = pin.Tags,
-                        CreatedAt = pin.CreatedAt,
-                        LikesCount = pin.Likes.Count,
-                        CommentsCount = pin.Comments.Count
-                    }).ToList(),
+                    Pins = _mapper.Map<List<PinSimpleDto>>(similarPins),
                     TotalCount = similarPins.Count,
                     PageNumber = 1,
                     PageSize = 30,
@@ -542,16 +396,7 @@ namespace PinterestClone.BLL.Services.PinService
 
                 var fallbackResult = new PinListDto
                 {
-                    Pins = pins.Select(pin => new PinSimpleDto
-                    {
-                        Id = pin.Id.ToString(),
-                        Title = pin.Title,
-                        ImageUrl = pin.ImageUrl!,
-                        Tags = pin.Tags,
-                        CreatedAt = pin.CreatedAt,
-                        LikesCount = pin.Likes.Count,
-                        CommentsCount = pin.Comments.Count
-                    }).ToList(),
+                    Pins = _mapper.Map<List<PinSimpleDto>>(pins),
                     TotalCount = pins.Count,
                     PageNumber = 1,
                     PageSize = 30,

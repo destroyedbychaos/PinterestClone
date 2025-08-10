@@ -4,6 +4,7 @@ using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.PinShareRepository;
 using PinterestClone.DAL.Repositories.PinRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
+using AutoMapper;
 
 namespace PinterestClone.BLL.Services.PinShareService
 {
@@ -12,15 +13,14 @@ namespace PinterestClone.BLL.Services.PinShareService
         private readonly IPinShareRepository _pinShareRepository;
         private readonly IPinRepository _pinRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
-        public PinShareService(
-            IPinShareRepository pinShareRepository,
-            IPinRepository pinRepository,
-            IUserRepository userRepository)
+        public PinShareService(IPinShareRepository pinShareRepository, IPinRepository pinRepository, IUserRepository userRepository, IMapper mapper)
         {
             _pinShareRepository = pinShareRepository;
             _pinRepository = pinRepository;
             _userRepository = userRepository;
+            _mapper = mapper;
         }
 
         public async Task<ServiceResponse> SharePinAsync(SharePinDto sharePinDto, string sharedByUserId)
@@ -65,7 +65,7 @@ namespace PinterestClone.BLL.Services.PinShareService
                 var createdShare = await _pinShareRepository.CreateAsync(pinShare);
 
                 var fullShare = await _pinShareRepository.GetByIdAsync(createdShare.Id);
-                var response = MapToResponseDto(fullShare!);
+                var response = _mapper.Map<PinShareResponseDto>(pinShare);
 
                 return ServiceResponse.OkResponse("Pin shared successfully", response);
             }
@@ -85,7 +85,7 @@ namespace PinterestClone.BLL.Services.PinShareService
                     return ServiceResponse.BadRequestResponse("Pin share not found");
                 }
 
-                var response = MapToResponseDto(pinShare);
+                var response = _mapper.Map<PinShareResponseDto>(pinShare);
                 return ServiceResponse.OkResponse("Pin share retrieved successfully", response);
             }
             catch (Exception ex)
@@ -157,38 +157,6 @@ namespace PinterestClone.BLL.Services.PinShareService
             {
                 return ServiceResponse.InternalServerErrorResponse($"Error getting unread count: {ex.Message}");
             }
-        }
-
-        private static PinShareResponseDto MapToResponseDto(PinShare pinShare)
-        {
-            return new PinShareResponseDto
-            {
-                Id = pinShare.Id,
-                PinId = pinShare.PinId.ToString(),
-                SharedByUserId = pinShare.SharedByUserId,
-                SharedByUserName = pinShare.SharedByUser?.DisplayName ?? pinShare.SharedByUser?.UserName ?? "Unknown",
-                SharedWithUserId = pinShare.SharedWithUserId,
-                SharedWithUserName = pinShare.SharedWithUser?.DisplayName ?? pinShare.SharedWithUser?.UserName ?? "Unknown",
-                Message = pinShare.Message,
-                SharedAt = pinShare.SharedAt,
-                IsRead = pinShare.IsRead,
-                ReadAt = pinShare.ReadAt,
-                Pin = new PinResponseDto
-                {
-                    Id = pinShare.Pin.Id.ToString(),
-                    Title = pinShare.Pin.Title,
-                    Description = pinShare.Pin.Description,
-                    ImageUrl = pinShare.Pin.ImageUrl ?? "",
-                    Link = pinShare.Pin.Link,
-                    Tags = pinShare.Pin.Tags,
-                    CreatedAt = pinShare.Pin.CreatedAt,
-                    UserId = pinShare.Pin.UserId,
-                    UserName = pinShare.Pin.User?.DisplayName ?? pinShare.Pin.User?.UserName ?? "Unknown",
-                    Boards = [],
-                    LikesCount = pinShare.Pin.Likes?.Count ?? 0,
-                    CommentsCount = pinShare.Pin.Comments?.Count ?? 0
-                }
-            };
         }
     }
 } 
