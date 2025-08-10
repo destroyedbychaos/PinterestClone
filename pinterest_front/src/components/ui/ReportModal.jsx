@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './ReportModal.css';
 
 const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
@@ -37,11 +38,29 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="report-modal-overlay" onClick={handleClose}>
-      <div className="report-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="report-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="report-modal-header">
           <h2>Повідомити про пін</h2>
           <button 
@@ -68,7 +87,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
                 value={reportMessage}
                 onChange={(e) => setReportMessage(e.target.value)}
                 placeholder="Опишіть проблему з цим піном..."
-                rows="5"
+                rows={5}
                 required
                 disabled={isSubmitting}
                 maxLength="1000"
@@ -103,7 +122,8 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
