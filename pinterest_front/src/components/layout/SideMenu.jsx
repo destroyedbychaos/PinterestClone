@@ -99,7 +99,7 @@ const SideMenu = memo(({ isUnverified = false }) => {
                                     <Iconify icon="octicon:comment-discussion-24" width={35} height={35} color={theme.palette.dark[500]} />
                                 </Link>
                                 <Link 
-                                    to="/profile"
+                                    to="/profile-boards"
                                     className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
                                 >
                                     <Iconify icon="octicon:person-24" width={35} height={35} color={theme.palette.dark[500]} />
