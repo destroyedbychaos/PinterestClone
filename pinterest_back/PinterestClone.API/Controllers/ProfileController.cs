@@ -70,18 +70,17 @@ namespace PinterestClone.API.Controllers
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(
-            [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
-            [FromForm] IFormFile file)
+    [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+    [FromForm] FileUploadVM model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
-
-            if (file == null || file.Length == 0) return BadRequest("Image file is required");
+            if (model.File == null) return BadRequest("Image file is required");
 
             if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
                 await imageService.DeleteImageAsync(user.AvatarUrl);
 
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
             var url = imageService.GetImageUrl(fileName);
             user.AvatarUrl = url;
 
@@ -91,29 +90,39 @@ namespace PinterestClone.API.Controllers
             return Ok(new { url });
         }
 
+
+        public class FileUploadVM
+        {
+            public IFormFile File { get; set; }
+        }
+
         [HttpPost("upload-banner")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadBanner(
             [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
-            [FromForm] IFormFile file)
+            [FromForm] FileUploadVM model)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null)
+                return Unauthorized();
 
-            if (file == null || file.Length == 0) return BadRequest("Image file is required");
+            if (model.File == null)
+                return BadRequest("Image file is required");
 
             if (!string.IsNullOrWhiteSpace(user.BannerUrl))
                 await imageService.DeleteImageAsync(user.BannerUrl);
 
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
             var url = imageService.GetImageUrl(fileName);
             user.BannerUrl = url;
 
             var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return BadRequest(result.Errors);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
             return Ok(new { url });
         }
+
 
         [HttpPost("reset")]
         public async Task<IActionResult> ResetProfile(
