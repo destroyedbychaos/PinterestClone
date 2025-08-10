@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Icon as Iconify } from '@iconify/react';
 import icon from '../../assets/images/logo.png';
 
-const SideMenu = memo(({ isUnverified = false }) => {
+const SideMenu = memo(({ isUnverified = false, flush = false }) => {
     const theme = useTheme();
 
     return (
@@ -15,9 +15,12 @@ const SideMenu = memo(({ isUnverified = false }) => {
             height: '100vh',
             backgroundColor: theme.palette.blue?.[50],
             display: 'flex', 
-            padding: '44px 0',
+            padding: flush ? 0 : '44px 0',
             alignItems: 'flex-start',
-            position: 'relative'
+            position: flush ? 'fixed' : 'relative',
+            top: flush ? 0 : 'auto',
+            left: flush ? 0 : 'auto',
+            zIndex: flush ? 1000 : 'auto'
         }}>
             <Box sx={{
                 width: '108px',
