@@ -1,8 +1,10 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.SmsService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models;
-using PinterestClone.BLL.Services.SmsService;
 
 namespace PinterestClone.BLL.Services.NotificationService
 {
@@ -10,37 +12,24 @@ namespace PinterestClone.BLL.Services.NotificationService
     {
         private readonly AppDbContext _context;
         private readonly ISmsService _smsService;
+        private readonly IMapper _mapper;
 
-        public NotificationService(
-            AppDbContext context,
-            ISmsService smsService)
+        public NotificationService(AppDbContext context, ISmsService smsService, IMapper mapper)
         {
             _context = context;
             _smsService = smsService;
-        }
-
-        private static NotificationDto MapToDto(Notification notification)
-        {
-            return new NotificationDto
-            {
-                Id = notification.Id,
-                Message = notification.Message,
-                Type = notification.Type,
-                CreatedAt = notification.CreatedAt,
-                Status = notification.Status
-            };
+            _mapper = mapper;
         }
 
         public async Task<ServiceResponse> GetUserNotificationsAsync(string userId)
         {
             try
             {
-                var notifications = await _context.Notifications
+                var notificationDtos = await _context.Notifications
                     .Where(n => n.UserId == userId && n.IsInAppEnabled)
                     .OrderByDescending(n => n.CreatedAt)
+                    .ProjectTo<NotificationDto>(_mapper.ConfigurationProvider)
                     .ToListAsync();
-
-                var notificationDtos = notifications.Select(MapToDto).ToList();
                 return ServiceResponse.OkResponse("Повідомлення успішно отримано", notificationDtos);
             }
             catch (Exception ex)

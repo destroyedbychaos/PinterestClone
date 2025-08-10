@@ -43,6 +43,7 @@ const HomePage = () => {
     const tagParam = activeTag ? activeTag.trim().toLowerCase() : '';
     if (tagParam) url += `&tags=${encodeURIComponent(tagParam)}`;
     if (search) url += `&searchTerm=${encodeURIComponent(search)}`;
+    
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
@@ -57,7 +58,8 @@ const HomePage = () => {
     fetch(`${API_BASE}/pins/all-tags`)
       .then((res) => res.json())
       .then((data) => {
-        setTags(data);
+        const limitedTags = data.slice(0, 6);
+        setTags(limitedTags);
       })
       .catch(() => setTags([]));
   }, []);
@@ -112,14 +114,8 @@ const HomePage = () => {
   });
 
   return (
-    <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0, position: 'relative' }}>
-      <Box
-        sx={{
-          filter: showSearchModal || showImageSearch ? 'blur(5px)' : 'none',
-          transition: 'filter 0.3s ease',
-          pointerEvents: showSearchModal || showImageSearch ? 'none' : 'auto',
-        }}
-      >
+    <Container maxWidth={false} sx={{ padding: 0 }}>
+      <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
         <DiscoverHeader
           user={user}
           onSearch={setSearch}
@@ -133,19 +129,12 @@ const HomePage = () => {
           }}
         />
 
-        <Box sx={{ mt: 4, ml: 0 }}>
-          {tags.length > 0 && (
-            <TagsFilter
-              tags={tags}
-              activeTag={search}
-              onTagSelect={(tag) => {
-                if (search === tag) setSearch('');
-                else setSearch(tag);
-                setActiveTag('');
-                setSearchResults([]);
-              }}
-            />
-          )}
+        <Box sx={{ padding: '0 24px' }}>
+          <TagsFilter
+            tags={tags}
+            activeTag={activeTag}
+            onTagSelect={setActiveTag}
+          />
 
           {searchResults.length > 0 && (
             <div
