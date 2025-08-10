@@ -13,7 +13,7 @@ namespace PinterestClone.DAL.Repositories.BoardRepository
         IQueryable<Board> GetAllBoards();
         IQueryable<Board> GetBoardsByUserId(string userId, int pageNumber = 1, int pageSize = 20);
         Task<Board?> GetBoardByIdAsync(string boardId);
-        Task<Board?> UpdateBoardAsync(string boardId, Board updateBoard, string userId);
+        Task<Board?> UpdateBoardAsync(Board updateBoard);
         Task<bool> DeleteBoardAsync(string boardId);
 
     }

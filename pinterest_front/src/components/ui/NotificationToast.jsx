@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './NotificationToast.css';
 
 const NotificationToast = ({ message, type = 'info', isVisible, onClose, duration = 3000 }) => {
@@ -43,7 +44,7 @@ const NotificationToast = ({ message, type = 'info', isVisible, onClose, duratio
     }
   };
 
-  return (
+  return createPortal(
     <div className={`notification-toast notification-toast--${type}`}>
       <div className="notification-toast__icon">
         {getIcon()}
@@ -60,7 +61,8 @@ const NotificationToast = ({ message, type = 'info', isVisible, onClose, duratio
           <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
-    </div>
+    </div>,
+    document.body
   );
 };
 

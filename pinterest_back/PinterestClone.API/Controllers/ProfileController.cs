@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,28 +17,12 @@ namespace PinterestClone.API.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager)
+        public ProfileController(UserManager<User> userManager, IMapper mapper)
         {
             _userManager = userManager;
-        }
-
-        private static UserProfileDto MapToDto(User user)
-        {
-            return new UserProfileDto
-            {
-                Id = user.Id,
-                UserName = user.UserName!,
-                DisplayName = user.DisplayName,
-                AvatarUrl = user.AvatarUrl,
-                BannerUrl = user.BannerUrl,
-                Bio = user.Bio,
-                BirthDate = user.BirthDate,
-                Gender = user.Gender,
-                Country = user.Country,
-                Language = user.Language,
-                IsProfilePublic = user.IsProfilePublic
-            };
+            _mapper = mapper;
         }
 
         [HttpPut("update")]
@@ -72,17 +57,18 @@ namespace PinterestClone.API.Controllers
 
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadAvatar([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService, [FromForm] IFormFile file)
+        public async Task<IActionResult> UploadAvatar(
+    [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+    [FromForm] FileUploadVM model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
-
-            if (file == null) return BadRequest("Image file is required");
-
+            if (model.File == null) return BadRequest("Image file is required");
 
             if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
                 await imageService.DeleteImageAsync(user.AvatarUrl);
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
             var url = imageService.GetImageUrl(fileName);
             user.AvatarUrl = url;
             var result = await _userManager.UpdateAsync(user);
@@ -90,24 +76,38 @@ namespace PinterestClone.API.Controllers
             return Ok(new { url });
         }
 
+
+        public class FileUploadVM
+        {
+            public IFormFile File { get; set; }
+        }
+
         [HttpPost("upload-banner")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadBanner([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService, [FromForm] IFormFile file)
+        public async Task<IActionResult> UploadBanner(
+            [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+            [FromForm] FileUploadVM model)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null)
+                return Unauthorized();
 
-            if (file == null) return BadRequest("Image file is required");
+            if (model.File == null)
+                return BadRequest("Image file is required");
 
             if (!string.IsNullOrWhiteSpace(user.BannerUrl))
                 await imageService.DeleteImageAsync(user.BannerUrl);
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
             var url = imageService.GetImageUrl(fileName);
             user.BannerUrl = url;
             var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return BadRequest(result.Errors);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
             return Ok(new { url });
         }
+
 
         [HttpPost("reset")]
         public async Task<IActionResult> ResetProfile([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
@@ -202,7 +202,7 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            return Ok(MapToDto(user));
+            return Ok(_mapper.Map<UserProfileDto>(user));
         }
 
         [HttpGet("{displayName}")]
@@ -221,7 +221,7 @@ namespace PinterestClone.API.Controllers
                     return Forbid();
             }
 
-            return Ok(MapToDto(user));
+            return Ok(_mapper.Map<UserProfileDto>(user));
         }
     }
 }
