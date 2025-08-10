@@ -28,6 +28,8 @@ using PinterestClone.DAL.Repositories.PinReportRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using System.Text;
+using AutoMapper;
+using PinterestClone.BLL.DTOs;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -137,6 +139,12 @@ builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
 builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+
+
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.CreateMap<User, UserProfileDto>();
+});
 
 
 var app = builder.Build();
