@@ -148,7 +148,7 @@ const ImageSearchModal = ({ open, onClose, onSearchResults, onSearchStart }) => 
         formData.append('SelectionCoords', JSON.stringify(selectionCoords));
       }
 
-      const response = await fetch(`${API_BASE}/pins/search-by-image`, {
+      const response = await fetch(`${API_BASE}/Pins/search-by-image`, {
         method: 'POST',
         body: formData,
       });

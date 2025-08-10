@@ -75,7 +75,7 @@ const SearchModal = ({
 
   const fetchRecommendations = async () => {
     try {
-      const res = await fetch(`${API_BASE}/pins/recommendations`);
+      const res = await fetch(`${API_BASE}/Pins/recommendations`);
       const data = await res.json();
       if (data?.mightLike || data?.popular) {
         setRecommendations([...data.mightLike || [], ...data.popular || []].slice(0, 8));
@@ -110,7 +110,7 @@ const SearchModal = ({
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`
+        `${API_BASE}/Pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`
       );
       const data = await res.json();
       const foundPins = data.Pins || data.pins || [];

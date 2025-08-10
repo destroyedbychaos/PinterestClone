@@ -147,6 +147,8 @@ builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddMaps(typeof(PinMappingProfile).Assembly);
+    cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
+    cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
 });
 
 var app = builder.Build();

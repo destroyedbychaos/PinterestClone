@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models;
+using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
@@ -16,6 +17,7 @@ namespace PinterestClone.BLL.MappingProfiles
             CreateMap<Pin, PinSimpleDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl ?? ""))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt != default ? src.CreatedAt : DateTime.UtcNow))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : ""))
                 .ForMember(dest => dest.LikesCount, opt => opt.MapFrom(src => src.Likes.Count))
                 .ForMember(dest => dest.CommentsCount, opt => opt.MapFrom(src => src.Comments.Count))

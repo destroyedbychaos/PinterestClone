@@ -7,6 +7,8 @@ import MasonryGrid from "../../components/ui/MasonryGrid";
 import defaultBanner from "../../assets/images/sky.png";
 import defaultAvatar from "../../assets/images/noImgUser.png";
 import { useNavigate } from "react-router-dom";
+import SavedPins from "../Saved/SavedPins.jsx";
+import { fetchSavedPins } from "../../utils/fetchSavedPins";
 
 const API_BASE = "/api";
 
@@ -21,11 +23,17 @@ const ProfileBoards = () => {
   const [loadingPins, setLoadingPins] = useState(false);
   const [boards, setBoards] = useState([]);
   const [loadingBoards, setLoadingBoards] = useState(false);
+  const [savedPins, setSavedPins] = useState([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [savedError, setSavedError] = useState("");
+  const [showSavedOverlay, setShowSavedOverlay] = useState(false);
 
   const navigate = useNavigate();
   const token = useMemo(() => localStorage.getItem("token"), [authState?.token]);
 
-  const handleSearch = () => {};
+  const handleSearch = () => {
+    setShowSavedOverlay(true);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -98,19 +106,63 @@ const ProfileBoards = () => {
     };
   }, [profile?.id]);
 
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      if (activeTab !== 'Aests') return;
+      try {
+        setLoadingSaved(true);
+        setSavedError('');
+        const token = localStorage.getItem('token');
+        const list = await fetchSavedPins(token, profile?.displayName || profile?.userName);
+        if (active) setSavedPins(list);
+      } catch (e) {
+        if (active) {
+          setSavedPins([]);
+          setSavedError(e.message || 'Помилка');
+        }
+      } finally {
+        if (active) setLoadingSaved(false);
+      }
+    };
+    run();
+    return () => { active = false; };
+  }, [activeTab, profile?.displayName, profile?.userName]);
+
+
+  useEffect(() => {
+    const onChanged = () => {
+      if (activeTab !== 'Aests') return;
+      const token = localStorage.getItem('token');
+      fetchSavedPins(token, profile?.displayName || profile?.userName)
+        .then(setSavedPins)
+        .catch(() => {});
+    };
+    window.addEventListener('savedPinsChanged', onChanged);
+    return () => window.removeEventListener('savedPinsChanged', onChanged);
+  }, [activeTab, profile?.displayName, profile?.userName]);
+
   const normalizedPins = useMemo(() => {
     return pins.map((pin) => {
       let image = pin.ImageUrl || pin.imageUrl || pin.image;
       if (image && !/^https?:\/\//.test(image)) {
         if (!image.startsWith("/")) image = "/images/" + image.replace(/^.*[\\/]/, "");
       }
+      const rawTags = pin.Tags ?? pin.tags ?? '';
+      const tags = Array.isArray(rawTags)
+        ? rawTags.map((t) => String(t).trim()).filter(Boolean)
+        : String(rawTags || "")
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean);
       return {
         id: pin.Id || pin.id,
         image,
         title: pin.Title || pin.title,
         description: pin.Description || pin.description,
         author: pin.UserName || pin.userName || profile?.displayName || profile?.userName,
-        tags: (pin.Tags || pin.tags || "").split(",").map((t) => t.trim()).filter(Boolean),
+        tags,
       };
     });
   }, [pins, profile]);
@@ -130,7 +182,7 @@ const ProfileBoards = () => {
           user={authState?.user}
           onSearch={handleSearch}
           searchRef={searchRef}
-          onFocusSearch={() => {}}
+          onFocusSearch={() => setShowSavedOverlay(true)}
         />
 
         <Box sx={{ bgcolor: "#fff", borderRadius: "16px", overflow: "hidden", mt: "30px" }}>
@@ -236,7 +288,7 @@ const ProfileBoards = () => {
                   if (tab === "Boards") {
                     setActiveTab("Boards");
                   } else if (tab === "Aests") {
-                    navigate("/profile-aests");
+                    setActiveTab("Aests");
                   } else if (tab === "Created") {
                     navigate("/profile-created");
                   }
@@ -295,9 +347,34 @@ const ProfileBoards = () => {
                 )}
               </>
             )}
+
+            {activeTab === 'Aests' && (
+              <>
+                {loadingSaved ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
+                ) : savedError ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
+                ) : (
+                  <MasonryGrid pins={savedPins} limitedMenu />
+                )}
+              </>
+            )}
           </Box>
         </Box>
       </Box>
+      {showSavedOverlay && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000 }}
+          onClick={() => setShowSavedOverlay(false)}
+        >
+          <div
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#fff', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SavedPins />
+          </div>
+        </div>
+      )}
     </Box>
   );
 };

@@ -10,6 +10,7 @@ using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.BoardRepository;
 using System.Linq.Dynamic.Core;
+using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.BoardService
 {
@@ -17,16 +18,20 @@ namespace PinterestClone.BLL.Services.BoardService
     {
         private readonly IBoardRepository _boardRepository;
         private readonly IMapper _mapper;
+        private readonly IUserRepository _userRepository;
 
-        public BoardService(IBoardRepository boardRepository, IMapper mapper)
+        public BoardService(IBoardRepository boardRepository, IUserRepository userRepository, IMapper mapper)
         {
             _boardRepository = boardRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
         public async Task<BoardResponseDto> CreateBoardAsync(BoardSimpleDto boardDto, string userId)
         {
             var board = _mapper.Map<Board>(boardDto);
+            board.UserId = userId;
+            board.User = await _userRepository.GetByIdAsync(userId);
 
             var createdBoard = await _boardRepository.CreateBoardAsync(board, userId);
             if (createdBoard == null) return null!;
@@ -186,6 +191,7 @@ namespace PinterestClone.BLL.Services.BoardService
                 return null;
 
             var boardNew = _mapper.Map<Board>(updateBoard);
+            boardNew.User = await _userRepository.GetByIdAsync(updateBoard.UserId);
 
             await _boardRepository.UpdateBoardAsync(boardNew);
 
