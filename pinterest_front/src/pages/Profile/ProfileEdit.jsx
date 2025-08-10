@@ -24,6 +24,8 @@ const ProfileEdit = () => {
   });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showBannerModal, setShowBannerModal] = useState(false);
 
   const token = useMemo(() => localStorage.getItem("token"), [authState?.token]);
   const navigate = useNavigate();
@@ -74,6 +76,7 @@ const ProfileEdit = () => {
     if (res.ok) {
       const { url } = await res.json();
       setForm((s) => ({ ...s, avatarUrl: url }));
+      setShowAvatarModal(false);
     }
   };
 
@@ -90,6 +93,7 @@ const ProfileEdit = () => {
     if (res.ok) {
       const { url } = await res.json();
       setForm((s) => ({ ...s, bannerUrl: url }));
+      setShowBannerModal(false);
     }
   };
 
@@ -165,10 +169,9 @@ const ProfileEdit = () => {
 
           <div className="pe-card">
             <div className="pe-banner" style={{ backgroundImage: `url(${bannerUrl})` }}>
-              <label htmlFor="banner-input" className="pe-banner-btn">
-                <input id="banner-input" hidden type="file" accept="image/*" onChange={onPickBanner} />
+              <button type="button" className="pe-banner-btn" onClick={() => setShowBannerModal(true)}>
                 Change header image
-              </label>
+              </button>
             </div>
 
             <div className="pe-body">
@@ -176,10 +179,9 @@ const ProfileEdit = () => {
                 <div className="pe-avatar-box">
                   <img className="pe-avatar" src={avatarUrl} alt="avatar" />
                 </div>
-                <label htmlFor="avatar-input" className="pe-change-image-btn">
-                  <input id="avatar-input" hidden type="file" accept="image/*" onChange={onPickAvatar} />
+                <button type="button" className="pe-change-image-btn" onClick={() => setShowAvatarModal(true)}>
                   Change image
-                </label>
+                </button>
               </div>
 
               <div className="pe-form">
@@ -205,6 +207,37 @@ const ProfileEdit = () => {
           </div>
         </div>
       </div>
+
+      {showAvatarModal && (
+        <div className="pe-modal-overlay" onClick={() => setShowAvatarModal(false)}>
+          <div className="pe-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pe-modal-header">
+              <div className="pe-modal-title">Change avatar</div>
+              <button className="pe-modal-close" onClick={() => setShowAvatarModal(false)} aria-label="Close">×</button>
+            </div>
+            <label className="pe-modal-btn">
+              <input id="avatar-input" hidden type="file" accept="image/*" onChange={onPickAvatar} />
+              Choose image
+            </label>
+          </div>
+        </div>
+      )}
+
+      {showBannerModal && (
+        <div className="pe-modal-overlay" onClick={() => setShowBannerModal(false)}>
+          <div className="pe-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pe-modal-header">
+              <div className="pe-modal-title">Change header</div>
+              <button className="pe-modal-close" onClick={() => setShowBannerModal(false)} aria-label="Close">×</button>
+            </div>
+            <label className="pe-modal-btn">
+              <input id="banner-input" hidden type="file" accept="image/*" onChange={onPickBanner} />
+              Choose image
+            </label>
+            <div className="pe-modal-note">(Recommended size 1720x260px)</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

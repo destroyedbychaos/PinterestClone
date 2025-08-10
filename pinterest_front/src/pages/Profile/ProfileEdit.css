@@ -201,3 +201,18 @@
 }
 
 
+.pe-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); display: flex; align-items: flex-start; justify-content: center; padding-top: 200px; z-index: 50; }
+
+.pe-modal { display: inline-flex; padding: 40px; flex-direction: column; align-items: flex-start; gap: 40px; border-radius: 40px; background: var(--White, #FFF); box-shadow: -1px 10px 16px 1px rgba(1, 35, 63, 0.25); min-width: 520px; }
+
+.pe-modal-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+
+.pe-modal-title { color: var(--Dark-600, #011D35); font-family: Geologica, sans-serif; font-size: 28px; font-style: normal; font-weight: 600; line-height: normal; }
+
+.pe-modal-close { background: transparent; border: none; font-size: 28px; line-height: 1; cursor: pointer; color: #1f2937; }
+
+.pe-modal-btn { display: flex; width: 464px; padding: 16px 24px; align-items: center; gap: 16px; border-radius: 100px; background: var(--Blue-500, #6F91D9); color: #fff; justify-content: center; cursor: pointer; }
+
+.pe-modal-note { color: var(--Dark-300, #52697C); text-align: center; font-family: Geologica, sans-serif; font-size: 21px; font-style: normal; font-weight: 400; line-height: normal; width: 100%; }
+
+
