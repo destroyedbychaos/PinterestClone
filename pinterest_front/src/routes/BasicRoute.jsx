@@ -11,6 +11,7 @@ import VerifyCode from "../pages/ForgotPassword/VerifyCode.jsx";
 import ResetPassword from "../pages/ForgotPassword/ResetPassword.jsx";
 import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.jsx";
 import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
+import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 
 
 const BasicRoute = () => {
@@ -47,6 +48,9 @@ const BasicRoute = () => {
             </Route>
             <Route path="/profile-boards" element={<LayoutWithoutFooter />}>
                 <Route index element={<ProfileBoards/>} />
+            </Route>
+            <Route path="/profile-edit" element={<LayoutWithoutFooter />}>
+                <Route index element={<ProfileEdit/>} />
             </Route>
         </Routes>
     );

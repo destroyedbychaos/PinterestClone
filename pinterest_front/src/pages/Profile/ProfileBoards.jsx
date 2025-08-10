@@ -209,6 +209,7 @@ const ProfileBoards = () => {
                   gap: 1.2,
                   fontSize: "1rem",
                 }}
+                onClick={() => navigate('/profile-edit')}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

@@ -286,7 +286,7 @@ namespace PinterestClone.API.Controllers
             var pin = await _db.Pins.FindAsync(Guid.Parse(id));
             if (pin == null)
                 return NotFound();
-            // Видалити зображення
+
             if (!string.IsNullOrEmpty(pin.ImageUrl))
             {
                 await _imageService.DeleteImageAsync(pin.ImageUrl);

@@ -6,6 +6,7 @@ using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace PinterestClone.API.Controllers
 {
@@ -29,6 +30,7 @@ namespace PinterestClone.API.Controllers
                 UserName = user.UserName!,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
+                BannerUrl = user.BannerUrl,
                 Bio = user.Bio,
                 BirthDate = user.BirthDate,
                 Gender = user.Gender,
@@ -44,18 +46,102 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            user.DisplayName = model.DisplayName ?? user.DisplayName;
-            user.Bio = model.Bio ?? user.Bio;
-            user.Country = model.Country ?? user.Country;
-            user.Language = model.Language ?? user.Language;
-            user.BirthDate = model.DateOfBirth ?? user.BirthDate;
-            user.AvatarUrl = model.ProfileImageUrl ?? user.AvatarUrl;
+            if (model.UserName is not null)
+                user.UserName = model.UserName;
+            if (model.DisplayName is not null)
+                user.DisplayName = model.DisplayName;
+            if (model.Bio is not null)
+                user.Bio = model.Bio;
+            if (model.Country is not null)
+                user.Country = model.Country;
+            if (model.Language is not null)
+                user.Language = model.Language;
+            if (model.DateOfBirth is not null)
+                user.BirthDate = model.DateOfBirth.Value;
+            if (model.ProfileImageUrl is not null)
+                user.AvatarUrl = string.IsNullOrWhiteSpace(model.ProfileImageUrl) ? null : model.ProfileImageUrl;
+            if (model.BannerImageUrl is not null)
+                user.BannerUrl = string.IsNullOrWhiteSpace(model.BannerImageUrl) ? null : model.BannerImageUrl;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
             return Ok(new { message = "Profile updated successfully." });
+        }
+
+        [HttpPost("upload-avatar")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAvatar([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService, [FromForm] IFormFile file)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            if (file == null) return BadRequest("Image file is required");
+
+
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                await imageService.DeleteImageAsync(user.AvatarUrl);
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+            var url = imageService.GetImageUrl(fileName);
+            user.AvatarUrl = url;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+            return Ok(new { url });
+        }
+
+        [HttpPost("upload-banner")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadBanner([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService, [FromForm] IFormFile file)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            if (file == null) return BadRequest("Image file is required");
+
+            if (!string.IsNullOrWhiteSpace(user.BannerUrl))
+                await imageService.DeleteImageAsync(user.BannerUrl);
+            var (_, fileName, _, _) = await imageService.SaveImageAsync(file);
+            var url = imageService.GetImageUrl(fileName);
+            user.BannerUrl = url;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+            return Ok(new { url });
+        }
+
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetProfile([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+
+            user.DisplayName = null;
+            user.Bio = null;
+            user.Country = null;
+            user.Language = null;
+
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+            {
+                await imageService.DeleteImageAsync(user.AvatarUrl);
+                user.AvatarUrl = null;
+            }
+            if (!string.IsNullOrWhiteSpace(user.BannerUrl))
+            {
+                await imageService.DeleteImageAsync(user.BannerUrl);
+                user.BannerUrl = null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                user.UserName = user.Email;
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok(new { message = "Profile reset successfully." });
         }
 
         [HttpPost("change-password")]

@@ -13,6 +13,7 @@ namespace PinterestClone.DAL.Models.Identity
     {
         public string? DisplayName { get; set; } 
         public string? AvatarUrl { get; set; }
+        public string? BannerUrl { get; set; }
         public string? Bio { get; set; }
 
         public DateTime BirthDate { get; set; }

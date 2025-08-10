@@ -6,7 +6,7 @@ import { logout } from "../../../store/slices/AuthSlice";
 import { useNavigate } from "react-router-dom";
 import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
 
-const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch }) => {
+const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch, title }) => {
   const [showMenu, setShowMenu] = useState(false);
   const profileRef = useRef(null);
   const menuRef = useRef(null);
@@ -31,7 +31,7 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
 
   return (
     <div className="discover-header">
-      <span className="discover-header__title">Your profile</span>
+      <span className="discover-header__title">{title || 'Your profile'}</span>
       <div className="discover-header__spacer" />
       <div className="discover-header__right">
         <div className="discover-header__search" ref={searchRef}>
@@ -49,25 +49,6 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
               onFocusSearch();
             }}
           />
-                     <button
-             onClick={() => {
-               onImageSearch?.();
-             }}
-             style={{
-               border: '1px solid #e0e0e0',
-               borderRadius: '6px',
-               backgroundColor: '#f8f9fa',
-               padding: '8px',
-               cursor: 'pointer',
-               marginLeft: '8px',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-             }}
-             title="Search by image"
-           >
-             <CenterFocusWeakIcon sx={{ fontSize: 18, color: '#6e7b91' }} />
-           </button>
         </div>
 
         {user ? (
@@ -126,6 +107,7 @@ ProfileHeader.propTypes = {
   onSignup: PropTypes.func,
   onFocusSearch: PropTypes.func,
   searchRef: PropTypes.object,
+  title: PropTypes.string,
 };
 
 export default ProfileHeader;
