@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using PinterestClone.BLL.Services.ImageAnalysisService;
 using PinterestClone.BLL.Services.ImageSearchService;
 using AutoMapper;
+using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -18,13 +19,15 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IImageAnalysisService _imageAnalysisService;
         private readonly IImageSearchService _imageSearchService;
         private readonly IMapper _mapper;
+        private readonly IUserRepository _userRepository;
 
-        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper)
+        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository)
         {
             _pinRepository = pinRepository;
             _imageAnalysisService = imageAnalysisService;
             _imageSearchService = imageSearchService;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
@@ -40,6 +43,7 @@ namespace PinterestClone.BLL.Services.PinService
             }
             var pin = _mapper.Map<Pin>(createPinDto);
             pin.UserId = userId;
+            pin.User = await _userRepository.GetByIdAsync(userId);
 
             var result = await _pinRepository.CreatePinAsync(pin, userId);
             if (result == null)
@@ -155,7 +159,7 @@ namespace PinterestClone.BLL.Services.PinService
             if (pin == null || pin.UserId != userId)
                 return null;
 
-            _mapper.Map(updatePinDto, pin);
+            pin = _mapper.Map<Pin>(updatePinDto);
 
             await _pinRepository.UpdatePinAsync(pinId, pin, userId);
             return await GetPinByIdAsync(pinId);

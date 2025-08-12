@@ -110,14 +110,14 @@ namespace PinterestClone.API.Controllers
         [HttpPost("tags")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(object), 200)]
-        public async Task<ActionResult> AddTag([FromBody] PinterestClone.BLL.DTOs.TagDto dto)
+        public async Task<ActionResult> AddTag([FromBody] TagDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto?.Name))
                 return BadRequest("Tag is required");
             var exists = _db.Tags.Any(t => t.Name.ToLower() == dto.Name.ToLower());
             if (exists)
                 return Conflict(new { message = "Tag already exists" });
-            var tag = new PinterestClone.DAL.Models.Tag { Name = dto.Name };
+            var tag = new DAL.Models.Tag { Name = dto.Name };
             _db.Tags.Add(tag);
             await _db.SaveChangesAsync();
             return Ok(new { message = $"Tag '{dto.Name}' added", tag });
