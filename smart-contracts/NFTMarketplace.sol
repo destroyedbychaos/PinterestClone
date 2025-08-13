@@ -31,7 +31,7 @@ contract NFTMarketplace is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, P
     // Структура для роялті
     struct RoyaltyInfo {
         address receiver;
-        uint256 royaltyFraction; // у базисних пунктах (100 = 1%)
+        uint256 royaltyFraction; 
     }
 
     // Маппінги
@@ -41,9 +41,9 @@ contract NFTMarketplace is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, P
     mapping(address => mapping(uint256 => uint256)) private _userTokenIndex;
 
     // Комісії
-    uint256 private _listingPrice = 0.001 ether; // Комісія за лістинг
+    uint256 private _listingPrice = 0.001 ether; 
     uint256 private _marketplaceFee = 250; // 2.5% у базисних пунктах
-    uint256 private constant MAX_ROYALTY = 1000; // 10% максимальне роялті
+    uint256 private constant MAX_ROYALTY = 1000; 
 
     // Події
     event NFTMinted(uint256 indexed tokenId, address indexed creator, string tokenURI);
@@ -218,6 +218,10 @@ contract NFTMarketplace is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, P
      */
     function getMarketItem(uint256 tokenId) public view returns (MarketItem memory) {
         return idToMarketItem[tokenId];
+    }
+
+    function isListed(uint256 tokenId) external view returns (bool) {
+        return idToMarketItem[tokenId].exists && idToMarketItem[tokenId].isListed;
     }
 
     /**

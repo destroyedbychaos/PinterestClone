@@ -37,13 +37,12 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(20);
   
-  // Фільтри
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
 
-  // Завантаження NFT
   const loadNFTs = async (currentPage = 1) => {
     setLoading(true);
     setError(null);
@@ -62,8 +61,10 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
       }
 
       if (response) {
-        setNFTs(response.items || response.data || []);
-        setTotalPages(Math.ceil((response.total || response.totalCount || 0) / pageSize));
+        const items = response.items || response.data || [];
+        const withImages = items.filter(i => !!i.imageUrl && String(i.imageUrl).trim() !== '');
+        setNFTs(withImages);
+        setTotalPages(Math.ceil((response.total || response.totalCount || withImages.length) / pageSize));
       }
     } catch (err) {
       console.error('Error loading NFTs:', err);
@@ -74,16 +75,16 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
     }
   };
 
-  // Завантаження при зміні параметрів
+
   useEffect(() => {
     loadNFTs(page);
   }, [page, showMyNFTs, showFavorites, filterBy, account]);
 
-  // Фільтрація та сортування на фронтенді
+
   const filteredAndSortedNFTs = React.useMemo(() => {
     let filtered = [...nfts];
 
-    // Пошук за назвою або описом
+
     if (searchTerm) {
       filtered = filtered.filter(nft =>
         nft.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +92,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
       );
     }
 
-    // Фільтр за ціною
+
     if (priceRange.min || priceRange.max) {
       filtered = filtered.filter(nft => {
         const price = parseFloat(nft.price || 0);
@@ -101,7 +102,19 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
       });
     }
 
-    // Сортування
+
+    if (filterBy !== 'marketplace') {
+      filtered = filtered.filter(nft => {
+        const listed = nft?.isForSale === true || nft?.IsForSale === true || nft?.isActive === true || nft?.IsActive === true;
+        return listed;
+      });
+    }
+
+    if (showMyNFTs && account) {
+      filtered = filtered.filter(nft => nft.ownerWalletAddress?.toLowerCase() === account.toLowerCase() || nft.creatorWalletAddress?.toLowerCase() === account.toLowerCase());
+    }
+
+
     switch (sortBy) {
       case 'newest':
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -158,7 +171,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
 
   return (
     <Box>
-      {/* Заголовок та статистика */}
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           {getTitle()}
@@ -171,11 +184,10 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
         />
       </Box>
 
-      {/* Фільтри та пошук */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            {/* Пошук */}
+
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
@@ -192,7 +204,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
               />
             </Grid>
 
-            {/* Сортування */}
+
             <Grid item xs={12} sm={6} md={2}>
               <FormControl fullWidth>
                 <InputLabel>Сортування</InputLabel>
@@ -210,7 +222,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
               </FormControl>
             </Grid>
 
-            {/* Фільтр за типом */}
+
             {!showMyNFTs && !showFavorites && (
               <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth>
@@ -227,7 +239,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
               </Grid>
             )}
 
-            {/* Діапазон цін */}
+
             <Grid item xs={6} md={2}>
               <TextField
                 fullWidth
@@ -257,7 +269,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
         </CardContent>
       </Card>
 
-      {/* Сітка NFT */}
+
       {loading ? (
         <Box display="flex" justifyContent="center" py={4}>
           <CircularProgress />
@@ -287,7 +299,7 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
             ))}
           </Grid>
 
-          {/* Пагінація */}
+
           {totalPages > 1 && (
             <Box display="flex" justifyContent="center" mt={4}>
               <Pagination

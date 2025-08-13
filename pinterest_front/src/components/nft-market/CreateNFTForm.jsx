@@ -36,7 +36,7 @@ const CreateNFTForm = ({ onSuccess, onCancel }) => {
     price: '',
     currency: 'MATIC',
     isForSale: false,
-    royaltyFraction: 250 // 2.5% по замовчуванню
+    royaltyFraction: 250 
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -57,7 +57,6 @@ const CreateNFTForm = ({ onSuccess, onCancel }) => {
       [name]: type === 'checkbox' ? checked : value
     }));
     
-    // Очищення помилок при зміні значення
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -66,20 +65,20 @@ const CreateNFTForm = ({ onSuccess, onCancel }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Валідація файлу
+
       if (!file.type.startsWith('image/')) {
         toast.error('Будь ласка, оберіть файл зображення');
         return;
       }
       
-      if (file.size > 10 * 1024 * 1024) { // 10MB
+      if (file.size > 10 * 1024 * 1024) {
         toast.error('Розмір файлу не може перевищувати 10MB');
         return;
       }
 
       setImageFile(file);
       
-      // Створення превʼю
+ 
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target.result);
       reader.readAsDataURL(file);
@@ -139,7 +138,7 @@ const CreateNFTForm = ({ onSuccess, onCancel }) => {
       const result = await createNFT(nftData, imageFile);
       setCreatedNFT(result);
       setActiveStep(3);
-      toast.success('NFT створено успішно!');
+      toast.success('NFT створено успішно! Він зʼявився у вашому профілі у вкладці "Створені".');
     } catch (error) {
       console.error('Error creating NFT:', error);
       toast.error(error.message || 'Помилка створення NFT');

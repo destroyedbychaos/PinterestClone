@@ -10,18 +10,26 @@ const loadState = () => {
                 user: null,
                 token: null,
                 isAuthenticated: false,
+                origin: null,
             };
         }
         
         if (serializedState) {
-            return JSON.parse(serializedState);
+            const parsed = JSON.parse(serializedState);
+            return {
+                user: parsed.user || null,
+                token: parsed.token || null,
+                isAuthenticated: !!parsed.isAuthenticated,
+                origin: parsed.origin || null,
+            };
         }
         
-        // Якщо є токен, але немає стану, повертаємо базовий стан
+
         return {
             user: null,
             token: authToken,
             isAuthenticated: false,
+            origin: null,
         };
     } catch (err) {
         console.error("Could not load state", err);
@@ -29,6 +37,7 @@ const loadState = () => {
             user: null,
             token: null,
             isAuthenticated: false,
+            origin: null,
         };
     }
 };
@@ -40,22 +49,25 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action) => {
-            const { user, accessToken } = action.payload;
+            const { user, accessToken, origin } = action.payload;
             state.user = user;
             state.token = accessToken;
             state.isAuthenticated = true;
+            state.origin = origin || state.origin || 'site';
             
             localStorage.setItem('authToken', accessToken);
             localStorage.setItem('authState', JSON.stringify({
                 user,
                 token: accessToken,
-                isAuthenticated: true
+                isAuthenticated: true,
+                origin: state.origin,
             }));
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
+            state.origin = null;
             localStorage.removeItem('authToken');
             localStorage.removeItem('authState');
         },

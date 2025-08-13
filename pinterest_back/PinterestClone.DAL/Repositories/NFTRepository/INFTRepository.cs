@@ -26,5 +26,7 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
         
         Task<bool> UpdateTokenInfoAsync(string nftId, string tokenId, string contractAddress, string transactionHash);
         Task<bool> UpdateIPFSInfoAsync(string nftId, string ipfsMetadataHash, string ipfsImageHash);
+        Task<bool> TransferOwnershipAsync(string nftId, string newOwnerWalletAddress);
+        Task<bool> UpdateSaleStatusAsync(string nftId, bool isForSale, decimal? price = null, string? currency = null);
     }
 } 

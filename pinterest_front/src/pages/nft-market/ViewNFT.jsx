@@ -16,7 +16,7 @@ const ViewNFT = () => {
   const { account, isConnected } = useWeb3();
   const { isAuthenticated } = useAuth();
   const { getNFTById, addToFavorites, removeFromFavorites, mintNFT, deleteNFT } = useNFT();
-  const { buyNFT, listNFTForSale, cancelListing, getListingStatus } = useMarketplace();
+  const { buyNFT, listNFTForSale, delistNFT, getListingStatus, isListedOnchain } = useMarketplace();
   
   const [nft, setNft] = useState(null);
   const [listingData, setListingData] = useState(null);
@@ -26,6 +26,17 @@ const ViewNFT = () => {
   const [showListingModal, setShowListingModal] = useState(false);
   const [listingPrice, setListingPrice] = useState("");
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
+  const [onchainListed, setOnchainListed] = useState(false);
+
+  const [debugViewAsBuyer, setDebugViewAsBuyer] = useState(() => {
+    try { return localStorage.getItem('debugViewAsBuyer') === '1'; } catch { return false; }
+  });
+  const toggleDebugBuyer = () => {
+    const next = !debugViewAsBuyer;
+    setDebugViewAsBuyer(next);
+    try { localStorage.setItem('debugViewAsBuyer', next ? '1' : '0'); } catch {}
+    toast.info(next ? 'Debug: перегляд як покупець увімкнено' : 'Debug: перегляд як покупець вимкнено');
+  };
 
   useEffect(() => {
     if (id) {
@@ -37,9 +48,8 @@ const ViewNFT = () => {
     try {
       setIsLoading(true);
       const nftData = await getNFTById(id);
-      
-      // Детальне логування отриманих даних
-      console.log('📊 NFT Data loaded:', {
+
+      console.log('NFT Data loaded:', {
         id: nftData.id,
         name: nftData.name,
         price: nftData.price,
@@ -52,22 +62,29 @@ const ViewNFT = () => {
       });
       
       setNft(nftData);
+      try {
+        if (nftData?.tokenId) {
+          const listed = await isListedOnchain(nftData.tokenId);
+          setOnchainListed(!!listed);
+        } else {
+          setOnchainListed(false);
+        }
+      } catch { setOnchainListed(false); }
       
-      // Якщо NFT на продажі, отримуємо ціну з MarketplaceListing
+
       if (nftData.isForSale) {
         try {
           const listing = await getListingStatus(nftData.id);
-          console.log('💰 Marketplace Listing loaded:', listing);
+          console.log(' Marketplace Listing loaded:', listing);
           setListingData(listing);
         } catch (error) {
           console.warn('Warning: Could not load marketplace listing:', error);
-          // Продовжуємо навіть якщо лістинг не знайдено
+
         }
       } else {
         setListingData(null);
       }
       
-      // TODO: Перевірити чи NFT в улюблених користувача
     } catch (error) {
       console.error('Error loading NFT:', error);
       toast.error('Помилка завантаження NFT');
@@ -101,19 +118,18 @@ const ViewNFT = () => {
     }
   };
 
-  // Покупка NFT
+
   const handleBuyNFT = async () => {
     if (!isConnected || !isAuthenticated) {
       toast.error('Спочатку підключіть гаманець та увійдіть в систему');
       return;
     }
 
-    // Використовуємо ціну з MarketplaceListing якщо є, інакше з NFT
     const salePrice = listingData?.price || nft.price;
     const tokenId = nft.tokenId;
 
-    // Детальне логування перед покупкою
-    console.log('🚀 Attempting to buy NFT:', { 
+
+    console.log(' Attempting to buy NFT:', { 
       nftId: nft.id, 
       tokenId: tokenId, 
       nftPrice: nft.price,
@@ -126,7 +142,7 @@ const ViewNFT = () => {
       listingData: listingData
     });
 
-    // Перевірки перед покупкою
+
     if (!nft.isForSale) {
       toast.error('Цей NFT не виставлений на продаж');
       return;
@@ -142,10 +158,7 @@ const ViewNFT = () => {
       return;
     }
 
-    if (!listingData) {
-      toast.error('Не вдалося отримати інформацію про продаж');
-      return;
-    }
+
 
     setIsProcessing(true);
     try {
@@ -156,9 +169,10 @@ const ViewNFT = () => {
       }
       
       await buyNFT(nft.id, tokenId, salePrice);
-      toast.success('NFT успішно придбано!');
-      // Перезавантажуємо дані NFT
+      toast.success('NFT успішно придбано! Додаємо в "Всі NFT" вашого профілю.');
+      // Оновлюємо дані та переходимо в профіль покупця
       await loadNFT();
+      try { navigate(`/nft-market/profile/${account}`); } catch {}
     } catch (error) {
       console.error('Error buying NFT:', error);
       toast.error('Помилка при покупці NFT');
@@ -167,7 +181,7 @@ const ViewNFT = () => {
     }
   };
 
-  // Виставлення NFT на продаж
+
   const handleListForSale = async () => {
     if (!listingPrice || parseFloat(listingPrice) <= 0) {
       toast.error('Введіть коректну ціну');
@@ -176,11 +190,11 @@ const ViewNFT = () => {
 
     setIsProcessing(true);
     try {
-      await listNFTForSale(nft.tokenId, listingPrice);
+      await listNFTForSale(nft.id, nft.tokenId, listingPrice);
       toast.success('NFT виставлено на продаж!');
       setShowListingModal(false);
       setListingPrice("");
-      // Перезавантажуємо дані NFT
+
       await loadNFT();
     } catch (error) {
       console.error('Error listing NFT:', error);
@@ -190,7 +204,7 @@ const ViewNFT = () => {
     }
   };
 
-  // Мінтинг NFT
+
   const handleMintNFT = async () => {
     if (!isConnected || !isAuthenticated) {
       toast.error('Спочатку підключіть гаманець та увійдіть в систему');
@@ -201,7 +215,7 @@ const ViewNFT = () => {
     try {
       await mintNFT(nft.id, nft.metadataUrl, nft.royaltyFraction || 0);
       toast.success('NFT успішно змінтовано!');
-      // Перезавантажуємо дані NFT
+
       await loadNFT();
     } catch (error) {
       console.error('Error minting NFT:', error);
@@ -211,7 +225,7 @@ const ViewNFT = () => {
     }
   };
 
-  // Видалення NFT
+
   const handleDeleteNFT = async () => {
     if (!confirm('Ви впевнені, що хочете видалити цей NFT? Цю дію неможливо скасувати.')) {
       return;
@@ -219,9 +233,9 @@ const ViewNFT = () => {
 
     setIsProcessing(true);
     try {
-      await deleteNFT(nft.id, false); // false = не спалювати на блокчейні
+      await deleteNFT(nft.id, false); 
       toast.success('NFT успішно видалено!');
-      // Перенаправляємо на профіль
+
       navigate('/nft-market/profile');
     } catch (error) {
       console.error('Error deleting NFT:', error);
@@ -239,7 +253,7 @@ const ViewNFT = () => {
     });
   };
 
-  const isOwner = account && nft?.creatorWalletAddress?.toLowerCase() === account.toLowerCase();
+  const isOwner = account && nft?.ownerWalletAddress?.toLowerCase() === account.toLowerCase();
 
   if (isLoading) {
     return (
@@ -281,7 +295,6 @@ const ViewNFT = () => {
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* NFT Image */}
           <div className="relative">
             <img 
                               src={getFullImageUrl(nft.imageUrl)} 
@@ -290,7 +303,6 @@ const ViewNFT = () => {
                               onError={(e) => handleImageError(e, 'NFT')}
             />
             
-            {/* Action Buttons Overlay */}
             <div className="absolute top-4 right-4 flex gap-2">
               <Button 
                 size="sm" 
@@ -325,9 +337,7 @@ const ViewNFT = () => {
             </div>
           </div>
 
-          {/* NFT Details */}
           <div className="space-y-6">
-            {/* Title and Creator */}
             <div>
               <h1 className="text-4xl font-bold text-white mb-4">{nft.name}</h1>
               <div className="flex items-center gap-4 mb-6">
@@ -374,7 +384,7 @@ const ViewNFT = () => {
               </div>
             </div>
 
-            {/* Description */}
+
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">Опис</CardTitle>
@@ -386,10 +396,33 @@ const ViewNFT = () => {
               </CardContent>
             </Card>
 
-            {/* Price and Purchase */}
+
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
               <CardHeader>
-                <CardTitle className="text-white">Ціна</CardTitle>
+                  <CardTitle className="text-white">Ціна</CardTitle>
+                  {isOwner && nft.isForSale && (
+                    <Button 
+                      size="sm"
+                      variant="outline" 
+                      className="ml-auto border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                      onClick={async () => {
+                        if (!confirm('Зняти NFT з продажу?')) return;
+                        setIsProcessing(true);
+                        try {
+                          await delistNFT(nft.id, nft.tokenId);
+                          toast.success('NFT знято з продажу');
+                          await loadNFT();
+                        } catch (e) {
+                          console.error(e);
+                          toast.error('Не вдалося зняти з продажу');
+                        } finally {
+                          setIsProcessing(false);
+                        }
+                      }}
+                    >
+                      Зняти з продажу
+                    </Button>
+                  )}
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between mb-4">
@@ -427,11 +460,22 @@ const ViewNFT = () => {
                     }>
                       {nft.isForSale ? 'На продажу' : nft.isMinted ? 'Створено' : 'Чернетка'}
                     </Badge>
+                    <div className="mt-2 text-xs text-gray-400">
+                      On-chain: {onchainListed ? <span className="text-green-400">listed</span> : <span className="text-yellow-400">not listed</span>}
+                    </div>
+                    {isOwner && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input type="checkbox" checked={debugViewAsBuyer} onChange={toggleDebugBuyer} />
+                          <span>Debug: перегляд як покупець</span>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  {/* Логування умов для кнопки купівлі */}
+
                   {console.log('🔍 Button visibility check:', {
                     isForSale: nft.isForSale,
                     isOwner,
@@ -440,10 +484,11 @@ const ViewNFT = () => {
                     listingPrice: listingData?.price,
                     nftPrice: nft.price,
                     hasValidPrice: !!(listingData?.price || nft.price) && (listingData?.price || nft.price) > 0,
-                    showBuyButton: nft.isForSale && !isOwner && nft.isMinted && !!listingData
+                    debugViewAsBuyer,
+                    showBuyButton: (onchainListed || (nft.isForSale && ((listingData?.price || nft.price) > 0))) && (!isOwner || debugViewAsBuyer) && nft.isMinted
                   })}
-                  
-                  {nft.isForSale && !isOwner && nft.isMinted && listingData && listingData.price > 0 && (
+
+                  {(onchainListed || (nft.isForSale && ((listingData?.price || nft.price) > 0))) && (!isOwner || debugViewAsBuyer) && nft.isMinted && (
                     <Button 
                       onClick={handleBuyNFT}
                       disabled={isProcessing}
@@ -487,16 +532,6 @@ const ViewNFT = () => {
                   {isOwner && (
                     <div className="flex gap-2">
                       <Button 
-                        variant="outline" 
-                        className="border-gray-600 text-white hover:bg-gray-700"
-                        title="Редагувати NFT (в розробці)"
-                        disabled
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Button>
-                      <Button 
                         onClick={handleDeleteNFT}
                         disabled={isProcessing}
                         variant="outline" 
@@ -531,7 +566,7 @@ const ViewNFT = () => {
               </CardContent>
             </Card>
 
-            {/* Stats */}
+
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">Статистика</CardTitle>
@@ -550,7 +585,7 @@ const ViewNFT = () => {
               </CardContent>
             </Card>
 
-            {/* Metadata */}
+
             {nft.metadataUrl && (
               <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
                 <CardHeader>
@@ -589,7 +624,7 @@ const ViewNFT = () => {
         </div>
       </div>
 
-      {/* Modal для виставлення на продаж */}
+
       {showListingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">

@@ -11,7 +11,7 @@ export const useMarketplace = () => {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Виставлення NFT на продаж
+
   const listNFTForSale = async (nftId, tokenId, price) => {
     if (!contract || !account) {
       throw new Error('Контракт або гаманець не підключені');
@@ -20,18 +20,48 @@ export const useMarketplace = () => {
     setIsLoading(true);
     
     try {
-      // Отримання комісії за лістинг
-      const listingPrice = await contract.getListingPrice();
-      const priceInWei = ethers.parseEther(price.toString());
+      if (tokenId === undefined || tokenId === null) {
+        throw new Error('Некоректний tokenId');
+      }
 
-      // Оцінка gas
+      let priceString;
+      if (typeof price === 'string') {
+        priceString = price.trim();
+      } else if (typeof price === 'number' || typeof price === 'bigint') {
+        priceString = price.toString();
+      }
+      if (!priceString) {
+        throw new Error('Вкажіть ціну в MATIC');
+      }
+      if (!/^[0-9]*\.?[0-9]+$/.test(priceString)) {
+        throw new Error('Некоректна ціна. Використовуйте формат 0.0');
+      }
+
+
+      const owner = await contract.ownerOf(tokenId);
+      if (owner.toLowerCase() !== account.toLowerCase()) {
+        throw new Error('Ви не є власником цього NFT');
+      }
+
+      const listingPrice = await contract.getListingPrice();
+      let priceInWei;
+      try {
+        priceInWei = ethers.parseEther(priceString);
+      } catch (e) {
+        throw new Error('Не вдалося конвертувати ціну в wei');
+      }
+      if (priceInWei <= 0n) {
+        throw new Error('Ціна має бути більшою за 0');
+      }
+
+
       const gasEstimate = await contract.listNFTForSale.estimateGas(
         tokenId,
         priceInWei,
         { value: listingPrice }
       );
 
-      // Виконання транзакції на блокчейні
+
       const tx = await contract.listNFTForSale(
         tokenId,
         priceInWei,
@@ -43,7 +73,23 @@ export const useMarketplace = () => {
 
       await tx.wait();
 
-      // Оновлення в базі даних
+
+      let confirmed = false;
+      for (let i = 0; i < 20; i++) {
+        try {
+          const item = await contract.getMarketItem(tokenId);
+          if (item && item.exists && item.isListed) { confirmed = true; break; }
+        } catch {}
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      if (!confirmed) {
+
+        const newOwner = await contract.ownerOf(tokenId);
+        if (newOwner.toLowerCase() !== contract.target.toLowerCase()) {
+          throw new Error('Лістинг не підтверджено ончейн (токен не переведено на контракт)');
+        }
+      }
+
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_LIST}`,
         {
@@ -68,7 +114,7 @@ export const useMarketplace = () => {
     }
   };
 
-  // Зняття NFT з продажу
+
   const delistNFT = async (nftId, tokenId) => {
     if (!contract || !account) {
       throw new Error('Контракт або гаманець не підключені');
@@ -77,16 +123,38 @@ export const useMarketplace = () => {
     setIsLoading(true);
     
     try {
-      // Виконання транзакції на блокчейні
-      const tx = await contract.delistNFT(tokenId);
-      await tx.wait();
 
-      // Оновлення в базі даних
+      let isListed = false;
+      try {
+        const item = await contract.getMarketItem(tokenId);
+        isListed = !!(item && item.exists && item.isListed);
+      } catch {}
+
+      let txHash = null;
+      if (isListed) {
+
+        const tx = await contract.delistNFT(tokenId);
+        await tx.wait();
+        txHash = tx.hash;
+
+        for (let i = 0; i < 20; i++) {
+          let listed = false;
+          try {
+            const item = await contract.getMarketItem(tokenId);
+            listed = !!(item && item.exists && item.isListed);
+          } catch {}
+          const ownerNow = await contract.ownerOf(tokenId);
+          if (!listed && ownerNow.toLowerCase() === account.toLowerCase()) break;
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      }
+
+
       const response = await axios.delete(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_DELIST(nftId)}`,
         { 
           headers: getAuthHeaders(token),
-          data: { transactionHash: tx.hash }
+          data: { transactionHash: txHash }
         }
       );
 
@@ -94,8 +162,21 @@ export const useMarketplace = () => {
         throw new Error(response.data.message || 'Помилка зняття з продажу');
       }
 
-      return { transactionHash: tx.hash };
+      return { transactionHash: txHash };
     } catch (error) {
+
+      const reason = error?.reason || error?.message || '';
+      if (String(reason).includes('NFT not listed')) {
+        try {
+          const response = await axios.delete(
+            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_DELIST(nftId)}`,
+            { headers: getAuthHeaders(token) }
+          );
+          if (response.data.isSuccess) {
+            return { transactionHash: null };
+          }
+        } catch {}
+      }
       console.error('Error delisting NFT:', error);
       throw error;
     } finally {
@@ -103,9 +184,9 @@ export const useMarketplace = () => {
     }
   };
 
-  // Купівля NFT
+
   const buyNFT = async (nftId, tokenId, price) => {
-    console.log('🛒 buyNFT called with:', { 
+    console.log(' buyNFT called with:', { 
       nftId, 
       tokenId, 
       price, 
@@ -118,9 +199,9 @@ export const useMarketplace = () => {
       throw new Error('Контракт або гаманець не підключені');
     }
 
-    // Детальна перевірка ціни
+
     const numericPrice = Number(price);
-    console.log('💰 Price validation:', { 
+    console.log(' Price validation:', { 
       originalPrice: price,
       numericPrice,
       isNaN: isNaN(numericPrice),
@@ -137,43 +218,108 @@ export const useMarketplace = () => {
     setIsLoading(true);
     
     try {
-      const priceInWei = ethers.parseEther(price.toString());
 
-      // Оцінка gas
-      const gasEstimate = await contract.buyNFT.estimateGas(
-        tokenId,
-        { value: priceInWei }
-      );
+      const tokenIdBig = typeof tokenId === 'bigint' ? tokenId : BigInt(tokenId);
 
-      // Ініціювання покупки в базі даних
-      const initiateResponse = await axios.post(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_BUY(nftId)}`,
-        { tokenId, price },
-        { headers: getAuthHeaders(token) }
-      );
 
-      if (!initiateResponse.data.isSuccess) {
-        throw new Error(initiateResponse.data.message || 'Помилка ініціювання покупки');
+      let isListedFlag;
+      try {
+        if (typeof contract.isListed === 'function') {
+          isListedFlag = await contract.isListed(tokenIdBig);
+        }
+      } catch (e) {
+        console.warn('isListed() failed:', e);
       }
 
-      // Виконання транзакції на блокчейні
-      const tx = await contract.buyNFT(tokenId, {
-        value: priceInWei,
+      let ownerOnchain;
+      try {
+        ownerOnchain = await contract.ownerOf(tokenIdBig);
+      } catch (e) {
+        console.warn('ownerOf() failed:', e);
+      }
+
+      let onchainItem;
+      try {
+        onchainItem = await contract.getMarketItem(tokenIdBig);
+      } catch (e) {
+        console.warn('getMarketItem failed', e);
+      }
+
+      const exists = !!onchainItem?.exists;
+      const isListed = isListedFlag !== undefined ? isListedFlag : !!onchainItem?.isListed;
+
+      const contractIsOwner = ownerOnchain && (ownerOnchain.toLowerCase() === contract.target.toLowerCase());
+      if (!exists || (!isListed && !contractIsOwner)) {
+        console.error('On-chain listing check failed', {
+          tokenId: tokenIdBig.toString(),
+          exists,
+          isListed,
+          isListedFlag,
+          ownerOnchain,
+          onchainItem
+        });
+        throw new Error('NFT не виставлено на продаж у смарт‑контракті (можливо, лістинг знято або ще не підтверджено). Оновіть сторінку.');
+      }
+
+
+      try {
+        const onchainSeller = onchainItem.seller || onchainItem.owner || '';
+        if (onchainSeller && onchainSeller.toLowerCase() === account.toLowerCase()) {
+          throw new Error('Ви не можете купити власний NFT. Увійдіть іншим гаманцем.');
+        }
+      } catch {}
+
+      const onchainPriceWei = onchainItem.price; 
+      if (!onchainPriceWei || onchainPriceWei <= 0n) {
+        throw new Error('Невірна ціна лістингу на блокчейні');
+      }
+
+      const gasEstimate = await contract.buyNFT.estimateGas(
+        tokenIdBig,
+        { value: onchainPriceWei }
+      );
+
+
+      const priceMatic = Number(ethers.formatEther(onchainPriceWei));
+      let initiateSucceeded = false;
+      try {
+        const initiateResponse = await axios.post(
+          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_BUY(nftId)}`,
+          { offerPrice: priceMatic, currency: 'MATIC' },
+          { headers: getAuthHeaders(token) }
+        );
+        initiateSucceeded = !!initiateResponse?.data?.isSuccess;
+        if (!initiateSucceeded) {
+          console.warn('InitiatePurchase returned non-success:', initiateResponse?.data);
+        }
+      } catch (e) {
+        console.warn('InitiatePurchase failed, continue with on-chain tx then confirm:', e?.response?.data || e?.message);
+      }
+
+      const tx = await contract.buyNFT(tokenIdBig, {
+        value: onchainPriceWei,
         gasLimit: gasEstimate + BigInt(50000)
       });
 
       const receipt = await tx.wait();
 
-      // Підтвердження покупки
+
+      let gasPriceWei = 0n;
+      try {
+        gasPriceWei = receipt?.effectiveGasPrice ?? receipt?.gasPrice ?? await getGasPrice();
+      } catch {}
+      const gasUsed = receipt?.gasUsed ?? 0n;
+      const txFeeWei = (typeof gasPriceWei === 'bigint' && typeof gasUsed === 'bigint') ? gasPriceWei * gasUsed : 0n;
+      const confirmPayload = {
+        nftId,
+        transactionHash: tx.hash,
+        gasUsed: Number(gasUsed || 0n),
+        gasPrice: Number(ethers.formatUnits(gasPriceWei || 0n, 'gwei')),
+        transactionFee: Number(ethers.formatEther(txFeeWei || 0n))
+      };
       const confirmResponse = await axios.post(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MARKETPLACE_CONFIRM}`,
-        {
-          nftId,
-          tokenId,
-          transactionHash: tx.hash,
-          buyerAddress: account,
-          finalPrice: price
-        },
+        confirmPayload,
         { headers: getAuthHeaders(token) }
       );
 
@@ -181,19 +327,17 @@ export const useMarketplace = () => {
         throw new Error(confirmResponse.data.message || 'Помилка підтвердження покупки');
       }
 
-      return { 
-        transactionHash: tx.hash, 
-        purchaseData: confirmResponse.data.data 
-      };
+      return { transactionHash: tx.hash, purchaseData: confirmResponse.data.data };
     } catch (error) {
-      console.error('Error buying NFT:', error);
-      throw error;
+      const serverMessage = error?.response?.data?.message || error?.response?.data || error?.message;
+      console.error('Error buying NFT:', serverMessage, error);
+      throw new Error(serverMessage || 'Помилка покупки');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Отримання всіх активних лістингів
+
   const getActiveListings = async (page = 1, pageSize = 20) => {
     try {
       const response = await axios.get(
@@ -211,7 +355,7 @@ export const useMarketplace = () => {
     }
   };
 
-  // Отримання статусу лістингу
+
   const getListingStatus = async (nftId) => {
     try {
       const response = await axios.get(
@@ -229,7 +373,22 @@ export const useMarketplace = () => {
     }
   };
 
-  // Отримання інформації з блокчейну
+
+  const repairListing = async (nftId, tokenId, price) => {
+    if (!contract || !account) {
+      throw new Error('Контракт або гаманець не підключені');
+    }
+
+    const owner = await contract.ownerOf(tokenId);
+    if (owner.toLowerCase() !== account.toLowerCase()) {
+      throw new Error('Лише власник може відновити лістинг');
+    }
+
+    try { await delistNFT(nftId, tokenId); } catch {}
+    return await listNFTForSale(nftId, tokenId, price);
+  };
+
+
   const getMarketItemFromBlockchain = async (tokenId) => {
     if (!contract) {
       throw new Error('Контракт не підключений');
@@ -251,7 +410,7 @@ export const useMarketplace = () => {
     }
   };
 
-  // Отримання активних лістингів з блокчейну
+
   const getActiveListingsFromBlockchain = async () => {
     if (!contract) {
       throw new Error('Контракт не підключений');
@@ -273,7 +432,7 @@ export const useMarketplace = () => {
     }
   };
 
-  // Оцінка комісій для продажу
+
   const getListingFees = async () => {
     if (!contract) {
       throw new Error('Контракт не підключений');
@@ -293,7 +452,7 @@ export const useMarketplace = () => {
     }
   };
 
-  // Розрахунок роялті
+
   const calculateRoyalty = async (tokenId, salePrice) => {
     if (!contract) {
       throw new Error('Контракт не підключений');
@@ -314,7 +473,24 @@ export const useMarketplace = () => {
     }
   };
 
-  // Отримання загальної статистики маркетплейсу
+
+  const isListedOnchain = async (tokenId) => {
+    if (!contract) throw new Error('Контракт не підключений');
+    const tokenIdBig = typeof tokenId === 'bigint' ? tokenId : BigInt(tokenId);
+    try {
+
+      if (typeof contract.isListed === 'function') {
+        const listed = await contract.isListed(tokenIdBig);
+        if (listed) return true;
+      }
+      const item = await contract.getMarketItem(tokenIdBig);
+      return !!(item && item.exists && item.isListed);
+    } catch (e) {
+      return false;
+    }
+  };
+
+
   const getMarketplaceStats = async () => {
     if (!contract) {
       throw new Error('Контракт не підключений');
@@ -340,6 +516,8 @@ export const useMarketplace = () => {
     listNFTForSale,
     delistNFT,
     buyNFT,
+    repairListing,
+    isListedOnchain,
     getActiveListings,
     getListingStatus,
     getMarketItemFromBlockchain,

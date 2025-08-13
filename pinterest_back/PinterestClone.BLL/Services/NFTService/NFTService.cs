@@ -35,7 +35,7 @@ namespace PinterestClone.BLL.Services.NFTService
                     CreatorWalletAddress = walletAddress,
                     Price = createNFTDto.Price,
                     Currency = createNFTDto.Currency,
-                    IsForSale = createNFTDto.IsForSale,
+                    IsForSale = false,
                     ChainId = "137" 
                 };
 
@@ -181,7 +181,7 @@ namespace PinterestClone.BLL.Services.NFTService
                     }
                 }
 
-                // Видаляємо зображення NFT з папки wwwroot/images
+
                 if (!string.IsNullOrEmpty(existingNft.ImageUrl))
                 {
                     try
@@ -190,7 +190,7 @@ namespace PinterestClone.BLL.Services.NFTService
                     }
                     catch (Exception imageEx)
                     {
-                        // Логуємо помилку, але не зупиняємо процес видалення NFT
+
                         Console.WriteLine($"Warning: Failed to delete NFT image: {imageEx.Message}");
                     }
                 }
@@ -219,10 +219,9 @@ namespace PinterestClone.BLL.Services.NFTService
                     return ServiceResponse<NFTDto>.UnauthorizedResponse("You can only update your own NFTs");
                 }
 
-                // Оновлюємо NFT з даними з blockchain
                 await _nftRepository.UpdateTokenInfoAsync(nftId, tokenId.ToString(), "", transactionHash);
                 
-                // Позначаємо NFT як заміньчений
+
                 nft.IsMinted = true;
                 nft.UpdatedAt = DateTime.UtcNow;
                 await _nftRepository.UpdateAsync(nft);
@@ -374,7 +373,7 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
-        // Favorites operations
+
         public async Task<ServiceResponse<bool>> AddToFavoritesAsync(string nftId, string walletAddress)
         {
             try

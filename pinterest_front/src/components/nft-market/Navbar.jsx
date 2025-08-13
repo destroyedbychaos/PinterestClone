@@ -18,7 +18,7 @@ const Navbar = () => {
     try {
       await connect();
       toast.success('Гаманець підключено успішно!');
-      // Авторизація відбудеться автоматично через useAuth hook
+
     } catch (error) {
       console.error('Error connecting wallet:', error);
       toast.error('Помилка підключення гаманця');
@@ -55,13 +55,13 @@ const Navbar = () => {
   const handleHomeTransition = () => {
     setIsTransitioning(true);
     
-    // Додаємо красиву анімацію з ефектом вибуху
+
     const homeButton = document.querySelector('.home-transition-btn');
     if (homeButton) {
       homeButton.classList.add('exploding');
     }
 
-    // Додаємо ефект fade-out для всієї сторінки
+
     const content = document.querySelector('.nft-market-content');
     if (content) {
       content.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.6, 1)';
@@ -70,7 +70,6 @@ const Navbar = () => {
       content.style.filter = 'blur(5px)';
     }
 
-    // Створюємо particle ефект
     createParticleEffect();
 
     setTimeout(() => {
@@ -118,7 +117,7 @@ const Navbar = () => {
       <nav className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+
           <div className="flex items-center space-x-3">
             <Link to="/nft-market" className="flex items-center space-x-3 group">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -130,8 +129,7 @@ const Navbar = () => {
                 Aestify
               </span>
             </Link>
-            
-            {/* Home Icon */}
+
             <button
               onClick={handleHomeTransition}
               disabled={isTransitioning}
@@ -152,20 +150,19 @@ const Navbar = () => {
                 />
               </svg>
               
-              {/* Tooltip */}
+
               <div className="tooltip absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none">
                 <span>🏠 Головна сторінка Aestify</span>
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
               </div>
               
-              {/* Ripple effect */}
+
               <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute inset-0 rounded-lg animate-ping bg-blue-400/20"></div>
               </div>
             </button>
           </div>
 
-          {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-6">
             <Link 
               to="/nft-market" 
@@ -213,9 +210,8 @@ const Navbar = () => {
 
 
 
-          {/* Wallet Connection */}
+
           <div className="flex items-center space-x-4">
-            {/* Balance Display */}
             {isConnected && (
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-300">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -223,7 +219,6 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* Auth Buttons */}
             {!isConnected ? (
               <Button 
                 onClick={handleConnectWallet} 
@@ -256,7 +251,7 @@ const Navbar = () => {
                 {isLoading ? 'Авторизація...' : 'Увійти'}
               </Button>
             ) : (
-              /* Profile Dropdown */
+
               <div className="relative">
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -285,7 +280,6 @@ const Navbar = () => {
                   </svg>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-lg shadow-lg border border-gray-800 py-1 z-50">
                     <Link 
@@ -326,10 +320,10 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+
       <div className="md:hidden border-t border-gray-800">
         <div className="px-2 pt-2 pb-3 space-y-1">
-          {/* Mobile Home Button */}
+
           <button
             onClick={handleHomeTransition}
             disabled={isTransitioning}

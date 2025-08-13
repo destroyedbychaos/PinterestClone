@@ -5,6 +5,7 @@ import { Badge } from '../../components/nft-market/ui/badge.jsx';
 import { useAuth } from '../../hooks/useAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { useNFT } from '../../hooks/useNFT.js';
+import { useMarketplace } from '../../hooks/useMarketplace.js';
 import MarketplaceNFTCard from '../../components/nft-market/MarketplaceNFTCard.jsx';
 
 import { toast } from 'react-toastify';
@@ -13,6 +14,7 @@ const MarketplacePage = () => {
   const { isAuthenticated } = useAuth();
   const { isConnected, connect, balance, account } = useWeb3();
   const { getAllNFTs, getUserNFTs, getUserFavorites } = useNFT();
+  const { getActiveListings } = useMarketplace();
 
   const [activeTab, setActiveTab] = useState(0);
   const [nfts, setNfts] = useState([]);
@@ -26,7 +28,7 @@ const MarketplacePage = () => {
     totalCreators: 0
   });
 
-  // Завантаження NFT при зміні табу, аккаунту або авторизації
+
   useEffect(() => {
     loadNFTs();
   }, [activeTab, account, isAuthenticated]);
@@ -36,28 +38,63 @@ const MarketplacePage = () => {
     try {
       let response;
       
+      let nftsList = [];
       switch (activeTab) {
-        case 0: // Всі NFT
-          response = await getAllNFTs(1, 50);
-          break;
-        case 1: // Мої NFT
-                if (account) {
-        response = await getUserNFTs(account, 1, 50);
-          }
-          break;
-        case 2: // Улюблені
-                if (account) {
-        response = await getUserFavorites(account, 1, 50);
-          }
-          break;
-        default:
-          response = await getAllNFTs(1, 50);
-      }
+        case 0: {
 
-      const nftsList = response?.items || response?.data || [];
+          response = await getAllNFTs(1, 200);
+          const raw = response?.items || response?.data || [];
+          const isTruthy = (v) => v === true || v === 'true' || v === 1 || v === '1';
+          nftsList = raw.filter(n =>
+            isTruthy(n?.isForSale) || isTruthy(n?.IsForSale) ||
+            isTruthy(n?.isActive) || isTruthy(n?.IsActive) ||
+            isTruthy(n?.isListed) || isTruthy(n?.IsListed)
+          );
+          break;
+        }
+        case 1: {
+
+          if (!account) break;
+          const listingsResp = await getActiveListings(1, 200);
+          const listings = listingsResp?.listings || listingsResp?.Listings || listingsResp?.items || listingsResp?.data?.listings || [];
+          const mine = listings.filter(l => (l.sellerWalletAddress || l.SellerWalletAddress || l.seller || '')
+            .toString().toLowerCase() === account.toLowerCase());
+          nftsList = mine.map(l => ({
+            id: l.nftId || l.NFTId || l.nftID || l.nft?.id,
+            name: l.nftName || l.NFTName || l.nft?.name || 'NFT',
+            imageUrl: l.nftImageUrl || l.NFTImageUrl || l.nft?.imageUrl,
+            price: l.price || l.Price,
+            currency: l.currency || l.Currency || 'MATIC',
+            tokenId: l.tokenId || l.TokenId || l.nft?.tokenId,
+            ownerWalletAddress: l.owner || l.ownerWalletAddress || account,
+            creatorWalletAddress: l.sellerWalletAddress || l.SellerWalletAddress || l.seller || account,
+            isForSale: true,
+            isListed: true,
+            listedAt: l.listedAt || l.ListedAt
+          }));
+          break;
+        }
+        case 2: {
+          if (!account) break;
+          response = await getUserFavorites(account, 1, 200);
+          const raw = response?.items || response?.data || [];
+          const isTruthy = (v) => v === true || v === 'true' || v === 1 || v === '1';
+          nftsList = raw.filter(n =>
+            isTruthy(n?.isForSale) || isTruthy(n?.IsForSale) ||
+            isTruthy(n?.isActive) || isTruthy(n?.IsActive) ||
+            isTruthy(n?.isListed) || isTruthy(n?.IsListed)
+          );
+          break;
+        }
+        default: {
+          response = await getAllNFTs(1, 200);
+          nftsList = response?.items || response?.data || [];
+          break;
+        }
+      }
       setNfts(nftsList);
       
-      // Оновлюємо статистику
+
       updateStats(nftsList, response);
     } catch (error) {
       console.error('Error loading NFTs:', error);
@@ -124,11 +161,11 @@ const MarketplacePage = () => {
     ] : [])
   ];
 
-  // Фільтрація та сортування
+
   const filteredAndSortedNFTs = React.useMemo(() => {
     let filtered = [...nfts];
 
-    // Пошук
+
     if (searchTerm) {
       filtered = filtered.filter(nft =>
         nft.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,7 +173,6 @@ const MarketplacePage = () => {
       );
     }
 
-    // Сортування
     switch (sortBy) {
       case 'newest':
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -162,12 +198,12 @@ const MarketplacePage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+
       <section className="relative py-16 overflow-hidden">
-        {/* Dark background with subtle purple/pink gradients */}
+
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-pink-900/20"></div>
-        
-        {/* Abstract glowing elements */}
+      
+
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-20 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
           <div className="absolute top-40 right-32 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl"></div>
@@ -185,7 +221,7 @@ const MarketplacePage = () => {
               {getPageDescription()}
             </p>
             
-            {/* Quick Actions */}
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/nft-market/create">
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-xl">
@@ -208,16 +244,14 @@ const MarketplacePage = () => {
           </div>
         </div>
       </section>
-
-      {/* Main Content */}
+ 
       <section className="py-8">
         <div className="container mx-auto px-4">
 
 
-          {/* Search and Filter Bar */}
           <div className="mb-8">
             <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-              {/* Tabs Navigation */}
+
               <div className="mb-4 pb-4 border-b border-gray-700">
                 <div className="flex flex-wrap gap-2 justify-center">
                   {tabs.map((tab) => (
@@ -238,7 +272,6 @@ const MarketplacePage = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Search */}
                 <div className="relative">
                   <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -252,7 +285,6 @@ const MarketplacePage = () => {
                   />
                 </div>
 
-                {/* Sort */}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -265,7 +297,6 @@ const MarketplacePage = () => {
                   <option value="name">За назвою</option>
                 </select>
 
-                {/* Results Count */}
                 <div className="flex items-center justify-center">
                   <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg">
                     {filteredAndSortedNFTs.length} результатів
@@ -275,9 +306,8 @@ const MarketplacePage = () => {
                     </div>
       </div>
 
-      {/* NFT Grid */}
           {loading ? (
-            // Skeleton loading
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2">
               {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden animate-pulse">
@@ -331,7 +361,7 @@ const MarketplacePage = () => {
         </div>
       </section>
 
-      {/* Footer Statistics Section */}
+
       <footer className="mt-16 py-12 bg-gray-900/50 border-t border-gray-800">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -353,7 +383,7 @@ const MarketplacePage = () => {
             </div>
           </div>
           
-          {/* Optional footer content */}
+
           <div className="mt-8 pt-8 border-t border-gray-800 text-center">
             <p className="text-gray-400 text-sm">
               © 2024 NFT Marketplace. Створюйте, купуйте та продавайте унікальні цифрові активи.
@@ -362,7 +392,7 @@ const MarketplacePage = () => {
         </div>
       </footer>
 
-      {/* Floating Create Button */}
+
       {isAuthenticated && (
         <Link to="/nft-market/create">
           <button className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-110 z-50">

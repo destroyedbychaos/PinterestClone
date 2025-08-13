@@ -10,7 +10,7 @@ export const useNFT = () => {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Створення NFT
+
   const createNFT = async (nftData, imageFile) => {
     setIsLoading(true);
     
@@ -26,7 +26,7 @@ export const useNFT = () => {
       formData.append('IsForSale', nftData.isForSale || false);
       formData.append('imageFile', imageFile);
       
-      // Додаємо обов'язкові поля для backend
+
       formData.append('CreatorWalletAddress', account);
       formData.append('OwnerWalletAddress', account);
       formData.append('IsMinted', 'false');
@@ -59,7 +59,7 @@ export const useNFT = () => {
     }
   };
 
-  // Мінтинг NFT на блокчейні
+
   const mintNFT = async (nftId, tokenURI, royaltyFraction = 0) => {
     if (!contract || !account) {
       throw new Error('Контракт або гаманець не підключені');
@@ -74,35 +74,32 @@ export const useNFT = () => {
     try {
       console.log('Minting NFT with params:', { account, tokenURI, royaltyFraction });
       
-      // Перевіряємо що всі параметри валідні
       const royalty = Number(royaltyFraction) || 0;
       
-      // Оцінка gas
+
       const gasEstimate = await contract.mintNFT.estimateGas(
         account,
         tokenURI,
         royalty
       );
 
-      // Виконання транзакції
       const tx = await contract.mintNFT(
         account,
         tokenURI,
         royalty,
         {
-          gasLimit: gasEstimate + BigInt(50000) // Додаємо буфер
+          gasLimit: gasEstimate + BigInt(50000) 
         }
       );
 
       const receipt = await tx.wait();
       
-      // Отримання tokenId з логів
       const mintEvent = receipt.logs.find(log => log.topics[0] === contract.interface.getEvent('NFTMinted').topicHash);
       const tokenId = parseInt(mintEvent.topics[1], 16);
 
-      // Оновлення NFT в базі даних
+
       try {
-        console.log('🔄 Оновлюємо NFT в базі даних...', {
+        console.log(' Оновлюємо NFT в базі даних...', {
           endpoint: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.NFT_MINT(nftId)}`,
           data: { transactionHash: tx.hash, tokenId },
           nftId
@@ -114,13 +111,13 @@ export const useNFT = () => {
           { headers: getAuthHeaders(token) }
         );
         
-        console.log('✅ NFT успішно оновлено в базі даних:', updateResponse.data);
+        console.log(' NFT успішно оновлено в базі даних:', updateResponse.data);
       } catch (dbError) {
-        console.error('❌ Помилка оновлення NFT в базі даних:', dbError);
+        console.error(' Помилка оновлення NFT в базі даних:', dbError);
         console.error('Response data:', dbError.response?.data);
         console.error('Response status:', dbError.response?.status);
         
-        // NFT вже заміньчений на блокчейні, тому показуємо попередження замість помилки
+
         throw new Error(`NFT успішно заміньчений на блокчейні (Token ID: ${tokenId}), але виникла помилка при оновленні бази даних. Будь ласка, оновіть сторінку.`);
       }
 
@@ -128,9 +125,8 @@ export const useNFT = () => {
     } catch (error) {
       console.error('Error minting NFT:', error);
       
-      // Перевіряємо чи це помилка блокчейну чи бази даних
       if (error.message.includes('база даних')) {
-        // Це наша кастомна помилка з попереднього блоку
+
         throw error;
       } else if (error.message.includes('Cannot read properties of undefined')) {
         throw new Error('Помилка параметрів контракту. Перевірте підключення до блокчейну');
@@ -146,7 +142,7 @@ export const useNFT = () => {
     }
   };
 
-  // Отримання всіх NFT
+
   const getAllNFTs = async (page = 1, pageSize = 20) => {
     try {
       const response = await axios.get(
@@ -154,12 +150,13 @@ export const useNFT = () => {
       );
 
       if (response.data.isSuccess) {
+        const list = response.data.data?.nfTs || response.data.data?.NFTs || response.data.data?.nfts || [];
         return {
-          items: response.data.data.nfTs || [],
-          totalCount: response.data.data.totalCount || 0,
-          page: response.data.data.page || 1,
-          pageSize: response.data.data.pageSize || 20,
-          totalPages: response.data.data.totalPages || 1
+          items: list,
+          totalCount: response.data.data?.totalCount || response.data.data?.TotalCount || list.length || 0,
+          page: response.data.data?.page || response.data.data?.Page || 1,
+          pageSize: response.data.data?.pageSize || response.data.data?.PageSize || pageSize,
+          totalPages: response.data.data?.totalPages || response.data.data?.TotalPages || 1
         };
       } else {
         throw new Error(response.data.message || 'Помилка отримання NFT');
@@ -173,7 +170,7 @@ export const useNFT = () => {
     }
   };
 
-  // Отримання NFT за ID
+
   const getNFTById = async (id) => {
     try {
       const response = await axios.get(
@@ -191,7 +188,7 @@ export const useNFT = () => {
     }
   };
 
-  // Оновлення NFT
+
   const updateNFT = async (id, updateData) => {
     setIsLoading(true);
     
@@ -215,7 +212,7 @@ export const useNFT = () => {
     }
   };
 
-  // Видалення NFT
+
   const deleteNFT = async (id, burnOnChain = false) => {
     setIsLoading(true);
     
@@ -238,7 +235,7 @@ export const useNFT = () => {
     }
   };
 
-  // Спалення NFT на блокчейні
+
   const burnNFT = async (tokenId) => {
     if (!contract || !account) {
       throw new Error('Контракт або гаманець не підключені');
@@ -259,7 +256,7 @@ export const useNFT = () => {
     }
   };
 
-  // Отримання NFT користувача (які йому належать)
+
   const getUserNFTs = async (walletAddress, page = 1, pageSize = 20) => {
     try {
       const response = await axios.get(
@@ -267,7 +264,32 @@ export const useNFT = () => {
       );
 
       if (response.data.isSuccess) {
-        return response.data.data;
+        const data = response.data.data;
+        const list = data?.NFTs?.NFTs 
+          || data?.nfts?.nfTs 
+          || data?.nfts 
+          || data?.items 
+          || [];
+        return {
+          items: list,
+          totalCount: data?.NFTs?.TotalCount 
+            || data?.nfts?.totalCount 
+            || data?.totalCount 
+            || list.length 
+            || 0,
+          page: data?.NFTs?.Page 
+            || data?.nfts?.page 
+            || data?.page 
+            || 1,
+          pageSize: data?.NFTs?.PageSize 
+            || data?.nfts?.pageSize 
+            || data?.pageSize 
+            || pageSize,
+          totalPages: data?.NFTs?.TotalPages 
+            || data?.nfts?.totalPages 
+            || data?.totalPages 
+            || 1
+        };
       } else {
         throw new Error(response.data.message || 'Помилка отримання NFT користувача');
       }
@@ -277,7 +299,7 @@ export const useNFT = () => {
     }
   };
 
-  // Отримання створених користувачем NFT
+
   const getUserCreatedNFTs = async (walletAddress, page = 1, pageSize = 20) => {
     try {
       const response = await axios.get(
@@ -285,7 +307,32 @@ export const useNFT = () => {
       );
 
       if (response.data.isSuccess) {
-        return response.data.data;
+        const data = response.data.data;
+        const list = data?.NFTs?.NFTs 
+          || data?.nfts?.nfTs 
+          || data?.nfts 
+          || data?.items 
+          || [];
+        return {
+          items: list,
+          totalCount: data?.NFTs?.TotalCount 
+            || data?.nfts?.totalCount 
+            || data?.totalCount 
+            || list.length 
+            || 0,
+          page: data?.NFTs?.Page 
+            || data?.nfts?.page 
+            || data?.page 
+            || 1,
+          pageSize: data?.NFTs?.PageSize 
+            || data?.nfts?.pageSize 
+            || data?.pageSize 
+            || pageSize,
+          totalPages: data?.NFTs?.TotalPages 
+            || data?.nfts?.totalPages 
+            || data?.totalPages 
+            || 1
+        };
       } else {
         throw new Error(response.data.message || 'Помилка отримання створених NFT');
       }
@@ -295,7 +342,7 @@ export const useNFT = () => {
     }
   };
 
-  // Додавання в улюблені
+
   const addToFavorites = async (walletAddress, nftId) => {
     setIsLoading(true);
     
@@ -323,7 +370,7 @@ export const useNFT = () => {
     }
   };
 
-  // Видалення з улюблених
+
   const removeFromFavorites = async (walletAddress, nftId) => {
     setIsLoading(true);
     
@@ -346,7 +393,7 @@ export const useNFT = () => {
     }
   };
 
-  // Отримання улюблених NFT користувача
+
   const getUserFavorites = async (walletAddress, page = 1, pageSize = 20) => {
     try {
       const response = await axios.get(
@@ -354,13 +401,54 @@ export const useNFT = () => {
       );
 
       if (response.data.isSuccess) {
-        return response.data.data;
+        const data = response.data.data;
+        const list = data?.Favorites?.NFTs 
+          || data?.favorites?.nfTs 
+          || data?.favorites 
+          || data?.items 
+          || [];
+        return {
+          items: list,
+          totalCount: data?.Favorites?.TotalCount 
+            || data?.favorites?.totalCount 
+            || data?.totalCount 
+            || list.length 
+            || 0,
+          page: data?.Favorites?.Page 
+            || data?.favorites?.page 
+            || data?.page 
+            || 1,
+          pageSize: data?.Favorites?.PageSize 
+            || data?.favorites?.pageSize 
+            || data?.pageSize 
+            || pageSize,
+          totalPages: data?.Favorites?.TotalPages 
+            || data?.favorites?.totalPages 
+            || data?.totalPages 
+            || 1
+        };
       } else {
         throw new Error(response.data.message || 'Помилка отримання улюблених NFT');
       }
     } catch (error) {
       console.error('Error getting user favorites:', error);
       throw new Error(error.response?.data?.message || error.message || 'Помилка отримання улюблених NFT');
+    }
+  };
+
+
+  const isFavorite = async (walletAddress, nftId) => {
+    try {
+      const response = await axios.get(
+        `${API_CONFIG.BASE_URL}/favorites/${nftId}/is-favorite?walletAddress=${walletAddress}`
+      );
+      if (response?.data?.isSuccess !== undefined) {
+        return !!response.data.data;
+      }
+
+      return !!response?.data;
+    } catch (e) {
+      return false;
     }
   };
 
@@ -379,6 +467,7 @@ export const useNFT = () => {
     getUserCreatedNFTs,
     addToFavorites,
     removeFromFavorites,
-    getUserFavorites
+    getUserFavorites,
+    isFavorite
   };
 };

@@ -22,11 +22,11 @@ export const Web3Provider = ({ children }) => {
   const [balance, setBalance] = useState('0');
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Ініціалізація Web3
+
   useEffect(() => {
-    if (isInitialized) return; // Уникаємо повторної ініціалізації
+    if (isInitialized) return; 
     
-    // Знаходимо правильний Ethereum провайдер
+  
     let ethereum = window.ethereum;
     
     if (window.ethereum?.providers?.length) {
@@ -39,18 +39,8 @@ export const Web3Provider = ({ children }) => {
       const provider = new ethers.BrowserProvider(ethereum);
       setProvider(provider);
 
-      // Відкладена перевірка попереднього підключення (тільки якщо є збережений токен)
-      const savedToken = localStorage.getItem('authToken');
-      const tokenExpiration = localStorage.getItem('authTokenExpiration');
-      const isTokenValid = savedToken && (!tokenExpiration || Date.now() < parseInt(tokenExpiration));
+
       
-      if (isTokenValid) {
-        setTimeout(() => {
-          checkConnection();
-        }, 1000); // Відкладаємо на 1 секунду
-      }
-      
-      // Слухачі подій
       ethereum.on('accountsChanged', handleAccountsChanged);
       ethereum.on('chainChanged', handleChainChanged);
       ethereum.on('disconnect', handleDisconnect);
@@ -74,10 +64,10 @@ export const Web3Provider = ({ children }) => {
     };
   }, [isInitialized]);
 
-  // Перевірка попереднього підключення
+
   const checkConnection = async () => {
     try {
-      if (window.ethereum && !account) { // Перевіряємо тільки якщо ще не підключені
+      if (window.ethereum && !account) { 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const accounts = await provider.listAccounts();
         
@@ -90,10 +80,8 @@ export const Web3Provider = ({ children }) => {
           setChainId(Number(network.chainId));
           setSigner(signer);
           
-          // Ініціалізація контракту
           initContract(signer);
           
-          // Отримання балансу
           updateBalance(address, provider);
         }
       }
@@ -102,12 +90,11 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Підключення гаманця
+
   const connect = async () => {
-    // Перевіряємо різні способи підключення до MetaMask
+
     let ethereum = window.ethereum;
     
-    // Якщо є кілька провайдерів (напр. MetaMask + Manta), шукаємо MetaMask
     if (window.ethereum?.providers?.length) {
       ethereum = window.ethereum.providers.find(
         (provider) => provider.isMetaMask
@@ -121,7 +108,6 @@ export const Web3Provider = ({ children }) => {
     setIsConnecting(true);
     
     try {
-      // Запит доступу до акаунтів через конкретний провайдер
       await ethereum.request({ method: 'eth_requestAccounts' });
       
       const provider = new ethers.BrowserProvider(ethereum);
@@ -134,32 +120,15 @@ export const Web3Provider = ({ children }) => {
       setAccount(address);
       setChainId(Number(network.chainId));
       
-      // Перевірка мережі (тільки якщо потрібно)
       if (Number(network.chainId) !== BLOCKCHAIN_CONFIG.POLYGON_CHAIN_ID) {
         await switchToPolygon();
       }
       
-      // Ініціалізація контракту
       initContract(signer);
       
-      // Отримання балансу
       updateBalance(address, provider);
       
-      // Автоматична авторизація після підключення кошелька (тільки якщо немає токена)
-      const savedToken = localStorage.getItem('authToken');
-      const tokenExpiration = localStorage.getItem('authTokenExpiration');
-      
-      // Перевіряємо чи токен не прострочений
-      const isTokenExpired = tokenExpiration && Date.now() > parseInt(tokenExpiration);
-      
-      if (!savedToken || isTokenExpired) {
-        console.log('🚀 Відправляємо подію walletConnected для:', address);
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('walletConnected', { detail: address }));
-        }, 1000); // Збільшуємо затримку для стабільності
-      } else {
-        console.log('✅ Токен дійсний, пропускаємо автоматичний логін');
-      }
+
       
       return address;
     } catch (error) {
@@ -170,7 +139,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Відключення гаманця
+
   const disconnect = () => {
     setProvider(null);
     setSigner(null);
@@ -180,7 +149,7 @@ export const Web3Provider = ({ children }) => {
     setBalance('0');
   };
 
-  // Перемикання на Polygon
+
   const switchToPolygon = async () => {
     try {
       await window.ethereum.request({
@@ -188,7 +157,6 @@ export const Web3Provider = ({ children }) => {
         params: [{ chainId: `0x${BLOCKCHAIN_CONFIG.POLYGON_CHAIN_ID.toString(16)}` }],
       });
     } catch (switchError) {
-      // Якщо мережа не додана, додаємо її
       if (switchError.code === 4902) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
@@ -210,7 +178,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Ініціалізація контракту
+
   const initContract = (signer) => {
     if (signer && BLOCKCHAIN_CONFIG.NFT_MARKETPLACE_ADDRESS) {
       const contractInstance = new ethers.Contract(
@@ -222,7 +190,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Оновлення балансу
+
   const updateBalance = async (address, provider) => {
     try {
       const balance = await provider.getBalance(address);
@@ -232,13 +200,11 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Обробники подій
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
       disconnect();
     } else {
       setAccount(accounts[0]);
-      // Оновлення балансу для нового акаунту
       if (provider) {
         updateBalance(accounts[0], provider);
       }
@@ -249,7 +215,7 @@ export const Web3Provider = ({ children }) => {
     const numericChainId = parseInt(chainId, 16);
     setChainId(numericChainId);
     
-    // Перезавантаження сторінки для правильної ініціалізації
+
     window.location.reload();
   };
 
@@ -257,7 +223,6 @@ export const Web3Provider = ({ children }) => {
     disconnect();
   };
 
-  // Підпис повідомлення
   const signMessage = async (message) => {
     if (!signer) {
       throw new Error('Гаманець не підключений');
@@ -271,7 +236,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Відправка транзакції
+
   const sendTransaction = async (transaction) => {
     if (!signer) {
       throw new Error('Гаманець не підключений');
@@ -280,7 +245,7 @@ export const Web3Provider = ({ children }) => {
     try {
       const tx = await signer.sendTransaction(transaction);
       
-      // Оновлення балансу після транзакції
+
       tx.wait().then(() => {
         updateBalance(account, provider);
       });
@@ -292,7 +257,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Отримання gas price
+
   const getGasPrice = async () => {
     if (!provider) {
       throw new Error('Provider не ініціалізований');
@@ -307,7 +272,7 @@ export const Web3Provider = ({ children }) => {
     }
   };
 
-  // Оцінка gas для транзакції
+
   const estimateGas = async (transaction) => {
     if (!provider) {
       throw new Error('Provider не ініціалізований');
@@ -322,7 +287,7 @@ export const Web3Provider = ({ children }) => {
   };
 
   const value = {
-    // Стан
+
     provider,
     signer,
     account,
@@ -331,7 +296,6 @@ export const Web3Provider = ({ children }) => {
     isConnecting,
     balance,
     
-    // Методи
     connect,
     disconnect,
     switchToPolygon,
@@ -341,7 +305,6 @@ export const Web3Provider = ({ children }) => {
     estimateGas,
     updateBalance: () => updateBalance(account, provider),
     
-    // Утиліти
     isConnected: !!account,
     isPolygon: chainId === BLOCKCHAIN_CONFIG.POLYGON_CHAIN_ID,
     formatAddress: BLOCKCHAIN_UTILS.formatAddress,

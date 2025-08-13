@@ -63,6 +63,8 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                 };
 
                 var createdListing = await _marketplaceRepository.CreateAsync(listing);
+
+                await _nftRepository.UpdateSaleStatusAsync(listNFTDto.NFTId, true, listNFTDto.Price, listNFTDto.Currency);
                 return ServiceResponse<MarketplaceListingDto>.SuccessResponse(MapToMarketplaceListingDto(createdListing));
             }
             catch (Exception ex)
@@ -87,6 +89,10 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                 }
 
                 var success = await _marketplaceRepository.DeactivateByNFTIdAsync(nftId);
+                if (success)
+                {
+                    await _nftRepository.UpdateSaleStatusAsync(nftId, false);
+                }
                 return ServiceResponse<bool>.SuccessResponse(success);
             }
             catch (Exception ex)
@@ -174,19 +180,11 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                     return ServiceResponse<PurchaseTransactionDto>.NotFoundResponse("NFT not found");
                 }
 
+
                 var gasPriceResponse = await _blockchainService.GetGasPriceAsync();
-                if (!gasPriceResponse.IsSuccess)
-                {
-                    return ServiceResponse<PurchaseTransactionDto>.ErrorResponse("Failed to get gas price");
-                }
-
-                var estimatedGasResponse = await _blockchainService.EstimateGasForMintAsync(buyerWalletAddress);
-                if (!estimatedGasResponse.IsSuccess)
-                {
-                    return ServiceResponse<PurchaseTransactionDto>.ErrorResponse("Failed to estimate gas");
-                }
-
-                var totalCost = listing.Price + (estimatedGasResponse.Data.EstimatedGas * gasPriceResponse.Data);
+                var estimatedGas = 210000m; 
+                var gasPrice = gasPriceResponse.IsSuccess ? gasPriceResponse.Data : 0m;
+                var totalCost = listing.Price + (estimatedGas * gasPrice);
 
                 var buyerBalanceResponse = await _blockchainService.GetMATICBalanceAsync(buyerWalletAddress);
                 if (!buyerBalanceResponse.IsSuccess)
@@ -200,14 +198,9 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                 }
 
                 var transactionDataResponse = await _blockchainService.PreparePurchaseTransactionAsync(
-                    nftId, 
-                    buyerWalletAddress, 
+                    nftId,
+                    buyerWalletAddress,
                     listing.Price);
-
-                if (!transactionDataResponse.IsSuccess)
-                {
-                    return ServiceResponse<PurchaseTransactionDto>.ErrorResponse("Failed to prepare transaction data");
-                }
 
                 var purchaseTransaction = new PurchaseTransactionDto
                 {
@@ -218,12 +211,12 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                     BuyerWalletAddress = buyerWalletAddress,
                     Price = listing.Price,
                     Currency = listing.Currency,
-                    TransactionData = transactionDataResponse.Data.TransactionData,
-                    ToAddress = transactionDataResponse.Data.ToAddress,
-                    Value = transactionDataResponse.Data.Value,
-                    GasLimit = estimatedGasResponse.Data.EstimatedGas.ToString(),
-                    GasPrice = gasPriceResponse.Data.ToString(),
-                    Nonce = transactionDataResponse.Data.Nonce
+                    TransactionData = transactionDataResponse.IsSuccess ? transactionDataResponse.Data.TransactionData : string.Empty,
+                    ToAddress = transactionDataResponse.IsSuccess ? transactionDataResponse.Data.ToAddress : listing.NFT?.ContractAddress ?? string.Empty,
+                    Value = transactionDataResponse.IsSuccess ? transactionDataResponse.Data.Value : listing.Price.ToString(),
+                    GasLimit = estimatedGas.ToString(),
+                    GasPrice = gasPrice.ToString(),
+                    Nonce = transactionDataResponse.IsSuccess ? transactionDataResponse.Data.Nonce : string.Empty
                 };
 
                 return ServiceResponse<PurchaseTransactionDto>.SuccessResponse(purchaseTransaction);
@@ -270,6 +263,15 @@ namespace PinterestClone.BLL.Services.MarketplaceService
                 {
                     return ServiceResponse<PurchaseConfirmationDto>.ErrorResponse("Failed to mark NFT as sold");
                 }
+
+
+                try
+                {
+
+                    await _nftRepository.TransferOwnershipAsync(confirmPurchaseDto.NFTId, buyerWalletAddress);
+                    await _nftRepository.UpdateSaleStatusAsync(confirmPurchaseDto.NFTId, false);
+                }
+                catch {  }
 
                 var confirmation = new PurchaseConfirmationDto
                 {

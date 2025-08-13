@@ -20,7 +20,7 @@ const Index = () => {
     totalVolume: 0
   });
 
-  // Завантаження NFT при завантаженні компонента та зміні авторизації
+
   useEffect(() => {
     loadNFTs();
   }, [isAuthenticated]);
@@ -28,15 +28,24 @@ const Index = () => {
   const loadNFTs = async () => {
     try {
       setLoadingNFTs(true);
-      const data = await getAllNFTs(1, 12); // Завантажуємо 12 NFT для головної сторінки
-      setNfts(data.items || []);
+      const data = await getAllNFTs(1, 400);
+      const listed = (data.items || []).filter(n => n.isForSale === true || n.IsForSale === true || n.isActive === true || n.IsActive === true);
+
+      const now = Date.now();
+      const recent = listed.filter(n => {
+        const ts = new Date(n.createdAt || n.updatedAt || n.listedAt || n.ListedAt || 0).getTime();
+        return ts && (now - ts) <= 24 * 60 * 60 * 1000;
+      });
+
+      recent.sort((a, b) => new Date(b.createdAt || b.updatedAt || b.listedAt || 0) - new Date(a.createdAt || a.updatedAt || a.listedAt || 0));
+      setNfts(recent.slice(0, 4));
       
-      // Оновлюємо статистику
-      const totalNFTs = data.totalCount || 0;
-      const mintedNFTs = (data.items || []).filter(nft => nft.isMinted).length;
-      const creators = new Set((data.items || []).map(nft => nft.creatorWalletAddress)).size;
-      const totalVolume = (data.items || [])
-        .filter(nft => nft.isForSale && nft.price)
+
+      const totalNFTs = listed.length || 0;
+      const mintedNFTs = listed.filter(nft => nft.isMinted).length;
+      const creators = new Set(listed.map(nft => nft.creatorWalletAddress)).size;
+      const totalVolume = listed
+        .filter(nft => (nft.isForSale || nft.IsForSale) && nft.price)
         .reduce((sum, nft) => sum + parseFloat(nft.price || 0), 0);
       
       setStats({
@@ -55,12 +64,11 @@ const Index = () => {
   };
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+
       <section className="relative py-24 overflow-hidden">
-        {/* Dark background with subtle purple/pink gradients */}
+
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-pink-900/20"></div>
-        
-        {/* Abstract glowing elements in background */}
+
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-20 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
           <div className="absolute top-40 right-32 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl"></div>
@@ -98,7 +106,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Recently Added NFTs */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
@@ -116,7 +123,7 @@ const Index = () => {
           </div>
           
           {loadingNFTs ? (
-            // Skeleton loading
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2">
               {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden animate-pulse">
@@ -136,6 +143,7 @@ const Index = () => {
                 <MarketplaceNFTCard
                   key={nft.id}
                   nft={nft}
+                  isNew={true}
                   isOwner={account && nft.ownerWalletAddress?.toLowerCase() === account.toLowerCase()}
                   onUpdate={loadNFTs}
                 />
@@ -160,7 +168,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+
       <section className="py-16 bg-gray-900/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">

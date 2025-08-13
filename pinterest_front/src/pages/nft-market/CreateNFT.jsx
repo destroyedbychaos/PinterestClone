@@ -27,21 +27,21 @@ const CreateNFT = () => {
     isForSale: false
   });
   
-  const [step, setStep] = useState(1); // 1: Create, 2: Mint, 3: Success
+  const [step, setStep] = useState(1); 
   const [createdNFT, setCreatedNFT] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
   const handleFileSelect = (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Перевірка типу файлу
+
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         toast.error('Підтримуються тільки зображення (JPEG, PNG, GIF, WebP)');
         return;
       }
 
-      // Перевірка розміру файлу (max 10MB)
+
       if (file.size > 10 * 1024 * 1024) {
         toast.error('Розмір файлу не повинен перевищувати 10MB');
         return;
@@ -96,14 +96,14 @@ const CreateNFT = () => {
     try {
       const nftData = {
         ...formData,
-        royaltyFraction: parseFloat(formData.royaltyFraction) * 100 // Конвертуємо в базисні пункти
+        royaltyFraction: parseFloat(formData.royaltyFraction) * 100 
       };
 
       const createdNft = await createNFT(nftData, selectedFile);
       console.log('NFT created successfully:', createdNft);
       setCreatedNFT(createdNft);
       setStep(2);
-      toast.success('NFT створено успішно! Тепер можете замінтити його на блокчейні.');
+      toast.success('NFT створено успішно! Тепер можете перейти до мінтингу.');
     } catch (error) {
       console.error('Error creating NFT:', error);
       toast.error('Помилка створення NFT');
@@ -117,20 +117,20 @@ const CreateNFT = () => {
       return;
     }
 
-    console.log('🚀 Starting NFT minting process...');
+    console.log(' Starting NFT minting process...');
     console.log('CreatedNFT object:', createdNFT);
 
     try {
-      // Використовуємо imageUrl як tokenURI (backend не створює metadataUrl)
+ 
       const tokenURI = createdNFT.imageUrl;
       
       if (!tokenURI) {
-        console.error('❌ No tokenURI available. CreatedNFT structure:', Object.keys(createdNFT));
+        console.error(' No tokenURI available. CreatedNFT structure:', Object.keys(createdNFT));
         throw new Error('Не вдалося отримати URL для мінтингу NFT. Перевірте що зображення було завантажено.');
       }
       
-      console.log('📊 Using tokenURI:', tokenURI);
-      console.log('💰 Royalty fraction:', parseInt(formData.royaltyFraction) * 100);
+      console.log(' Using tokenURI:', tokenURI);
+      console.log(' Royalty fraction:', parseInt(formData.royaltyFraction) * 100);
       
       const result = await mintNFT(
         createdNFT.id,
@@ -138,19 +138,18 @@ const CreateNFT = () => {
         parseInt(formData.royaltyFraction) * 100
       );
       
-      console.log('✅ Mint result:', result);
-      console.log('🎯 Transitioning to step 3...');
+      console.log(' Mint result:', result);
+      console.log(' Transitioning to step 3...');
       
-      // Перехід на 3-й крок і запуск святкування
-      setStep(3);
+
       setShowCelebration(true);
       
-      console.log('🎉 Step 3 reached! Celebration started!');
-      toast.success('🎉 NFT успішно заміновано на блокчейні!');
+      console.log(' Step 3 reached! Celebration started!');
+      toast.success(' NFT успішно заміновано на блокчейні!');
       
-      // Додатковий toast про додавання в профіль
+
       setTimeout(() => {
-        toast.info('✨ NFT додано у ваш профіль!', {
+        toast.info(' NFT додано у ваш профіль!', {
           autoClose: 3000,
           position: "bottom-right"
         });
@@ -165,7 +164,7 @@ const CreateNFT = () => {
         formData: formData
       });
       
-      // Детальніші повідомлення про помилки
+
       let errorMessage = 'Помилка мінтингу NFT: ';
       let toastType = 'error';
       let autoClose = 5000;
@@ -173,7 +172,7 @@ const CreateNFT = () => {
       if (error.message.includes('база даних')) {
         errorMessage = error.message;
         toastType = 'warning';
-        autoClose = 12000; // Довший час для важливого повідомлення
+        autoClose = 12000; 
       } else if (error.message.includes('User rejected') || error.message.includes('відхилена')) {
         errorMessage = 'Транзакцію було відхилено користувачем';
         toastType = 'info';
@@ -193,8 +192,7 @@ const CreateNFT = () => {
         toast.error(errorMessage, { autoClose });
       }
       
-      // НЕ повертаємося на попередній крок при помилці, залишаємося на мінтингу
-      // Користувач може спробувати ще раз
+
     }
   };
 
@@ -235,7 +233,7 @@ const CreateNFT = () => {
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
+
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4 text-white">
             Створити <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">NFT</span>
@@ -245,7 +243,7 @@ const CreateNFT = () => {
           </p>
         </div>
 
-        {/* Progress Steps */}
+
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-4">
             <div className={`flex items-center ${step >= 1 ? 'text-purple-400' : 'text-gray-600'}`}>
@@ -279,7 +277,7 @@ const CreateNFT = () => {
 
         {step === 1 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Image Upload */}
+
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">Зображення NFT</CardTitle>
@@ -331,7 +329,7 @@ const CreateNFT = () => {
               </CardContent>
             </Card>
 
-            {/* NFT Details */}
+
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">Деталі NFT</CardTitle>
@@ -509,7 +507,7 @@ const CreateNFT = () => {
           <div className="max-w-2xl mx-auto">
             <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 transform transition-all duration-500">
               <CardContent className="text-center space-y-6 p-8">
-                {/* Елегантна анімація успіху (іконка видалена) */}
+
 
                 <div className="space-y-4">
                   <h2 className="text-4xl font-bold animate-rainbow-text animate-pulse">
@@ -533,7 +531,7 @@ const CreateNFT = () => {
                     className="w-64 h-64 object-cover rounded-2xl mx-auto shadow-2xl shadow-purple-500/30 transform transition-transform duration-500"
                     onError={(e) => handleImageError(e, 'NFT')}
                   />
-                  {/* Елегантні світлові ефекти навколо NFT */}
+
                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse shadow-lg"></div>
                   <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse"></div>
                 </div>
@@ -581,7 +579,7 @@ const CreateNFT = () => {
           </div>
         )}
         
-        {/* Святковий ефект */}
+
         <CelebrationEffect 
           isActive={showCelebration} 
           onComplete={() => setShowCelebration(false)} 

@@ -96,7 +96,7 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
                 .CountAsync();
         }
 
-        // Методи для отримання створених користувачем NFT
+
         public async Task<IEnumerable<NFT>> GetUserCreatedNFTsAsync(string walletAddress, int page, int pageSize)
         {
             var skip = (page - 1) * pageSize;
@@ -124,7 +124,7 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
 
             nft.TokenId = tokenId;
             nft.ContractAddress = contractAddress;
-            nft.IsMinted = true; // Встановлюємо що NFT замінчений
+            nft.IsMinted = true; 
             nft.UpdatedAt = DateTime.UtcNow;
 
             _context.NFTs.Update(nft);
@@ -141,6 +141,40 @@ namespace PinterestClone.DAL.Repositories.NFTRepository
             nft.Description = $"{nft.Description}\nIPFS Metadata: {ipfsMetadataHash}\nIPFS Image: {ipfsImageHash}";
             nft.UpdatedAt = DateTime.UtcNow;
 
+            _context.NFTs.Update(nft);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> TransferOwnershipAsync(string nftId, string newOwnerWalletAddress)
+        {
+            var nft = await _context.NFTs.FindAsync(nftId);
+            if (nft == null)
+                return false;
+
+            nft.OwnerWalletAddress = newOwnerWalletAddress;
+            nft.UpdatedAt = DateTime.UtcNow;
+            _context.NFTs.Update(nft);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateSaleStatusAsync(string nftId, bool isForSale, decimal? price = null, string? currency = null)
+        {
+            var nft = await _context.NFTs.FindAsync(nftId);
+            if (nft == null)
+                return false;
+
+            nft.IsForSale = isForSale;
+            if (price.HasValue)
+            {
+                nft.Price = price.Value;
+            }
+            if (!string.IsNullOrEmpty(currency))
+            {
+                nft.Currency = currency;
+            }
+            nft.UpdatedAt = DateTime.UtcNow;
             _context.NFTs.Update(nft);
             await _context.SaveChangesAsync();
             return true;

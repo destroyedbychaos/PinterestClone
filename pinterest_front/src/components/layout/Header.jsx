@@ -15,10 +15,10 @@ const adminPages = [
 const Header = memo(() => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useSelector((state) => state.auth);
+    const { user, isAuthenticated, origin } = useSelector((state) => state.auth);
     
     const isAdmin = user?.role === 'Admin';
-    const isLoggedIn = isAuthenticated;
+    const isLoggedIn = isAuthenticated && (origin === null || origin === 'site');
 
     const [adminMenuOpen, setAdminMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);

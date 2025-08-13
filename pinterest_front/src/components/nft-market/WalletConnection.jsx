@@ -49,7 +49,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
   const [showDetails, setShowDetails] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Автентифікація відбувається автоматично через useAuth hook
+
 
   const handleConnect = async () => {
     try {
@@ -59,6 +59,16 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
       if (onConnect) {
         onConnect(connectedAddress);
       }
+
+ 
+      if (!isAuthenticated) {
+        try {
+          await login();
+        } catch (e) {
+          console.error('Auto-auth after wallet connect failed:', e);
+
+        }
+      }
     } catch (error) {
       console.error('Wallet connection error:', error);
       toast.error(error.message || 'Помилка підключення гаманця');
@@ -67,7 +77,6 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
 
   const handleDisconnect = () => {
     disconnect();
-    logout();
     toast.info('Гаманець відключено');
   };
 
@@ -100,7 +109,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
     }
   };
 
-  // Показати кнопку підключення якщо гаманець не підключений
+
   if (!isConnected) {
     return (
       <Button
@@ -115,7 +124,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
     );
   }
 
-  // Показати попередження якщо неправильна мережа
+
   if (!isPolygon) {
     return (
       <Box>
@@ -133,7 +142,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
     );
   }
 
-  // Показати статус автентифікації
+
   if (isConnected && !isAuthenticated) {
     return (
       <Box>
@@ -156,7 +165,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
     );
   }
 
-  // Головний інтерфейс підключеного гаманця
+
   return (
     <Box>
       <Card variant="outlined" sx={{ minWidth: 300 }}>
@@ -224,7 +233,6 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
         </CardContent>
       </Card>
 
-      {/* Діалог з деталями */}
       <Dialog open={showDetails} onClose={() => setShowDetails(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Деталі підключення</DialogTitle>
         <DialogContent>

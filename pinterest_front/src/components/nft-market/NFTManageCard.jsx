@@ -10,20 +10,8 @@ import {
   TextField,
   Button,
   Typography,
-  Chip,
-  IconButton,
-  Menu,
-  MenuItem,
   CircularProgress
 } from '@mui/material';
-import {
-  MoreVert,
-  Edit,
-  Sell,
-  RemoveShoppingCart,
-  Visibility,
-  Delete
-} from '@mui/icons-material';
 import { useNFT } from '../../hooks/useNFT';
 import { useMarketplace } from '../../hooks/useMarketplace';
 import { toast } from 'react-toastify';
@@ -33,7 +21,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
   const { updateNFT, deleteNFT, isLoading: nftLoading } = useNFT();
   const { listNFTForSale, delistNFT, isLoading: marketplaceLoading } = useMarketplace();
   
-  const [anchorEl, setAnchorEl] = useState(null);
   const [showSellDialog, setShowSellDialog] = useState(false);
   const [sellPrice, setSellPrice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,14 +32,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
     if (isForSale) return { text: "На продажу", color: "success", icon: "🏪" };
     if (isMinted) return { text: "Створено", color: "primary", icon: "🎨" };
     return { text: "Чернетка", color: "default", icon: "⏳" };
-  };
-
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
   };
 
   const handleSell = async () => {
@@ -68,7 +47,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
 
     setIsLoading(true);
     try {
-      // Спочатку оновлюємо NFT в базі
       await updateNFT(nft.id, {
         name: nft.name,
         description: nft.description,
@@ -77,7 +55,7 @@ const NFTManageCard = ({ nft, onUpdate }) => {
         isForSale: true
       });
 
-      // Потім виставляємо на маркетплейс
+
       await listNFTForSale(nft.id, nft.tokenId, parseFloat(sellPrice));
       
       toast.success('NFT виставлено на продаж');
@@ -94,12 +72,11 @@ const NFTManageCard = ({ nft, onUpdate }) => {
   const handleDelist = async () => {
     setIsLoading(true);
     try {
-      // Знімаємо з маркетплейса
+
       if (nft.tokenId) {
         await delistNFT(nft.id, nft.tokenId);
       }
-      
-      // Оновлюємо в базі
+
       await updateNFT(nft.id, {
         name: nft.name,
         description: nft.description,
@@ -139,34 +116,25 @@ const NFTManageCard = ({ nft, onUpdate }) => {
   return (
     <>
       <div className="nft-card-modern group cursor-pointer">
-        {/* Image Container */}
+
         <div className="relative">
           <img 
             src={getFullImageUrl(nft.imageUrl)} 
             alt={nft.name}
-            className="w-full h-64 object-cover rounded-t-2xl"
+            className="w-full h-52 object-cover rounded-t-lg"
             onError={(e) => handleImageError(e, 'NFT')}
           />
           
-          {/* Status Badge */}
+
           {!isMinted && (
             <div className="absolute top-3 right-3 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium">
               В процесі
             </div>
           )}
           
-          {/* Actions Menu */}
-          <div className="absolute top-3 left-3">
-            <IconButton
-              onClick={handleMenuOpen}
-              size="small"
-              className="bg-gray-900/80 text-white hover:bg-gray-800"
-            >
-              <MoreVert />
-            </IconButton>
-          </div>
 
-          {/* Loading Overlay */}
+
+
           {(isLoading || nftLoading || marketplaceLoading) && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <CircularProgress size={40} className="text-purple-400" />
@@ -174,38 +142,36 @@ const NFTManageCard = ({ nft, onUpdate }) => {
           )}
         </div>
 
-        {/* Content */}
-        <div className="p-4 bg-gray-950/95 backdrop-blur-sm rounded-b-2xl border-t border-gray-800/50">
-          
-          {/* Title */}
-          <h3 className="text-white font-semibold text-lg mb-2 line-clamp-1">
+
+        <div className="p-2.5 bg-gray-950/95 backdrop-blur-sm rounded-b-lg border-t border-gray-800/50">
+
+          <h3 className="text-white font-medium text-sm mb-1 line-clamp-1">
             {nft.name}
           </h3>
 
-          {/* Description */}
-          <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+ 
+          <p className="text-gray-400 text-[11px] mb-2 line-clamp-2">
             {nft.description || 'Опис недоступний'}
           </p>
 
-          {/* Price */}
-          <div className="mb-4">
+
+          <div className="mb-3">
             {isForSale ? (
-              <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <div className="text-sm font-semibold text-purple-300">
                 {nft.price} MATIC
               </div>
             ) : (
-              <div className="text-gray-400 text-lg">
+              <div className="text-gray-400 text-xs">
                 {isMinted ? 'Не продається' : 'Чернетка'}
               </div>
             )}
           </div>
 
-          {/* Management Buttons */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {!isForSale && isMinted && (
               <button
                 onClick={() => setShowSellDialog(true)}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-green-500/25"
+                className="w-full bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
               >
                 💰 Виставити на продаж
               </button>
@@ -214,14 +180,14 @@ const NFTManageCard = ({ nft, onUpdate }) => {
             {isForSale && (
               <button
                 onClick={handleDelist}
-                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25"
+                className="w-full bg-red-600/90 hover:bg-red-600 text-white font-medium py-2 px-3 rounded-md text-sm transition-colors"
               >
                 🚫 Зняти з продажу
               </button>
             )}
 
             <Link to={`/nft-market/nft/${nft.id}`} className="block">
-              <button className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300">
+              <button className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-medium py-1.5 px-3 rounded-md text-sm transition-colors">
                 👁️ Переглянути деталі
               </button>
             </Link>
@@ -229,93 +195,72 @@ const NFTManageCard = ({ nft, onUpdate }) => {
         </div>
       </div>
 
-      {/* Actions Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        className="mt-2"
-      >
-        <MenuItem onClick={() => { handleMenuClose(); }}>
-          <Link to={`/nft-market/nft/${nft.id}`} className="flex items-center w-full">
-            <Visibility className="mr-2" />
-            Переглянути деталі
-          </Link>
-        </MenuItem>
-        
-        {!isForSale && isMinted && (
-          <MenuItem onClick={() => { handleMenuClose(); setShowSellDialog(true); }}>
-            <Sell className="mr-2" />
-            Виставити на продаж
-          </MenuItem>
-        )}
-        
-        {isForSale && (
-          <MenuItem onClick={() => { handleMenuClose(); handleDelist(); }}>
-            <RemoveShoppingCart className="mr-2" />
-            Зняти з продажу
-          </MenuItem>
-        )}
-        
-        {!isMinted && (
-          <MenuItem onClick={() => { handleMenuClose(); handleDelete(); }}>
-            <Delete className="mr-2 text-red-400" />
-            <span className="text-red-400">Видалити</span>
-          </MenuItem>
-        )}
-      </Menu>
 
-      {/* Sell Dialog */}
+
       <Dialog open={showSellDialog} onClose={() => setShowSellDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle className="text-white bg-gray-800">
-          Виставити NFT на продаж
+        <DialogTitle className="bg-gray-900 border-b border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white">💰</div>
+            <div>
+              <h3 className="m-0 text-lg font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Виставити NFT на продаж</h3>
+              <p className="m-0 text-xs text-gray-400">Вкажіть ціну в MATIC. Ви зможете змінити її пізніше.</p>
+            </div>
+          </div>
         </DialogTitle>
-        <DialogContent className="bg-gray-800">
-          <div className="mt-4">
+        <DialogContent className="bg-gray-900">
+          <div className="mt-4 flex items-start gap-4">
             <img 
               src={getFullImageUrl(nft.imageUrl)} 
               alt={nft.name}
-              className="w-32 h-32 object-cover rounded-lg mx-auto mb-4"
+              className="w-28 h-28 object-cover rounded-lg border border-gray-800"
               onError={(e) => handleImageError(e, 'NFT')}
             />
-            <Typography variant="h6" className="text-white text-center mb-4">
-              {nft.name}
-            </Typography>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Ціна"
-              type="number"
-              fullWidth
-              variant="outlined"
-              value={sellPrice}
-              onChange={(e) => setSellPrice(e.target.value)}
-              placeholder="0.001"
-              InputProps={{
-                endAdornment: <Typography className="text-gray-400 ml-2">MATIC</Typography>,
-                className: 'text-white'
-              }}
-              InputLabelProps={{
-                className: 'text-gray-400'
-              }}
-              className="mb-4"
-            />
-            <Typography variant="body2" className="text-gray-400">
-              Встановіть ціну за яку хочете продати ваш NFT. Покупці зможуть купити його за цією ціною.
-            </Typography>
+            <div className="flex-1">
+              <Typography variant="h6" className="text-white mb-2">
+                {nft.name}
+              </Typography>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Ціна"
+                type="number"
+                fullWidth
+                variant="outlined"
+                value={sellPrice}
+                onChange={(e) => setSellPrice(e.target.value)}
+                placeholder="0.001"
+                InputProps={{
+                  endAdornment: <Typography className="text-gray-400 ml-2">MATIC</Typography>,
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'rgba(17,24,39,0.6)',
+                    color: '#fff',
+                    '& fieldset': { borderColor: '#374151' },
+                    '&:hover fieldset': { borderColor: '#8b5cf6' },
+                    '&.Mui-focused fieldset': { borderColor: '#8b5cf6' }
+                  },
+                  '& .MuiInputLabel-root': { color: '#9ca3af' },
+                }}
+                className="mb-2"
+              />
+              <div className="text-xs text-gray-400 leading-relaxed">
+                Комісія маркетплейсу: <span className="text-gray-300">2.5%</span>. Комісія лістингу може стягуватись смарт‑контрактом.
+              </div>
+            </div>
           </div>
         </DialogContent>
-        <DialogActions className="bg-gray-800">
-          <Button onClick={() => setShowSellDialog(false)} className="text-gray-400">
+        <DialogActions className="bg-gray-900 border-t border-gray-800">
+          <Button onClick={() => setShowSellDialog(false)} className="text-gray-300 hover:text-white">
             Скасувати
           </Button>
           <Button 
             onClick={handleSell} 
             variant="contained"
             disabled={isLoading || !sellPrice || parseFloat(sellPrice) <= 0}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-emerald-600/90 hover:bg-emerald-600 text-white"
           >
-            {isLoading ? 'Виставляння...' : 'Виставити на продаж'}
+            {isLoading ? 'Виставляння...' : 'Виставити'}
           </Button>
         </DialogActions>
       </Dialog>

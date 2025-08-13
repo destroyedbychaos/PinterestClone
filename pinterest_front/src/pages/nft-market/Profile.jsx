@@ -14,36 +14,36 @@ import { getFullImageUrl, handleImageError } from "../../utils/imageUtils.js";
 
 
 const Profile = () => {
-  const { walletAddress } = useParams(); // Отримуємо wallet адресу з URL
+  const { walletAddress } = useParams();
   const { account } = useWeb3();
   const { user: currentUser } = useAuth();
   const { getUserProfile } = useUser();
-  const { getUserNFTs, getUserCreatedNFTs, getUserFavorites } = useNFT();
+  const { getUserNFTs, getUserCreatedNFTs, getUserFavorites, getAllNFTs, addToFavorites, removeFromFavorites } = useNFT();
 
   
   const [activeTab, setActiveTab] = useState("created");
   const [userProfile, setUserProfile] = useState(null);
   const [userNFTs, setUserNFTs] = useState([]);
   const [userFavorites, setUserFavorites] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(false);
 
-  // Визначаємо чий це профіль
-  const targetWallet = walletAddress || account;
+
+  const targetWallet = walletAddress || account || currentUser?.walletAddress;
   const isOwnProfile = account && targetWallet?.toLowerCase() === account.toLowerCase();
 
-  // Завантаження даних профілю
   useEffect(() => {
     if (targetWallet) {
       loadUserProfile();
     }
   }, [targetWallet]);
 
-  // Завантаження NFT при зміні таба
+
   useEffect(() => {
     if (targetWallet) {
       if (activeTab === "created") {
-        loadUserCreatedNFTs();
+        loadUserAllNFTs();
       } else if (activeTab === "owned") {
         loadUserOwnedNFTs();
       } else if (activeTab === "collected") {
@@ -52,6 +52,20 @@ const Profile = () => {
     }
   }, [activeTab, targetWallet]);
 
+ 
+  useEffect(() => {
+    if (!walletAddress && (account || currentUser?.walletAddress)) {
+
+      if (activeTab === "created") {
+        loadUserAllNFTs();
+      } else if (activeTab === "owned") {
+        loadUserOwnedNFTs();
+      } else if (activeTab === "collected") {
+        loadUserFavorites();
+      }
+    }
+  }, [account, currentUser?.walletAddress]);
+
   const loadUserProfile = async () => {
     try {
       setIsLoading(true);
@@ -59,7 +73,7 @@ const Profile = () => {
       setUserProfile(profile);
     } catch (error) {
       console.error('Error loading user profile:', error);
-      // Якщо профіль не знайдений, створюємо базовий об'єкт
+
       setUserProfile({
         walletAddress: targetWallet,
         nickname: `Користувач ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
@@ -76,27 +90,48 @@ const Profile = () => {
     }
   };
 
-  // Завантаження створених користувачем NFT  
-  const loadUserCreatedNFTs = async () => {
+
+  const loadUserAllNFTs = async () => {
     try {
       setIsLoadingNFTs(true);
-      const data = await getUserCreatedNFTs(targetWallet);
-      console.log('Created NFTs data:', data); // Для дебагу
-      setUserNFTs(data.NFTs?.NFTs || data.items || []);
+      const [createdResp, ownedResp] = await Promise.all([
+        getUserCreatedNFTs(targetWallet).catch(() => ({})),
+        getUserNFTs(targetWallet).catch(() => ({}))
+      ]);
+      const created = createdResp?.NFTs?.NFTs || createdResp?.items || [];
+      const owned = ownedResp?.items || [];
+      const map = new Map();
+      [...created, ...owned].forEach(n => { if (n?.id) map.set(n.id, n); });
+      let result = Array.from(map.values());
+
+
+      if (!result || result.length === 0) {
+        try {
+          const all = await getAllNFTs(1, 100);
+          const items = all?.items || [];
+          result = items.filter(n =>
+            (n?.creatorWalletAddress && n.creatorWalletAddress.toLowerCase() === targetWallet.toLowerCase()) ||
+            (n?.ownerWalletAddress && n.ownerWalletAddress.toLowerCase() === targetWallet.toLowerCase())
+          );
+        } catch {}
+      }
+
+      setUserNFTs(result);
     } catch (error) {
-      console.error('Error loading user created NFTs:', error);
+      console.error('Error loading user NFTs:', error);
       setUserNFTs([]);
     } finally {
       setIsLoadingNFTs(false);
     }
   };
 
-  // Завантаження NFT у власності користувача (старий метод)
+
   const loadUserOwnedNFTs = async () => {
     try {
       setIsLoadingNFTs(true);
-      const nfts = await getUserNFTs(targetWallet);
-      setUserNFTs(nfts.items || []);
+      const nftsResp = await getUserNFTs(targetWallet);
+      const list = nftsResp?.NFTs?.NFTs || nftsResp?.items || [];
+      setUserNFTs(list);
     } catch (error) {
       console.error('Error loading user owned NFTs:', error);
       setUserNFTs([]);
@@ -105,26 +140,46 @@ const Profile = () => {
     }
   };
 
-  // Функція для оновлення NFT після змін
+
   const handleNFTUpdate = () => {
     if (activeTab === "created") {
-      loadUserCreatedNFTs();
+      loadUserAllNFTs();
     } else if (activeTab === "owned") {
       loadUserOwnedNFTs();
     }
-    loadUserProfile(); // Оновлюємо також профіль для статистики
+    loadUserProfile(); 
   };
 
   const loadUserFavorites = async () => {
     try {
       setIsLoadingNFTs(true);
       const favorites = await getUserFavorites(targetWallet);
-      setUserFavorites(favorites.items || []);
+      const items = favorites.items || [];
+      setUserFavorites(items);
+      setFavoriteIds(new Set(items.map(n => n.id)));
     } catch (error) {
       console.error('Error loading user favorites:', error);
       setUserFavorites([]);
     } finally {
       setIsLoadingNFTs(false);
+    }
+  };
+
+  const toggleFavorite = async (nftId) => {
+    try {
+      if (!targetWallet) return;
+      if (favoriteIds.has(nftId)) {
+        await removeFromFavorites(targetWallet, nftId);
+        setFavoriteIds(prev => { const s = new Set(prev); s.delete(nftId); return s; });
+        setUserFavorites(prev => (prev || []).filter(n => n.id !== nftId));
+        toast.success('Видалено з улюблених');
+      } else {
+        await addToFavorites(targetWallet, nftId);
+        setFavoriteIds(prev => { const s = new Set(prev); s.add(nftId); return s; });
+        toast.success('Додано в улюблені');
+      }
+    } catch (e) {
+      toast.error('Помилка оновлення улюблених');
     }
   };
 
@@ -164,9 +219,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
-        {/* Profile Header */}
         <div className="relative mb-8">
-          {/* Cover Image */}
           <div className="h-48 md:h-64 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg overflow-hidden">
             {userProfile?.bannerUrl ? (
               <img 
@@ -178,7 +231,6 @@ const Profile = () => {
             ) : null}
           </div>
           
-          {/* Profile Info */}
           <div className="relative -mt-16 px-6">
             <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
               <div className="w-32 h-32 border-4 border-gray-900 rounded-full overflow-hidden">
@@ -207,8 +259,6 @@ const Profile = () => {
                       <span>Приєднався: {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Невідомо'}</span>
                       <span>•</span>
                       <span>{userProfile?.nftCount || 0} створено</span>
-                      <span>•</span>
-                      <span>{userProfile?.followersCount || 0} підписників</span>
                     </div>
                   </div>
                   
@@ -233,8 +283,8 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-gray-400">Загальний об'єм</CardTitle>
@@ -268,43 +318,33 @@ const Profile = () => {
             </CardContent>
           </Card>
           
-          <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-400">Підписники</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-white">
-                {userProfile?.followersCount || 0}
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* NFT Tabs */}
+
         <div className="w-full">
-          <div className="grid w-full grid-cols-2 bg-gray-800/50 rounded-lg p-1">
+          <div className="grid w-full grid-cols-2 bg-gray-900/60 border border-gray-800 rounded-md p-1">
             <button
               onClick={() => setActiveTab("created")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-sm transition-colors ${
                 activeTab === "created" 
-                  ? "bg-gray-900 text-white shadow-sm" 
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gray-800 text-white" 
+                  : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
-              Створені
+              Всі NFT
             </button>
             <button
               onClick={() => setActiveTab("collected")}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-sm transition-colors ${
                 activeTab === "collected" 
-                  ? "bg-gray-900 text-white shadow-sm" 
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-gray-800 text-white" 
+                  : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               Колекція
@@ -314,7 +354,7 @@ const Profile = () => {
           {activeTab === "created" && (
             <div className="mt-6">
               {isLoadingNFTs ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-3 sm:gap-x-6 sm:gap-y-4 md:gap-x-12 md:gap-y-6 xl:gap-x-40 xl:gap-y-16 2xl:gap-x-56 2xl:gap-y-20">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <Card key={index} className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden animate-pulse">
                       <CardContent className="p-0">
@@ -328,42 +368,42 @@ const Profile = () => {
                   ))}
                 </div>
               ) : userNFTs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-3 sm:gap-x-6 sm:gap-y-4 md:gap-x-12 md:gap-y-6 xl:gap-x-40 xl:gap-y-16 2xl:gap-x-56 2xl:gap-y-20">
                   {userNFTs.map((nft) => (
                     isOwnProfile ? (
-                      // Для власного профілю показуємо карточки з управлінням
+
                       <NFTManageCard 
                         key={nft.id} 
                         nft={nft} 
                         onUpdate={handleNFTUpdate} 
                       />
                     ) : (
-                      // Для чужого профілю - тільки перегляд
+
                       <Link key={nft.id} to={`/nft-market/nft/${nft.id}`}>
-                        <Card className="group hover:scale-105 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm border border-gray-800 hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/20 rounded-xl overflow-hidden">
+                        <Card className="group relative bg-[#0f0f12] border border-gray-800 rounded-xl overflow-hidden hover:border-purple-500/40 transition-colors">
                           <CardContent className="p-0">
-                            <div className="relative overflow-hidden">
-                              <img 
-                                src={getFullImageUrl(nft.imageUrl)} 
+                            <div className="relative">
+                              <img
+                                src={getFullImageUrl(nft.imageUrl)}
                                 alt={nft.name}
-                                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                                className="w-full h-56 object-cover"
                                 onError={(e) => handleImageError(e, 'NFT')}
                               />
-                              <div className="absolute top-3 right-3">
-                                <Badge className={getStatusBadge(nft).class}>
+
+                              <div className="absolute top-2 left-2">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] bg-black/50 text-gray-200 border border-white/10">
                                   {getStatusBadge(nft).text}
-                                </Badge>
-                              </div>
-                            </div>
-                            
-                            <div className="p-4">
-                              <h3 className="font-semibold text-lg mb-2 text-white group-hover:text-purple-400 transition-colors">
-                                {nft.name}
-                              </h3>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xl font-bold text-purple-400">
-                                  {nft.price ? `${nft.price} ${nft.currency || 'MATIC'}` : 'Не продається'}
                                 </span>
+                              </div>
+                              <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                                <div className="flex items-end justify-between gap-2">
+                                  <h3 className="text-white text-xs font-semibold truncate">
+                                    {nft.name}
+                                  </h3>
+                                  <span className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] bg-purple-600/80 text-white">
+                                    {nft.price ? `${nft.price} ${nft.currency || 'MATIC'}` : '—'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </CardContent>
@@ -400,11 +440,11 @@ const Profile = () => {
           {activeTab === "collected" && (
             <div className="mt-6">
               {isLoadingNFTs ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array.from({ length: 6 }).map((_, index) => (
-                    <Card key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden animate-pulse">
+                    <Card key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl overflow-hidden animate-pulse">
                       <CardContent className="p-0">
-                        <div className="w-full h-48 bg-gray-700"></div>
+                        <div className="w-full h-60 bg-gray-700"></div>
                         <div className="p-4">
                           <div className="h-6 bg-gray-700 rounded mb-2"></div>
                           <div className="h-8 bg-gray-700 rounded"></div>
@@ -414,42 +454,46 @@ const Profile = () => {
                   ))}
                 </div>
               ) : userFavorites.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userFavorites.map((nft) => (
                     <Link key={nft.id} to={`/nft-market/nft/${nft.id}`}>
-                      <Card className="group hover:scale-105 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm border border-gray-800 hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/20 rounded-xl overflow-hidden">
+                      <Card className="group relative bg-[#0f0f12]/95 border border-gray-800 rounded-2xl overflow-hidden hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
                         <CardContent className="p-0">
-                          <div className="relative overflow-hidden">
-                            <img 
-                              src={getFullImageUrl(nft.imageUrl)} 
+                          <div className="relative">
+                            <img
+                              src={getFullImageUrl(nft.imageUrl)}
                               alt={nft.name}
-                              className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                              className="w-full h-72 object-cover"
                               onError={(e) => handleImageError(e, 'NFT')}
                             />
-                            <div className="absolute top-3 left-3">
-                              <Badge className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
-                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            <div className="absolute top-3 right-3">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (isOwnProfile) toggleFavorite(nft.id); }}
+                                className={`p-2 rounded-full backdrop-blur-sm ${favoriteIds.has(nft.id) ? 'bg-red-600/20' : 'bg-white/20'} hover:bg-white/30 transition-colors`}
+                                title={favoriteIds.has(nft.id) ? 'Видалити з улюблених' : 'Додати в улюблені'}
+                              >
+                                <svg 
+                                  className={`w-5 h-5 ${favoriteIds.has(nft.id) ? 'text-red-500 fill-current' : 'text-white'}`}
+                                  fill={favoriteIds.has(nft.id) ? 'currentColor' : 'none'}
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
-                                Улюблене
-                              </Badge>
+                              </button>
                             </div>
-                          </div>
-                          
-                          <div className="p-4">
-                            <h3 className="font-semibold text-lg mb-2 text-white group-hover:text-purple-400 transition-colors">
-                              {nft.name}
-                            </h3>
-                            <p className="text-gray-400 mb-3 text-sm">
-                              Від {nft.creatorWalletAddress ? 
-                                `${nft.creatorWalletAddress.slice(0, 6)}...${nft.creatorWalletAddress.slice(-4)}` : 
-                                'Невідомий'
-                              }
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xl font-bold text-purple-400">
-                                {nft.price ? `${nft.price} ${nft.currency || 'MATIC'}` : 'Не продається'}
-                              </span>
+
+                            <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent backdrop-blur-[2px]">
+                              <div className="flex items-end justify-between gap-4">
+                                <div className="min-w-0">
+                                  <h3 className="text-white text-base font-semibold truncate">{nft.name}</h3>
+                                  <p className="text-xs text-gray-300 truncate">Від {nft.creatorWalletAddress ? `${nft.creatorWalletAddress.slice(0,6)}...${nft.creatorWalletAddress.slice(-4)}` : 'Невідомий'}</p>
+                                </div>
+                                <span className="shrink-0 px-2.5 py-1 rounded-md text-sm bg-purple-600/90 text-white">
+                                  {nft.price ? `${nft.price} ${nft.currency || 'MATIC'}` : '—'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
