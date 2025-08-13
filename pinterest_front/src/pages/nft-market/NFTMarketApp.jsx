@@ -20,15 +20,15 @@ const NFTMarketApp = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Перевіряємо, чи це перший візит на NFT маркетплейс
+
     const hasVisitedNFTMarket = sessionStorage.getItem('visitedNFTMarket');
     
     if (hasVisitedNFTMarket) {
-      // Показуємо динамічну анімацію для повторних відвідувань
+
       setShowDynamicAnimation(true);
       setIsFirstVisit(false);
     } else {
-      // Показуємо повну анімацію при першому відвідуванні
+
       sessionStorage.setItem('visitedNFTMarket', 'true');
     }
 
@@ -41,7 +41,7 @@ const NFTMarketApp = () => {
 
   const handleDynamicAnimationComplete = () => {
     setShowDynamicAnimation(false);
-    // Миттєво показуємо контент після завершення анімації
+
     setTimeout(() => {
       const contentElement = document.querySelector('.nft-market-content');
       if (contentElement) {
@@ -74,7 +74,6 @@ const NFTMarketApp = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-
 
     </div>
   );

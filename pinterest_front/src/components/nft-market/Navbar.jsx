@@ -320,7 +320,6 @@ const Navbar = () => {
         </div>
       </div>
 
-
       <div className="md:hidden border-t border-gray-800">
         <div className="px-2 pt-2 pb-3 space-y-1">
 

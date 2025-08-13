@@ -236,7 +236,6 @@ const MarketplaceNFTCard = ({ nft, isOwner, onUpdate, isNew = false }) => {
               </div>
             </div>
 
-
           </div>
         </div>
       </div>

@@ -263,7 +263,6 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
                 {balance} MATIC
               </Typography>
             </Box>
-
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Статус автентифікації:
@@ -274,7 +273,6 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
                 icon={isAuthenticated ? <CheckCircle /> : <WarningIcon />}
               />
             </Box>
-
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Контракт маркетплейсу:

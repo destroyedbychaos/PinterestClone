@@ -142,7 +142,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
           )}
         </div>
 
-
         <div className="p-2.5 bg-gray-950/95 backdrop-blur-sm rounded-b-lg border-t border-gray-800/50">
 
           <h3 className="text-white font-medium text-sm mb-1 line-clamp-1">
@@ -153,7 +152,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
           <p className="text-gray-400 text-[11px] mb-2 line-clamp-2">
             {nft.description || 'Опис недоступний'}
           </p>
-
 
           <div className="mb-3">
             {isForSale ? (
@@ -194,7 +192,6 @@ const NFTManageCard = ({ nft, onUpdate }) => {
           </div>
         </div>
       </div>
-
 
 
       <Dialog open={showSellDialog} onClose={() => setShowSellDialog(false)} maxWidth="sm" fullWidth>

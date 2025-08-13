@@ -382,7 +382,6 @@ const MarketplacePage = () => {
               <div className="text-gray-400 text-sm md:text-base">Творців</div>
             </div>
           </div>
-          
 
           <div className="mt-8 pt-8 border-t border-gray-800 text-center">
             <p className="text-gray-400 text-sm">
@@ -391,7 +390,6 @@ const MarketplacePage = () => {
           </div>
         </div>
       </footer>
-
 
       {isAuthenticated && (
         <Link to="/nft-market/create">

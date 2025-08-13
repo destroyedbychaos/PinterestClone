@@ -269,7 +269,6 @@ const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
         </CardContent>
       </Card>
 
-
       {loading ? (
         <Box display="flex" justifyContent="center" py={4}>
           <CircularProgress />

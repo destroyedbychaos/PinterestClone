@@ -373,7 +373,6 @@ namespace PinterestClone.BLL.Services.NFTService
             }
         }
 
-
         public async Task<ServiceResponse<bool>> AddToFavoritesAsync(string nftId, string walletAddress)
         {
             try
@@ -447,7 +446,6 @@ namespace PinterestClone.BLL.Services.NFTService
                 return ServiceResponse<bool>.ErrorResponse($"Error checking favorite status: {ex.Message}");
             }
         }
-
 
 
         private NFTDto MapToNFTDto(NFT nft)
