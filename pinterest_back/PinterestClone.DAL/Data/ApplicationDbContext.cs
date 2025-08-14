@@ -1,3 +1,4 @@
+using System.Reflection.Emit;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.DAL.Models;
@@ -23,6 +24,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<HiddenPin> HiddenPins { get; set; }
+        public DbSet<UserFollow> UserFollows { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -176,6 +178,21 @@ namespace PinterestClone.DAL.Data
             builder.Entity<HiddenPin>()
                 .HasIndex(hp => new { hp.PinId, hp.UserId })
                 .IsUnique();
+
+            builder.Entity<UserFollow>()
+                .HasKey(uf => new { uf.FollowerId, uf.FollowingId });
+
+            builder.Entity<UserFollow>()
+                .HasOne(uf => uf.Follower)
+                .WithMany(u => u.FollowingRelations)
+                .HasForeignKey(uf => uf.FollowerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserFollow>()
+                .HasOne(uf => uf.Following)
+                .WithMany(u => u.FollowerRelations)
+                .HasForeignKey(uf => uf.FollowingId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 } 

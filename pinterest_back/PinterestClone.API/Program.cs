@@ -32,6 +32,7 @@ using System;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using PinterestClone.BLL.MappingProfiles;
+using PinterestClone.BLL.Services.UserService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -140,6 +141,7 @@ builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
 builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 //automapper
  
@@ -148,6 +150,7 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddMaps(typeof(PinMappingProfile).Assembly);
     cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
     cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
+    cfg.AddMaps(typeof(UserMappingProfile).Assembly);
 });
 
 var app = builder.Build();
