@@ -14,6 +14,20 @@ import ClearIcon from '@mui/icons-material/Close';
 
 const API_BASE = '/api';
 
+const highlightMatch = (text, query) => {
+  const regex = new RegExp(`(${query})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <strong key={i} style={{ fontWeight: 700 }}>
+        {part}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+};
+
 const SearchModal = ({
   open,
   onClose,
@@ -27,12 +41,39 @@ const SearchModal = ({
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
-  
+  const [suggestions, setSuggestions] = useState([]);
+
+
   useEffect(() => {
     if (open) {
       fetchRecommendations();
+    } else {
+      setSearch('');
+      setSuggestions([]);
     }
   }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (search.trim()) {
+      fetchSuggestions(search);
+    } else {
+      setSuggestions([]);
+    }
+  }, [search]);
 
   const fetchRecommendations = async () => {
     try {
@@ -50,24 +91,24 @@ const SearchModal = ({
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        onClose();
+  const fetchSuggestions = async (term) => {
+    try {
+      const res = await fetch(`${API_BASE}/pins/search-suggestions?q=${encodeURIComponent(term)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data || []);
+      } else {
+        setSuggestions([]);
       }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
+    } catch {
+      setSuggestions([]);
     }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open, onClose]);
+  };
 
   const handleSearch = async (term) => {
     const trimmed = term.trim();
     if (!trimmed) return;
-
+    
     setLoading(true);
     try {
       const res = await fetch(
@@ -178,7 +219,49 @@ const SearchModal = ({
         </Box>
       )}
 
-      {!loading && (
+      {!loading && search.trim() ? (
+        <>
+          <Box
+            sx={{
+              maxHeight: '60vh',
+              overflowY: 'auto',
+            }}
+          >
+            {suggestions.length > 0 ? (
+              suggestions.map((s, idx) => (
+                <Box
+                  key={idx}
+                  onClick={() => handleSearchClick(s)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    px: 2,
+                    py: 1.6,
+                    cursor: 'pointer',
+                    bgcolor: 'background.paper',
+                    '&:hover': {
+                      bgcolor: '#e8f0fe',
+                    },
+                    borderRadius: '17px',
+                  }}
+                >
+                  <SearchIcon sx={{ color: '#6e7b91', fontSize: 20 }} />
+                  <Typography sx={{ fontSize: 15, color: '#1d1e1f' }}>
+                    {highlightMatch(s, search)}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography
+                sx={{ p: 2, color: '#6e7b91', fontStyle: 'italic', fontSize: 14 }}
+              >
+                No suggestions
+              </Typography>
+            )}
+          </Box>
+        </>
+      ) : (
         <>
           <Typography variant="subtitle1" fontWeight={600} mb={1}>
             Recent searches
