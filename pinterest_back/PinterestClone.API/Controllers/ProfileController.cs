@@ -8,6 +8,8 @@ using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
+using PinterestClone.BLL.Services.UserService;
 
 namespace PinterestClone.API.Controllers
 {
@@ -17,11 +19,13 @@ namespace PinterestClone.API.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly IUserService _userService;
         private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager, IMapper mapper)
+        public ProfileController(UserManager<User> userManager, IUserService userService, IMapper mapper)
         {
             _userManager = userManager;
+            _userService = userService;
             _mapper = mapper;
         }
 
@@ -58,8 +62,8 @@ namespace PinterestClone.API.Controllers
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(
-    [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
-    [FromForm] FileUploadVM model)
+        [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+        [FromForm] FileUploadVM model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
@@ -75,7 +79,6 @@ namespace PinterestClone.API.Controllers
             if (!result.Succeeded) return BadRequest(result.Errors);
             return Ok(new { url });
         }
-
 
         public class FileUploadVM
         {
@@ -223,46 +226,63 @@ namespace PinterestClone.API.Controllers
 
             return Ok(_mapper.Map<UserProfileDto>(user));
         }
-        [HttpGet("search")]
-        [AllowAnonymous] 
-        public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
-            [FromQuery] string query,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+
+        [HttpGet("followers")]
+        [Authorize]
+        public async Task<ActionResult<List<UserProfileDto>>> GetUserFollowers(string userName)
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return BadRequest(new { error = "Query is required." });
+            var userResponse = await _userService.GetByUserNameAsync(userName);
+            if (!userResponse.Success) return NotFound();
 
-            var normalizedQuery = query.Trim().ToLower();
-            page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 50);
+            UserProfileDto user = (UserProfileDto)userResponse.Payload!;
 
-            var usersQuery = _userManager.Users
-                .AsNoTracking()
-                .Where(u =>
-                    u.UserName.ToLower().Contains(normalizedQuery) ||
-                    (u.DisplayName != null && u.DisplayName.ToLower().Contains(normalizedQuery)) ||
-                    (u.Email != null && u.Email.ToLower().Contains(normalizedQuery))
-                )
-                .OrderBy(u => u.UserName);
+            var followersResponse = await _userService.GetFollowersAsync(user);
 
-            var total = await usersQuery.CountAsync();
-            var users = await usersQuery
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            if (!followersResponse.Success || followersResponse.Payload == null ) return NotFound();
 
-            var result = _mapper.Map<IEnumerable<UserSearchDto>>(users);
+            List<UserProfileDto> followers = (List<UserProfileDto>)followersResponse.Payload;
 
-            return Ok(new
-            {
-                page,
-                pageSize,
-                total,
-                totalPages = (int)Math.Ceiling(total / (double)pageSize),
-                items = result
-            });
+            return Ok(followers);
+        }
+
+        [HttpGet("following")]
+        [Authorize]
+        public async Task<ActionResult<List<UserProfileDto>>> GetUserFollowing(string userName)
+        {
+            var userResponse = await _userService.GetByUserNameAsync(userName);
+            if (!userResponse.Success) return NotFound();
+
+            UserProfileDto user = (UserProfileDto)userResponse.Payload!;
+
+            var followingResponse = await _userService.GetFollowingAsync(user);
+
+            if (!followingResponse.Success || followingResponse.Payload == null) return NotFound();
+
+            List<UserProfileDto> following = (List<UserProfileDto>)followingResponse.Payload;
+
+            return Ok(following);
+        }
+
+        [HttpPost("{targetUserId}/follow")]
+        public async Task<IActionResult> FollowUser(string targetUserId)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _userService.FollowUserAsync(currentUserId!, targetUserId);
+
+            if (!result.Success) return BadRequest(result.Message);
+
+            return Ok(result.Message);
+        }
+
+        [HttpPost("{targetUserId}/unfollow")]
+        public async Task<IActionResult> UnfollowUser(string targetUserId)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _userService.UnfollowUserAsync(currentUserId!, targetUserId);
+
+            if (!result.Success) return BadRequest(result.Message);
+
+            return Ok(result.Message);
         }
     }
 }
-
