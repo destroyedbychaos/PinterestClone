@@ -36,22 +36,24 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
                 lineHeight: '100%',
                 display: 'flex',
                 alignItems: 'center',
+                position: 'relative',
             }}>
                 <input
                     className={'input-field w-full focus:outline-none'}
                     type={type === 'password' && showPassword ? 'text' : type}
-                    color={theme.palette.dark[200]}
                     placeholder={placeholder}
                     id={id}
                     value={value}
                     onChange={onChange}
                     required={required}
+                    lang="en-US"
                     style={{
                         background: 'transparent',
                         border: 'none',
                         width: '100%',
                         outline: 'none',
                         fontSize: '18px',
+                        colorScheme: 'light',
                     }}
                 />
                 {type === 'password' && (
@@ -73,7 +75,45 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
                         }
                     </Icon>
                 )}
+                {type === 'date' && (
+                    <Icon
+                        sx={{
+                            color: theme.palette.dark[300],
+                            ml: 1,
+                            pointerEvents: 'all',
+                            cursor: 'pointer',
+                            position: 'absolute',
+                            right: '20px',
+                            zIndex: 1,
+                            '& svg': {
+                                fill: 'currentColor',
+                                width: '22px',
+                                height: '22px'
+                            }
+                        }}
+                        onClick={() => {
+                            const input = document.getElementById(id);
+                            if (input) {
+                                input.showPicker();
+                            }
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6.75 0C6.94891 0 7.13968 0.0790176 7.28033 0.21967C7.42098 0.360322 7.5 0.551088 7.5 0.75V3H16.5V0.75C16.5 0.551088 16.579 0.360322 16.7197 0.21967C16.8603 0.0790176 17.0511 0 17.25 0C17.4489 0 17.6397 0.0790176 17.7803 0.21967C17.921 0.360322 18 0.551088 18 0.75V3H20.75C21.716 3 22.5 3.784 22.5 4.75V20.75C22.5 21.2141 22.3156 21.6592 21.9874 21.9874C21.6592 22.3156 21.2141 22.5 20.75 22.5H3.25C2.78587 22.5 2.34075 22.3156 2.01256 21.9874C1.68437 21.6592 1.5 21.2141 1.5 20.75V4.75C1.5 3.784 2.284 3 3.25 3H6V0.75C6 0.551088 6.07902 0.360322 6.21967 0.21967C6.36032 0.0790176 6.55109 0 6.75 0ZM21 9.5H3V20.75C3 20.888 3.112 21 3.25 21H20.75C20.8163 21 20.8799 20.9737 20.9268 20.9268C20.9737 20.8799 21 20.8163 21 20.75V9.5ZM3.25 4.5C3.1837 4.5 3.12011 4.52634 3.07322 4.57322C3.02634 4.62011 3 4.6837 3 4.75V8H21V4.75C21 4.6837 20.9737 4.62011 20.9268 4.57322C20.8799 4.52634 20.8163 4.5 20.75 4.5H3.25Z" fill="#52697C"/>
+                        </svg>
+                    </Icon>
+                )}
             </Box>
+            
+            {type === 'date' && (
+                <style jsx>{`
+                    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; width: 100%; height: 100%; position: absolute; left: 0; top: 0; }
+                    input[type="date"] { -webkit-appearance: none; -moz-appearance: textfield; cursor: pointer; }
+                    input[type="date"]::-webkit-inner-spin-button, input[type="date"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+                    input[type="date"]::placeholder { color: #7B8D9B !important; opacity: 1; }
+                    input[type="date"]:invalid { color: #7B8D9B; }
+                `}</style>
+            )}
         </Box>
     );
 };

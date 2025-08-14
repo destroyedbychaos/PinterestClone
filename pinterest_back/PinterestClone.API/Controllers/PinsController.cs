@@ -4,6 +4,7 @@ using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.ImageService;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace PinterestClone.API.Controllers
 {
@@ -82,6 +83,7 @@ namespace PinterestClone.API.Controllers
                 if (pageNumber < 1) pageNumber = 1;
 
                 var pins = await _pinService.GetPinsAsync(pageNumber, pageSize, searchTerm, tags, sortBy, isAscending);
+                
                 return Ok(pins);
             }
             catch (Exception ex)
@@ -108,14 +110,14 @@ namespace PinterestClone.API.Controllers
         [HttpPost("tags")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(object), 200)]
-        public async Task<ActionResult> AddTag([FromBody] PinterestClone.BLL.DTOs.TagDto dto)
+        public async Task<ActionResult> AddTag([FromBody] TagDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto?.Name))
                 return BadRequest("Tag is required");
             var exists = _db.Tags.Any(t => t.Name.ToLower() == dto.Name.ToLower());
             if (exists)
                 return Conflict(new { message = "Tag already exists" });
-            var tag = new PinterestClone.DAL.Models.Tag { Name = dto.Name };
+            var tag = new DAL.Models.Tag { Name = dto.Name };
             _db.Tags.Add(tag);
             await _db.SaveChangesAsync();
             return Ok(new { message = $"Tag '{dto.Name}' added", tag });
@@ -124,101 +126,99 @@ namespace PinterestClone.API.Controllers
 
         [HttpGet("all-tags")]
         [ProducesResponseType(typeof(List<string>), 200)]
-        public async Task<ActionResult> GetAllTagsCombined()
+        public ActionResult GetAllTagsCombined()
         {
             var dbTags = _db.Tags.Select(t => t.Name).ToList();
             var pinTags = _db.Pins
                 .Where(p => p.Tags != null && p.Tags != "")
                 .Select(p => p.Tags)
                 .ToList()
-                .SelectMany(tags => tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .SelectMany(tags => tags?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>())
                 .Select(t => t.Trim())
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList();
             var allTags = dbTags.Concat(pinTags).Select(t => t.ToLower()).Distinct().OrderBy(t => t).ToList();
+            
             return Ok(allTags);
         }
 
 
-        //[HttpGet("search")]
-        //public async Task<ActionResult<PinListDto>> SearchPins(
-        //    [FromQuery] string searchTerm,
-        //    [FromQuery] bool searchInTitle = true,
-        //    [FromQuery] bool searchInDescription = true,
-        //    [FromQuery] bool exactMatch = false,
-        //    [FromQuery] int pageNumber = 1,
-        //    [FromQuery] int pageSize = 20)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrWhiteSpace(searchTerm))
-        //        {
-        //            return BadRequest("Search term is required");
-        //        }
+        [HttpGet("search")]
+        public async Task<ActionResult<PinListDto>> SearchPins(
+            [FromQuery] string searchTerm,
+            [FromQuery] bool searchInTitle = true,
+            [FromQuery] bool searchInDescription = true,
+            [FromQuery] bool exactMatch = false,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return BadRequest("Search term is required");
+                }
 
-        //        if (pageSize > 100) pageSize = 100;
-        //        if (pageNumber < 1) pageNumber = 1;
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
 
-        //        var pins = await _pinService.SearchPinsAsync(searchTerm, searchInTitle, searchInDescription, exactMatch, pageNumber, pageSize);
-        //        return Ok(pins);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest($"Error searching pins: {ex.Message}");
-        //    }
-        //}
+                var pins = await _pinService.SearchPinsAsync(searchTerm, searchInTitle, searchInDescription, exactMatch, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error searching pins: {ex.Message}");
+            }
+        }
 
+        [HttpGet("search-by-image-hash")]
+        public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
+            [FromQuery] string imageHash,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(imageHash))
+                {
+                    return BadRequest("Image hash is required");
+                }
 
-        //[HttpGet("search-by-image-hash")]
-        //public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
-        //    [FromQuery] string imageHash,
-        //    [FromQuery] int pageNumber = 1,
-        //    [FromQuery] int pageSize = 20)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrWhiteSpace(imageHash))
-        //        {
-        //            return BadRequest("Image hash is required");
-        //        }
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
 
-        //        if (pageSize > 100) pageSize = 100;
-        //        if (pageNumber < 1) pageNumber = 1;
+                var pins = await _pinService.SearchPinsByImageAsync(imageHash, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error searching pins by image: {ex.Message}");
+            }
+        }
 
-        //        var pins = await _pinService.SearchPinsByImageAsync(imageHash, pageNumber, pageSize);
-        //        return Ok(pins);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest($"Error searching pins by image: {ex.Message}");
-        //    }
-        //}
+        [HttpPost("find-similar-images")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
+        {
+            try
+            {
+                if (request.ImageFile == null)
+                {
+                    return BadRequest("Image file is required");
+                }
 
-        ///// <summary>
-        ///// </summary>
-        //[HttpPost("find-similar-images")]
-        //[Consumes("multipart/form-data")]
-        //public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
-        //{
-        //    try
-        //    {
-        //        if (request.ImageFile == null)
-        //        {
-        //            return BadRequest("Image file is required");
-        //        }
-
-        //        var pins = await _pinService.FindSimilarImagesAsync(request.ImageFile);
-        //        return Ok(pins);
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest($"Error finding similar images: {ex.Message}");
-        //    }
-        //}
+                var pins = await _pinService.FindSimilarImagesAsync(request.ImageFile);
+                return Ok(pins);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error finding similar images: {ex.Message}");
+            }
+        }
 
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<PinListDto>> GetUserPins(
@@ -288,7 +288,7 @@ namespace PinterestClone.API.Controllers
             var pin = await _db.Pins.FindAsync(Guid.Parse(id));
             if (pin == null)
                 return NotFound();
-            // Видалити зображення
+
             if (!string.IsNullOrEmpty(pin.ImageUrl))
             {
                 await _imageService.DeleteImageAsync(pin.ImageUrl);
@@ -368,6 +368,41 @@ namespace PinterestClone.API.Controllers
             return Ok(suggestions);
         }
 
+        [HttpPost("search-by-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PinListDto>> SearchByImage([FromForm] FindSimilarImagesDto request)
+        {
+            try
+            {
+                Console.WriteLine($"SearchByImage called - ImageFile: {request.ImageFile?.FileName}, SearchArea: {request.SearchArea}, SelectionCoords: {request.SelectionCoords}");
+                
+                if (request.ImageFile == null)
+                {
+                    Console.WriteLine("ImageFile is null");
+                    return BadRequest("Image file is required");
+                }
 
+                if (!request.ImageFile.ContentType.StartsWith("image/"))
+                {
+                    Console.WriteLine($"Invalid content type: {request.ImageFile.ContentType}");
+                    return BadRequest("File must be an image");
+                }
+
+                Console.WriteLine($"Calling FindSimilarImagesAsync with SearchArea: {request.SearchArea}, SelectionCoords: {request.SelectionCoords}");
+                
+                
+                var similarPins = await _pinService.FindSimilarImagesAsync(request.ImageFile, request.SearchArea, request.SelectionCoords);
+                
+                Console.WriteLine($"FindSimilarImagesAsync completed, found {similarPins?.Pins?.Count ?? 0} pins");
+                
+                return Ok(similarPins);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchByImage: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return BadRequest($"Error searching by image: {ex.Message}");
+            }
+        }
     }
 } 

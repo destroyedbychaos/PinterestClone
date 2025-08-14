@@ -12,23 +12,19 @@ const RegisterForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
     const [register, { isLoading, error }] = useRegisterMutation();
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (password !== confirmPassword) {
-                console.error('Паролі не збігаються');
-                return;
-            }
             const response = await register({
                 email,
                 password,
+                dateOfBirth,
             }).unwrap();
 
             dispatch(setCredentials({
@@ -70,15 +66,13 @@ const RegisterForm = () => {
                 />
 
                 <InputField
-                    label="Confirm password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm password"
-                    id="confirmPassword"
+                    label="Date of birth"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    placeholder="mm/dd/yyyy"
+                    id="date"
                     required
-                    showPassword={showConfirmPassword}
-                    setShowPassword={setShowConfirmPassword}
                 />
                 <Button
                     sx={{

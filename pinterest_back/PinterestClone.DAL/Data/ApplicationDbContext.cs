@@ -22,6 +22,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<PinReport> PinReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<HiddenPin> HiddenPins { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -159,6 +160,22 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<PasswordResetCode>()
                 .HasIndex(prc => prc.CreatedAt);
+
+            builder.Entity<HiddenPin>()
+                .HasOne(hp => hp.Pin)
+                .WithMany()
+                .HasForeignKey(hp => hp.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<HiddenPin>()
+                .HasOne(hp => hp.User)
+                .WithMany()
+                .HasForeignKey(hp => hp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<HiddenPin>()
+                .HasIndex(hp => new { hp.PinId, hp.UserId })
+                .IsUnique();
         }
     }
 } 

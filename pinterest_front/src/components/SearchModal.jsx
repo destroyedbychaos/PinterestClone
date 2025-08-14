@@ -11,6 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
 import ClearIcon from '@mui/icons-material/Close';
 
+
 const API_BASE = '/api';
 
 const highlightMatch = (text, query) => {
@@ -33,12 +34,15 @@ const SearchModal = ({
   recentSearches = [],
   setRecentSearches,
   onSearchResults,
+  showImageSearch,
+  setShowImageSearch,
 }) => {
   const modalRef = useRef();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+
 
   useEffect(() => {
     if (open) {
@@ -73,7 +77,7 @@ const SearchModal = ({
 
   const fetchRecommendations = async () => {
     try {
-      const res = await fetch(`${API_BASE}/pins/recommendations`);
+      const res = await fetch(`${API_BASE}/Pins/recommendations`);
       const data = await res.json();
       if (data?.mightLike || data?.popular) {
         setRecommendations([...data.mightLike || [], ...data.popular || []].slice(0, 8));
@@ -108,7 +112,7 @@ const SearchModal = ({
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`
+        `${API_BASE}/Pins?pageNumber=1&pageSize=40&searchTerm=${encodeURIComponent(trimmed)}`
       );
       const data = await res.json();
       const foundPins = data.Pins || data.pins || [];
@@ -141,62 +145,73 @@ const SearchModal = ({
     setRecentSearches(recentSearches.filter((t) => t !== term));
   };
 
-  if (!open) return null;
+  const handleClearSearch = () => {
+    setSearch('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleClearSearch();
+    }
+  };
 
   return (
-    <Box
-      ref={modalRef}
-      sx={{
-        position: 'fixed',
-        top: 30,
-        left: '53%',
-        transform: 'translateX(-50%)',
-        width: '95%',
-        maxWidth: 730,
-        bgcolor: '#fff',
-        borderRadius: '24px',
-        p: 3,
-        boxShadow: 12,
-        zIndex: 1300,
-        overflowY: 'auto',
-        maxHeight: '90vh',
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          height: 44,
-          borderRadius: 999,
-          backgroundColor: '#f4f7fd',
-          boxShadow: 'inset 0 0 0 1px #d3dce6',
-          marginBottom: 24,
-          width: '100%',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <SearchIcon sx={{ color: '#6e7b91', fontSize: 20, mr: 1 }} />
-          <InputBase
-            placeholder="Search..."
-            fullWidth
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ fontSize: '15px', color: '#1d1e1f' }}
-            autoFocus
-          />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton size="small" onClick={() => setSearch('')}>
-            <CenterFocusWeakIcon sx={{ fontSize: 18, color: '#6e7b91' }} />
-          </IconButton>
-          <IconButton size="small" onClick={onClose}>
-            <CloseIcon sx={{ fontSize: 20, color: '#6e7b91' }} />
-          </IconButton>
-        </Box>
-      </form>
+    <>
+      {open && (
+        <Box
+          ref={modalRef}
+          sx={{
+            position: 'fixed',
+            top: 30,
+            left: '53%',
+            transform: 'translateX(-50%)',
+            width: '95%',
+            maxWidth: 730,
+            bgcolor: '#fff',
+            borderRadius: '24px',
+            p: 3,
+            boxShadow: 12,
+            zIndex: 1300,
+            overflowY: 'auto',
+            maxHeight: '90vh',
+          }}
+        >
+             <Box
+         style={{
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'space-between',
+           padding: '0 16px',
+           height: 44,
+           borderRadius: 999,
+           backgroundColor: '#f4f7fd',
+           boxShadow: 'inset 0 0 0 1px #d3dce6',
+           marginBottom: 24,
+           width: '100%',
+         }}
+       >
+         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+           <SearchIcon sx={{ color: '#6e7b91', fontSize: 20, mr: 1 }} />
+           <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+             <InputBase
+               placeholder="Search... (Press Esc to clear)"
+               fullWidth
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+               onKeyDown={handleKeyDown}
+               sx={{ fontSize: '15px', color: '#1d1e1f' }}
+               autoFocus
+             />
+           </form>
+         </Box>
+         <Box sx={{ display: 'flex', gap: 1 }}>
+           <IconButton size="small" onClick={onClose}>
+             <CloseIcon sx={{ fontSize: 20, color: '#6e7b91' }} />
+           </IconButton>
+         </Box>
+       </Box>
+
+       
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
@@ -344,7 +359,11 @@ const SearchModal = ({
           )}
         </>
       )}
-    </Box>
+      </Box>
+      )}
+
+
+    </>
   );
 };
 

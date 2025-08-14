@@ -36,6 +36,7 @@ namespace PinterestClone.BLL.Services
             return GetResponse(message, false, payload, HttpStatusCode.InternalServerError);
         }
 
+
         public static ServiceResponse ByIdentityResult(IdentityResult result, string successMessage)
         {
             return result.Succeeded 

@@ -3,51 +3,40 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.BoardRepository;
+using System.Linq.Dynamic.Core;
+using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.BoardService
 {
     public class BoardService : IBoardService
     {
         private readonly IBoardRepository _boardRepository;
+        private readonly IMapper _mapper;
+        private readonly IUserRepository _userRepository;
 
-        public BoardService(IBoardRepository boardRepository)
+        public BoardService(IBoardRepository boardRepository, IUserRepository userRepository, IMapper mapper)
         {
             _boardRepository = boardRepository;
+            _userRepository = userRepository;
+            _mapper = mapper;
         }
 
         public async Task<BoardResponseDto> CreateBoardAsync(BoardSimpleDto boardDto, string userId)
         {
-            var board = new Board
-            {
-                Id = Guid.NewGuid(),
-                Name = boardDto.Name,
-                Description = boardDto.Description,
-                UserId = userId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                IsPrivate = boardDto.IsPrivate,
-                IsArchived = false
-            };
+            var board = _mapper.Map<Board>(boardDto);
+            board.UserId = userId;
+            board.User = await _userRepository.GetByIdAsync(userId);
 
             var createdBoard = await _boardRepository.CreateBoardAsync(board, userId);
             if (createdBoard == null) return null!;
 
-            return new BoardResponseDto
-            {
-                Id = createdBoard.Id.ToString(),
-                Name = createdBoard.Name,
-                Description = createdBoard.Description,
-                IsPrivate = createdBoard.IsPrivate,
-                IsArchived = createdBoard.IsArchived,
-                CreatedAt = createdBoard.CreatedAt,
-                UpdatedAt = createdBoard.UpdatedAt,
-                UserId = createdBoard.UserId
-            };
+            return _mapper.Map<BoardResponseDto>(createdBoard);
         }
 
         public async Task<BoardListDto> GetAllBoards(int pageNumber = 1, int pageSize = 20, string? searchTerm = null,
@@ -74,25 +63,14 @@ namespace PinterestClone.BLL.Services.BoardService
             if (prop == null)
                 query.OrderBy(b => b.CreatedAt);
             else
-                query = query.OrderBy(b => prop.GetValue(b));
+                query = query.OrderBy($"{sortBy} {(isAscending ? "ascending" : "descending")}");
 
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var boards = await query
+            var boards = await _mapper.ProjectTo<BoardSimpleDto>(query)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(b => new BoardSimpleDto
-                {
-                    Id = b.Id.ToString(),
-                    Name = b.Name ?? "",
-                    Description = b.Description,
-                    IsPrivate = b.IsPrivate,
-                    IsArchived = b.IsArchived,
-                    CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt,
-                    UserId = b.UserId
-                })
                 .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(groupBy))
@@ -155,20 +133,9 @@ namespace PinterestClone.BLL.Services.BoardService
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var boards = await query
+            var boards = await _mapper.ProjectTo<BoardSimpleDto>(query)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(b => new BoardSimpleDto
-                {
-                    Id = b.Id.ToString(),
-                    Name = b.Name ?? "",
-                    Description = b.Description,
-                    IsPrivate = b.IsPrivate,
-                    IsArchived = b.IsArchived,
-                    CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt,
-                    UserId = b.UserId
-                })
                 .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(groupBy))
@@ -213,31 +180,7 @@ namespace PinterestClone.BLL.Services.BoardService
 
             if (board == null) return null;
 
-            return new BoardResponseDto
-            {
-                Id = board.Id.ToString(),
-                Name = board.Name ?? string.Empty,
-                Description = board.Description,
-                IsPrivate = board.IsPrivate,
-                IsArchived = board.IsArchived,
-                CreatedAt = board.CreatedAt,
-                UpdatedAt = board.UpdatedAt,
-                UserId = board.UserId,
-                UserName = board.User?.UserName ?? string.Empty,
-                Pins = board.BoardPins
-                    .Where(bp => bp.Pin != null)
-                    .OrderByDescending(bp => bp.Pin!.CreatedAt)
-                    .Select(bp => new PinSimpleDto
-                    {
-                        Id = bp.Pin!.Id.ToString(),
-                        Title = bp.Pin.Title ?? string.Empty,
-                        ImageUrl = bp.Pin.ImageUrl ?? string.Empty,
-                        CreatedAt = bp.Pin.CreatedAt,
-                        Tags = bp.Pin.Tags,
-                        UserName = bp.Pin.User?.UserName ?? string.Empty,
-                        LikesCount = bp.Pin.Likes.Count
-                    }).ToList()
-            };
+            return _mapper.Map<BoardResponseDto>(board);
         }
 
         public async Task<BoardResponseDto?> UpdateBoardAsync(string boardId, BoardSimpleDto updateBoard, string userId)
@@ -247,12 +190,10 @@ namespace PinterestClone.BLL.Services.BoardService
             if (board == null || board.UserId != userId)
                 return null;
 
-            board.Name = updateBoard.Name;
-            board.Description = updateBoard.Description;
-            board.IsPrivate = updateBoard.IsPrivate;
-            board.UpdatedAt = DateTime.UtcNow;
+            var boardNew = _mapper.Map<Board>(updateBoard);
+            boardNew.User = await _userRepository.GetByIdAsync(updateBoard.UserId);
 
-            await _boardRepository.UpdateBoardAsync(boardId, board, userId);
+            await _boardRepository.UpdateBoardAsync(boardNew);
 
             return await GetBoardByIdAsync(boardId);
         }
@@ -271,7 +212,7 @@ namespace PinterestClone.BLL.Services.BoardService
             board.IsArchived = true;
             board.UpdatedAt = DateTime.UtcNow;
 
-            await _boardRepository.UpdateBoardAsync(boardId, board, userId);
+            await _boardRepository.UpdateBoardAsync(board);
             return await GetBoardByIdAsync(boardId);
         }
 
@@ -284,7 +225,7 @@ namespace PinterestClone.BLL.Services.BoardService
             board.IsArchived = false;
             board.UpdatedAt = DateTime.UtcNow;
 
-            await _boardRepository.UpdateBoardAsync(boardId, board, userId);
+            await _boardRepository.UpdateBoardAsync(board);
             return await GetBoardByIdAsync(boardId);
         }
     }

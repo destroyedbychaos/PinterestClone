@@ -1,0 +1,218 @@
+
+.pe-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.pe-main {
+  flex: 1;
+}
+
+.pe-wrap {
+  padding: 24px 32px 40px;
+}
+
+.pe-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.pe-card {
+  border-radius: 24px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.pe-banner {
+  height: 260px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.pe-banner-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: inline-flex;
+  padding: 20px 40px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 40px;
+  background: rgba(0, 13, 23, 0.30);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pe-body {
+  position: relative;
+  padding: 105px 24px 24px; 
+  display: grid;
+  grid-template-columns: 227px 1fr; 
+  column-gap: 40px;
+  row-gap: 0;
+  align-items: start;
+  max-width: 1100px;  
+  margin: 0 auto;     
+}
+
+.pe-avatar-col {
+  display: flex;
+  width: 227px;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px; 
+}
+
+.pe-avatar-box {
+  position: relative;
+  display: inline-block;
+  border-radius: 9999px;
+  background: #ffffff;
+  padding: 5px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.08);
+  margin-top: 0; 
+}
+
+.pe-avatar {
+  width: 217px;
+  height: 217px;
+  aspect-ratio: 1/1;
+  border-radius: 200px;
+  background: lightgray 50% / cover no-repeat;
+}
+
+.pe-change-image-btn {
+  display: flex;
+  padding: 16px 24px;
+  align-items: center;
+  gap: 16px;
+  align-self: stretch;
+  width: 100%;
+  justify-content: center;
+  background: var(--Blue-50, #D7E0F4);
+  color: #0f172a;
+  border: none;
+  border-radius: 100px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pe-form {
+  max-width: 760px;
+  width: 100%;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin: 0; 
+}
+
+.pe-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: stretch;
+  width: 100%;
+}
+
+.pe-label {
+  display: block;         
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  color: #111827;
+}
+
+.pe-input,
+.pe-textarea {
+  display: block;        
+}
+
+.pe-input {
+  width: 100%;
+  height: 56px;
+  background: #e9f0fb;
+  border: none;
+  outline: none;
+  border-radius: 24px;
+  padding: 0 20px;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.pe-textarea {
+  width: 100%;
+  background: #e9f0fb;
+  border: none;
+  outline: none;
+  border-radius: 20px;
+  padding: 14px 20px;
+  font-size: 16px;
+  color: #0f172a;
+  resize: vertical;
+}
+
+.pe-actions {
+  grid-column: 1 / -1;          
+  display: flex;
+  gap: 16px;
+  max-width: 760px;
+  margin: 28px auto 40px;        
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  justify-self: center;          
+}
+
+.pe-btn {
+  display: flex;
+  padding: 16px 24px;
+  align-items: center;
+  gap: 16px;
+  flex: 1 0 0;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  justify-content: center;
+}
+
+.pe-btn-reset {
+  background: var(--Blue-50, #D7E0F4);
+  color: #0f172a;
+  border: none;
+}
+
+.pe-btn-save {
+  background: var(--Blue-500, #6F91D9);
+  color: #ffffff;
+  border: none;
+}
+
+
+.pe-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); display: flex; align-items: flex-start; justify-content: center; padding-top: 200px; z-index: 50; }
+
+.pe-modal { display: inline-flex; padding: 40px; flex-direction: column; align-items: flex-start; gap: 40px; border-radius: 40px; background: var(--White, #FFF); box-shadow: -1px 10px 16px 1px rgba(1, 35, 63, 0.25); min-width: 520px; }
+
+.pe-modal-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+
+.pe-modal-title { color: var(--Dark-600, #011D35); font-family: Geologica, sans-serif; font-size: 28px; font-style: normal; font-weight: 600; line-height: normal; }
+
+.pe-modal-close { background: transparent; border: none; font-size: 28px; line-height: 1; cursor: pointer; color: #1f2937; }
+
+.pe-modal-btn { display: flex; width: 464px; padding: 16px 24px; align-items: center; gap: 16px; border-radius: 100px; background: var(--Blue-500, #6F91D9); color: #fff; justify-content: center; cursor: pointer; }
+
+.pe-modal-note { color: var(--Dark-300, #52697C); text-align: center; font-family: Geologica, sans-serif; font-size: 21px; font-style: normal; font-weight: 400; line-height: normal; width: 100%; }
+
+

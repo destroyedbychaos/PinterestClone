@@ -50,7 +50,7 @@ namespace PinterestClone.DAL.Repositories.BoardRepository
                 .FirstOrDefaultAsync(b => b.Id == guid);
         }
 
-        public async Task<Board?> UpdateBoardAsync(string boardId, Board updateBoard, string userId)
+        public async Task<Board?> UpdateBoardAsync(Board updateBoard)
         {
             _context.Boards.Update(updateBoard);
             await _context.SaveChangesAsync();

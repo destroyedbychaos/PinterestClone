@@ -261,6 +261,34 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("PinterestClone.DAL.Models.HiddenPin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("HiddenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PinId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("PinId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("HiddenPins");
+                });
+
             modelBuilder.Entity("PinterestClone.DAL.Models.Identity.User", b =>
                 {
                     b.Property<string>("Id")
@@ -270,6 +298,9 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BannerUrl")
                         .HasColumnType("text");
 
                     b.Property<string>("Bio")
@@ -839,6 +870,25 @@ namespace PinterestClone.DAL.Migrations
 
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
                         .WithMany("Comments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pin");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.HiddenPin", b =>
+                {
+                    b.HasOne("PinterestClone.DAL.Models.Pin", "Pin")
+                        .WithMany()
+                        .HasForeignKey("PinId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

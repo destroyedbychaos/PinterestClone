@@ -1,6 +1,7 @@
+using AutoMapper;
 using PinterestClone.BLL.DTOs;
-using PinterestClone.BLL.Services.PinReportService;
 using PinterestClone.BLL.Services.EmailService;
+using PinterestClone.BLL.Services.PinReportService;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.PinReportRepository;
 using PinterestClone.DAL.Repositories.PinRepository;
@@ -14,26 +15,26 @@ namespace PinterestClone.BLL.Services.PinReportService
         private readonly IPinRepository _pinRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IMapper _mapper;
 
-        public PinReportService(
-            IPinReportRepository pinReportRepository,
-            IPinRepository pinRepository,
-            IUserRepository userRepository,
-            IEmailService emailService)
+        public PinReportService(IPinReportRepository pinReportRepository, IPinRepository pinRepository, IUserRepository userRepository, IEmailService emailService, IMapper mapper)
         {
             _pinReportRepository = pinReportRepository;
             _pinRepository = pinRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _mapper = mapper;
         }
 
         public async Task<ServiceResponse> ReportPinAsync(ReportPinDto reportPinDto, string reportedByUserId)
         {
             try
             {
+                Console.WriteLine($"ReportPinAsync called with PinId: '{reportPinDto.PinId}', ReportMessage: '{reportPinDto.ReportMessage}'");
                 
                 if (!Guid.TryParse(reportPinDto.PinId, out var pinId))
                 {
+                    Console.WriteLine($"Failed to parse PinId as GUID: '{reportPinDto.PinId}'");
                     return ServiceResponse.BadRequestResponse("Invalid pin ID format");
                 }
 
@@ -74,7 +75,7 @@ namespace PinterestClone.BLL.Services.PinReportService
                 );
 
                 var fullReport = await _pinReportRepository.GetByIdAsync(createdReport.Id);
-                var response = MapToResponseDto(fullReport!);
+                var response = _mapper.Map<PinReportResponseDto>(pinReport);
 
                 return ServiceResponse.OkResponse("Pin reported successfully", response);
             }
@@ -94,7 +95,7 @@ namespace PinterestClone.BLL.Services.PinReportService
                     return ServiceResponse.BadRequestResponse("Pin report not found");
                 }
 
-                var response = MapToResponseDto(pinReport);
+                var response = _mapper.Map<PinReportResponseDto>(pinReport);
                 return ServiceResponse.OkResponse("Pin report retrieved successfully", response);
             }
             catch (Exception ex)
@@ -164,35 +165,9 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
-        private static PinReportResponseDto MapToResponseDto(PinReport pinReport)
+        private PinReportResponseDto MapToResponseDto(PinReport pinReport)
         {
-            return new PinReportResponseDto
-            {
-                Id = pinReport.Id,
-                PinId = pinReport.PinId.ToString(),
-                ReportedByUserId = pinReport.ReportedByUserId,
-                ReportedByUserName = pinReport.ReportedByUser?.DisplayName ?? pinReport.ReportedByUser?.UserName ?? "Unknown",
-                ReportMessage = pinReport.ReportMessage,
-                ReportedAt = pinReport.ReportedAt,
-                IsResolved = pinReport.IsResolved,
-                ResolvedAt = pinReport.ResolvedAt,
-                ResolutionNotes = pinReport.ResolutionNotes,
-                Pin = new PinResponseDto
-                {
-                    Id = pinReport.Pin.Id.ToString(),
-                    Title = pinReport.Pin.Title,
-                    Description = pinReport.Pin.Description,
-                    ImageUrl = pinReport.Pin.ImageUrl ?? "",
-                    Link = pinReport.Pin.Link,
-                    Tags = pinReport.Pin.Tags,
-                    CreatedAt = pinReport.Pin.CreatedAt,
-                    UserId = pinReport.Pin.UserId,
-                    UserName = pinReport.Pin.User?.DisplayName ?? pinReport.Pin.User?.UserName ?? "Unknown",
-                    Boards = [],
-                    LikesCount = pinReport.Pin.Likes?.Count ?? 0,
-                    CommentsCount = pinReport.Pin.Comments?.Count ?? 0
-                }
-            };
+            return _mapper.Map<PinReportResponseDto>(pinReport);
         }
     }
 } 
