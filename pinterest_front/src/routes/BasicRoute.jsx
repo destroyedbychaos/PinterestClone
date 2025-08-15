@@ -12,6 +12,7 @@ import ResetPassword from "../pages/ForgotPassword/ResetPassword.jsx";
 import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.jsx";
 import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
 import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
+import SearchFilter from "../pages/Search/SearchFilter.jsx";
 
 
 const BasicRoute = () => {
@@ -51,6 +52,9 @@ const BasicRoute = () => {
             </Route>
             <Route path="/profile-edit" element={<LayoutWithoutFooter />}>
                 <Route index element={<ProfileEdit/>} />
+            </Route>
+            <Route path="/search-filter" element={<LayoutWithoutFooter />}>
+                <Route index element={<SearchFilter/>} />
             </Route>
         </Routes>
     );
