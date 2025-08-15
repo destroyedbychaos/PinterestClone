@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import MasonryGrid from "../../components/ui/MasonryGrid";
 import TagsFilter from "../../components/ui/TagsFilter";
 import SearchHeader from "../../components/layout/SearchHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import SearchModal from "../../components/SearchModal";
-import SearchFilterModal from "../../components/SearchFilterModal";
 import ImageSearchModal from "../../components/ImageSearchModal";
+import SearchFilterModal from "../../components/SearchFilterModal";
 
 const API_BASE = "/api";
 
 const SearchFilter = () => {
   const { user } = useSelector((state) => state.auth);
+
   const [tags, setTags] = useState([]);
   const [activeTag, setActiveTag] = useState("");
   const [pins, setPins] = useState([]);
@@ -24,26 +25,29 @@ const SearchFilter = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [showSearchFilterModal, setShowSearchFilterModal] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
+  const [showSearchFilterModal, setShowSearchFilterModal] = useState(false);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get("query") || "";
+    setSearch(query);
+  }, [location.search]);
 
   useEffect(() => {
     setLoading(true);
     let url = `${API_BASE}/pins?pageNumber=1&pageSize=40`;
-    const tagParam = activeTag ? activeTag.trim().toLowerCase() : "";
-    if (tagParam) url += `&tags=${encodeURIComponent(tagParam)}`;
+    if (activeTag) url += `&tags=${encodeURIComponent(activeTag.trim().toLowerCase())}`;
     if (search) url += `&searchTerm=${encodeURIComponent(search)}`;
 
     fetch(url)
       .then((res) => res.json())
-      .then((data) => {
-        const foundPins = data.Pins || data.pins || [];
-        setPins(foundPins);
-      })
+      .then((data) => setPins(data.Pins || data.pins || []))
       .catch(() => setPins([]))
       .finally(() => setLoading(false));
   }, [activeTag, search]);
@@ -51,10 +55,7 @@ const SearchFilter = () => {
   useEffect(() => {
     fetch(`${API_BASE}/pins/all-tags`)
       .then((res) => res.json())
-      .then((data) => {
-        const limitedTags = data.slice(0, 6);
-        setTags(limitedTags);
-      })
+      .then((data) => setTags(data.slice(0, 6)))
       .catch(() => setTags([]));
   }, []);
 
@@ -64,46 +65,26 @@ const SearchFilter = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.payload) {
-            setHiddenPinIds(data.payload);
-          } else {
-            setHiddenPinIds([]);
-          }
-        })
+        .then((data) => setHiddenPinIds(data.success && data.payload ? data.payload : []))
         .catch(() => setHiddenPinIds([]));
     } else {
       setHiddenPinIds([]);
     }
   }, [token]);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSearchModal(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handlePinHidden = (pinId) => {
     setHiddenPinIds((prev) => [...prev, pinId]);
     setPins((prev) =>
-      prev.filter((pin) => {
-        const currentPinId =
-          pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
-        return currentPinId !== pinId;
-      })
+      prev.filter(
+        (pin) =>
+          (pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString()) !== pinId
+      )
     );
   };
 
-  const displayedPins = (searchResults.length > 0 ? searchResults : pins).filter(
-    (pin) => {
-      const pinId =
-        pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
-      return !hiddenPinIds.includes(pinId);
-    }
+  const displayedPins = pins.filter(
+    (pin) =>
+      !hiddenPinIds.includes(pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString())
   );
 
   return (
@@ -113,33 +94,51 @@ const SearchFilter = () => {
         <SearchHeader
           user={user}
           onSearch={setSearch}
-          onLogin={() => navigate("/login")}
-          onSignup={() => navigate("/register")}
-          onFocusSearch={() => setShowSearchModal(true)}
           searchRef={searchRef}
+          onFocusSearch={() => setShowSearchModal(true)}
           onImageSearch={() => {
             setShowImageSearch(true);
             setShowSearchModal(false);
           }}
+          onLogin={() => navigate("/login")}
+          onSignup={() => navigate("/register")}
         />
 
         <Box sx={{ p: "0 24px", mt: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
             <Box
               component="button"
-              onClick={() => setShowSearchFilterModal(true)}
+              onClick={() => setShowSearchFilterModal((prev) => !prev)}
               sx={{
+                backgroundColor: "#EAEFF9",
+                color: "#000D17",
+                border: "none",
+                borderRadius: "100px",
+                padding: "12px 24px",
+                fontFamily: "Geologica, sans-serif",
+                fontSize: "24px",
+                fontWeight: 400,
+                lineHeight: 1.2,
+                textAlign: "center",
+                cursor: "pointer",
+                minHeight: "48px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                bgcolor: "#fff",
-                borderRadius: "20px",
-                border: "1px solid #e0e0e0",
-                padding: "6px 12px",
-                cursor: "pointer",
+                whiteSpace: "nowrap",
                 transition: "all 0.2s ease",
                 "&:hover": {
-                  bgcolor: "#f0f0f0",
+                  backgroundColor: "#d1d9e8",
+                  transform: "translateY(-1px)",
+                },
+                "&:active": {
+                  transform: "translateY(0)",
+                },
+                "&.active": {
+                  backgroundColor: "#fff",
+                  border: "1px solid #CBD7F1",
+                  fontWeight: 500,
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                 },
               }}
             >
@@ -161,26 +160,19 @@ const SearchFilter = () => {
               </svg>
             </Box>
 
-            <TagsFilter
-              tags={tags}
-              activeTag={activeTag}
-              onTagSelect={setActiveTag}
-            />
+            <TagsFilter tags={tags} activeTag={activeTag} onTagSelect={setActiveTag} />
           </Box>
 
-          {(loading || imageSearchLoading) ? (
+          {loading || imageSearchLoading ? (
             <div style={{ textAlign: "center", marginTop: 40 }}>
-              {imageSearchLoading
-                ? "Пошук схожих зображень..."
-                : "Завантаження..."}
+              {imageSearchLoading ? "Пошук схожих зображень..." : "Завантаження..."}
             </div>
           ) : (
             <MasonryGrid
               pins={displayedPins.map((pin) => {
                 let image = pin.ImageUrl || pin.imageUrl || pin.image;
                 if (image && !/^https?:\/\//.test(image)) {
-                  if (!image.startsWith("/"))
-                    image = "/images/" + image.replace(/^.*[\\/]/, "");
+                  if (!image.startsWith("/")) image = "/images/" + image.replace(/^.*[\\/]/, "");
                 }
                 return {
                   id: pin.Id || pin.id,
@@ -188,10 +180,7 @@ const SearchFilter = () => {
                   title: pin.Title || pin.title,
                   description: pin.Description || pin.description,
                   author: pin.UserName || pin.userName || pin.author,
-                  tags: (pin.Tags || pin.tags || "")
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
+                  tags: (pin.Tags || pin.tags || "").split(",").map((t) => t.trim()).filter(Boolean),
                 };
               })}
               onPinHidden={handlePinHidden}
@@ -205,7 +194,6 @@ const SearchFilter = () => {
         onClose={() => setShowSearchModal(false)}
         recentSearches={recentSearches}
         setRecentSearches={setRecentSearches}
-        onSearchResults={(results) => setSearchResults(results)}
         showImageSearch={showImageSearch}
         setShowImageSearch={setShowImageSearch}
       />
@@ -220,11 +208,8 @@ const SearchFilter = () => {
         }}
         onSearchStart={() => setImageSearchLoading(true)}
       />
-      <SearchFilterModal
-  open={showSearchFilterModal}
-  onClose={() => setShowSearchFilterModal(false)}
-/>
 
+      <SearchFilterModal open={showSearchFilterModal} onClose={() => setShowSearchFilterModal(false)} />
     </Box>
   );
 };
