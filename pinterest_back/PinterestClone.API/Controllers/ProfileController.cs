@@ -223,6 +223,46 @@ namespace PinterestClone.API.Controllers
 
             return Ok(_mapper.Map<UserProfileDto>(user));
         }
+        [HttpGet("search")]
+        [AllowAnonymous] 
+        public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
+            [FromQuery] string query,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest(new { error = "Query is required." });
+
+            var normalizedQuery = query.Trim().ToLower();
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 50);
+
+            var usersQuery = _userManager.Users
+                .AsNoTracking()
+                .Where(u =>
+                    u.UserName.ToLower().Contains(normalizedQuery) ||
+                    (u.DisplayName != null && u.DisplayName.ToLower().Contains(normalizedQuery)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(normalizedQuery))
+                )
+                .OrderBy(u => u.UserName);
+
+            var total = await usersQuery.CountAsync();
+            var users = await usersQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = _mapper.Map<IEnumerable<UserSearchDto>>(users);
+
+            return Ok(new
+            {
+                page,
+                pageSize,
+                total,
+                totalPages = (int)Math.Ceiling(total / (double)pageSize),
+                items = result
+            });
+        }
     }
 }
 
