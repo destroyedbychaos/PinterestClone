@@ -12,94 +12,29 @@ import {
     Select,
     MenuItem,
     FormControl,
-    InputLabel,
     styled 
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import AestifyLogo from './ui/AestifyLogo';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AestifyLogo from './ui/AestifyLogo';
+import {interestCategories} from '../components/data/interestCategories.js';
+import {vibes} from '../components/data/vibes.js';
+import {
+    StyledDialog,
+    StyledTextField,
+    ContinueButton,
+    InterestCard,
+    ImageContainer,
+    CardImage,
+    MasonryGrid,
+    VibeCard,
+    VibeImage,
+    SelectedVibesGrid,
+    SelectedVibeCard
+} from '../components/ui/StyledComponents/OnBoardComponents.jsx';
 
 
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-    '& .MuiDialog-paper': {
-        display: 'flex',
-        width: '848px',
-        padding: '40px',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '40px',
-        borderRadius: '40px',
-        background: '#FFF',
-        boxShadow: '-1px 10px 16px 1px rgba(1, 35, 63, 0.25)',
-        margin: '16px',
-        maxWidth: '848px',
-    },
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-    '& .MuiOutlinedInput-root': {
-        display: 'flex',
-        width: '464px',
-        padding: '16px 24px',
-        alignItems: 'center',
-        gap: '10px',
-        borderRadius: '100px',
-        background: 'rgba(215, 224, 244, 0.50)',
-        '& fieldset': {
-            border: 'none',
-        },
-        '&:hover fieldset': {
-            border: 'none',
-        },
-        '&.Mui-focused fieldset': {
-            border: '2px solid #6F91D9',
-        },
-    },
-    '& .MuiInputLabel-root': {
-        color: '#000D17',
-        fontWeight: '500',
-        fontSize: '14px',
-    },
-    '& .MuiInputBase-input': {
-        padding: '0px 16px',
-        fontSize: '16px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '10px',
-        alignSelf: 'stretch',
-    },
-}));
-
-const ContinueButton = styled(Button)(({ theme }) => ({
-    display: 'flex',
-    width: '464px',
-    padding: '16px 24px',
-    alignItems: 'center',
-    gap: '16px',
-    borderRadius: '100px',
-    background: '#6F91D9',
-    color: 'white',
-    fontWeight: '600',
-    fontSize: '16px',
-    textTransform: 'none',
-    '&:hover': {
-        backgroundColor: '#5A7BC7',
-    },
-    '&:disabled': {
-        backgroundColor: '#B4C6EB',
-    },
-    '& .MuiButton-label': {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '10px',
-        flex: '1 0 0',
-    },
-}));
-
-const OnboardingModal = ({ open, onClose, onComplete }) => {
+const OnboardingModal = ({ open = true, onClose = () => {}, onComplete = () => {} }) => {
     const theme = useTheme();
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
@@ -107,6 +42,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
     const [gender, setGender] = useState('female');
     const [country, setCountry] = useState('ukraine');
     const [language, setLanguage] = useState('english');
+    const [selectedInterests, setSelectedInterests] = useState([]);
+    const [selectedVibes, setSelectedVibes] = useState([]);
 
     const handleContinue = () => {
         if (step === 1) {
@@ -116,9 +53,41 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
         } else if (step === 3) {
             setStep(4);
         } else if (step === 4) {
-            onComplete({ name, username, gender, country, language });
+            setStep(5);
+        } else if (step === 5) {
+            setStep(6);
+        } else if (step === 6) {
+            setStep(7);
+        } else if (step === 7) {
+            onComplete({ 
+                name, 
+                username, 
+                gender, 
+                country, 
+                language, 
+                interests: selectedInterests,
+                vibes: selectedVibes 
+            });
             onClose();
         }
+    };
+
+    const handleInterestToggle = (interestId) => {
+        setSelectedInterests(prev => {
+            if (prev.includes(interestId)) {
+                return prev.filter(id => id !== interestId);
+            }
+            return [...prev, interestId];
+        });
+    };
+
+    const handleVibeToggle = (vibeId) => {
+        setSelectedVibes(prev => {
+            if (prev.includes(vibeId)) {
+                return prev.filter(id => id !== vibeId);
+            }
+            return [...prev, vibeId];
+        });
     };
 
     const handleBack = () => {
@@ -130,6 +99,12 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
     const isStep2Valid = name.trim() && username.trim();
     const isStep3Valid = gender;
     const isStep4Valid = country && language;
+    const isStep5Valid = selectedInterests.length > 0;
+    const isStep6Valid = selectedVibes.length >= 3;
+
+    const getSelectedVibesData = () => {
+        return vibes.filter(vibe => selectedVibes.includes(vibe.id)).slice(0, 3);
+    };
 
     return (
         <StyledDialog 
@@ -137,6 +112,7 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
             onClose={onClose}
             maxWidth="sm"
             fullWidth
+            dialogwidth={step === 5 || step === 6 ? '1050px' : '848px'}
         >
             <DialogContent sx={{ p: 0, textAlign: 'center', width: '100%', height: '100%' }}>
                 {step === 1 ? (
@@ -188,15 +164,11 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             Before we start, let's set up your profile.
                         </Typography>
 
-                        <ContinueButton
-                            onClick={handleContinue}
-                        >
+                        <ContinueButton onClick={handleContinue}>
                             Continue
                         </ContinueButton>
                     </Box>
                 ) : step === 2 ? (
- 
-
                     <Box sx={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -206,8 +178,6 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                         height: '100%',
                         justifyContent: 'center'
                     }}>
-
-
                         <Typography 
                             sx={{ 
                                 color: '#000D17',
@@ -235,7 +205,6 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                         >
                             What's your name?
                         </Typography>
-
 
                         <Typography 
                             sx={{ 
@@ -307,7 +276,6 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             Next
                         </ContinueButton>
 
-
                         <Typography 
                             sx={{ 
                                 color: '#000D17',
@@ -318,8 +286,6 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                         </Typography>
                     </Box>
                 ) : step === 3 ? (
-        
-
                     <Box sx={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -329,13 +295,11 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                         height: '100%',
                         justifyContent: 'center'
                     }}>
-
-
                         <Box sx={{ 
                             display: 'flex',
                             width: '768px',
                             alignItems: 'center',
-                            gap: '324px'
+                            justifyContent: 'space-between'
                         }}>
                             <Button
                                 onClick={handleBack}
@@ -347,6 +311,7 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             >
                                 <ArrowBackIcon />
                             </Button>
+                            
                             <Typography 
                                 sx={{ 
                                     color: '#000D17',
@@ -359,6 +324,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             >
                                 2 of 5
                             </Typography>
+                            
+                            <Box sx={{ width: 40 }} />
                         </Box>
 
                         <Typography 
@@ -376,27 +343,19 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             What's your gender?
                         </Typography>
 
-                        <Box sx={{ 
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            gap: '40px'
-                        }}>
-                            <Typography 
-                                sx={{ 
-                                    color: 'var(--Dark-900, #000D17)',
-                                    textAlign: 'center',
-                                    fontFamily: 'Geologica',
-                                    fontSize: '21px',
-                                    fontStyle: 'normal',
-                                    fontWeight: '400',
-                                    lineHeight: 'normal'
-                                }}
-                            >
-                                This helps us find more relevant content for you. We won't show it on your profile.
-                            </Typography>
-                        </Box>
-
+                        <Typography 
+                            sx={{ 
+                                color: '#000D17',
+                                textAlign: 'center',
+                                fontFamily: 'Geologica',
+                                fontSize: '21px',
+                                fontStyle: 'normal',
+                                fontWeight: '400',
+                                lineHeight: 'normal'
+                            }}
+                        >
+                            This helps us find more relevant content for you. We won't show it on your profile.
+                        </Typography>
 
                         <Box sx={{ 
                             display: 'flex',
@@ -497,9 +456,7 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             You can change this anytime in your settings.
                         </Typography>
                     </Box>
-                ) : (
-
-
+                ) : step === 4 ? (
                     <Box sx={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -511,9 +468,10 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                     }}>
                         <Box sx={{ 
                             display: 'flex',
-                            width: '768px',
+                            width: '100%',
+                            maxWidth: '800px',
                             alignItems: 'center',
-                            gap: '324px'
+                            justifyContent: 'space-between'
                         }}>
                             <Button
                                 onClick={handleBack}
@@ -525,6 +483,7 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             >
                                 <ArrowBackIcon />
                             </Button>
+                            
                             <Typography 
                                 sx={{ 
                                     color: '#000D17',
@@ -537,12 +496,14 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             >
                                 3 of 5
                             </Typography>
+                            
+                            <Box sx={{ width: 40 }} />
                         </Box>
 
                         <Typography 
                             sx={{ 
                                 alignSelf: 'stretch',
-                                color: '#000',
+                                color: '#000D17',
                                 textAlign: 'center',
                                 fontFamily: 'Geologica',
                                 fontSize: '51px',
@@ -557,7 +518,7 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                         <Typography 
                             sx={{ 
                                 alignSelf: 'stretch',
-                                color: '#000',
+                                color: '#000D17',
                                 textAlign: 'center',
                                 fontFamily: 'Geologica',
                                 fontSize: '21px',
@@ -569,10 +530,9 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             This information will always be private.
                         </Typography>
 
-
                         <Box sx={{ 
                             display: 'flex',
-                            width: '400px',
+                            width: '500px',
                             flexDirection: 'column',
                             alignItems: 'flex-start',
                             gap: '24px'
@@ -581,7 +541,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'flex-start',
-                                gap: '8px'
+                                gap: '8px',
+                                width: '100%'
                             }}>
                                 <Typography 
                                     sx={{ 
@@ -605,7 +566,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                                             },
                                             '& .MuiSelect-select': {
                                                 padding: '14px 24px',
-                                                fontSize: '16px'
+                                                fontSize: '16px',
+                                                textAlign: 'left',
                                             }
                                         }}
                                     >
@@ -622,7 +584,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'flex-start',
-                                gap: '8px'
+                                gap: '8px',
+                                width: '100%'
                             }}>
                                 <Typography 
                                     sx={{ 
@@ -646,7 +609,8 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                                             },
                                             '& .MuiSelect-select': {
                                                 padding: '14px 24px',
-                                                fontSize: '16px'
+                                                fontSize: '16px',
+                                                textAlign: 'left',
                                             }
                                         }}
                                     >
@@ -673,10 +637,327 @@ const OnboardingModal = ({ open, onClose, onComplete }) => {
                             You can change this anytime in your settings.
                         </Typography>
                     </Box>
-                )}
+                ) : step === 5 ? (
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '24px',
+                        width: '100%',
+                        height: '600px',
+                        justifyContent: 'center'
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            width: '100%',
+                            maxWidth: '1200px',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <Button 
+                                onClick={handleBack} 
+                                sx={{ 
+                                    minWidth: 'auto', 
+                                    p: 0, 
+                                    color: '#000D17', 
+                                }}
+                            >
+                                <ArrowBackIcon />
+                            </Button>
+                            
+                            <Typography 
+                                sx={{ 
+                                    color: '#000D17',
+                                    fontFamily: 'Geologica',
+                                    fontSize: '21px',
+                                    fontStyle: 'normal',
+                                    fontWeight: '400',
+                                    lineHeight: 'normal'
+                                }}
+                            >
+                                4 of 5
+                            </Typography>
+                            
+                            <Box sx={{ width: 40 }} />
+                        </Box>
+
+                        <Typography 
+                            sx={{ 
+                                alignSelf: 'stretch',
+                                color: '#000D17',
+                                textAlign: 'center',
+                                fontFamily: 'Geologica',
+                                fontSize: '51px',
+                                fontStyle: 'normal',
+                                fontWeight: '700',
+                                lineHeight: 'normal'
+                            }}
+                        >
+                            Customize your feed
+                        </Typography>
+
+                        <Typography 
+                            sx={{ 
+                                alignSelf: 'stretch',
+                                color: '#000D17',
+                                textAlign: 'center',
+                                fontFamily: 'Geologica',
+                                fontSize: '21px',
+                                fontStyle: 'normal',
+                                fontWeight: '400',
+                                lineHeight: 'normal'
+                            }}
+                        >
+                            Select at least one of your interest.
+                        </Typography>
+
+                        <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, 1fr)',
+                            gap: '20px',
+                            justifyContent: 'center',
+                            width: '100%',
+                            maxWidth: '1200px',
+                            maxHeight: '400px',
+                            overflowY: 'auto',
+                            py: 2,
+                            px: 4,
+                            '&::-webkit-scrollbar': {
+                                width: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'rgba(0,0,0,0.1)',
+                                borderRadius: '10px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'gray',
+                                borderRadius: '10px',
+                            }
+                        }}>
+                            {interestCategories.map((interest) => (
+                                <InterestCard 
+                                    key={interest.id}
+                                    onClick={() => handleInterestToggle(interest.id)}
+                                >
+                                    <ImageContainer selected={selectedInterests.includes(interest.id)}>
+                                        <CardImage 
+                                            src={interest.image} 
+                                            alt={interest.title}
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.parentElement.style.background = '#6F91D9';
+                                            }}
+                                        />
+                                    </ImageContainer>
+                                    <Typography 
+                                        sx={{ 
+                                            color: '#000D17',
+                                            textAlign: 'center',
+                                            fontFamily: 'Geologica',
+                                            fontSize: '16px',
+                                            fontStyle: 'normal',
+                                            fontWeight: '500',
+                                            lineHeight: 'normal'
+                                        }}
+                                    >
+                                        {interest.title}
+                                    </Typography>
+                                </InterestCard>
+                            ))}
+                        </Box>
+
+                        <ContinueButton
+                            onClick={handleContinue}
+                            disabled={!isStep5Valid}
+                        >
+                            Continue
+                        </ContinueButton>
+                    </Box>
+                ) : step === 6 ? (
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '24px',
+                        width: '100%',
+                        height: '600px',
+                        justifyContent: 'center'
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            width: '100%',
+                            maxWidth: '1200px',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <Button 
+                                onClick={handleBack} 
+                                sx={{ 
+                                    minWidth: 'auto', 
+                                    p: 1, 
+                                    color: '#000D17', 
+                                }}
+                            >
+                                <ArrowBackIcon />
+                            </Button>
+                            
+                            <Typography 
+                                sx={{ 
+                                    color: '#000D17',
+                                    fontFamily: 'Geologica',
+                                    fontSize: '21px',
+                                    fontStyle: 'normal',
+                                    fontWeight: '400',
+                                    lineHeight: 'normal'
+                                }}
+                            >
+                                5 of 5
+                            </Typography>
+                            
+                            <Box sx={{ width: 40 }} />
+                        </Box>
+
+                        <Typography 
+                            sx={{ 
+                                alignSelf: 'stretch',
+                                color: '#000D17',
+                                textAlign: 'center',
+                                fontFamily: 'Geologica',
+                                fontSize: '51px',
+                                fontStyle: 'normal',
+                                fontWeight: '700',
+                                lineHeight: 'normal'
+                            }}
+                        >
+                            Customize your feed
+                        </Typography>
+
+                        <Typography 
+                            sx={{ 
+                                alignSelf: 'stretch',
+                                color: '#000D17',
+                                textAlign: 'center',
+                                fontFamily: 'Geologica',
+                                fontSize: '21px',
+                                fontStyle: 'normal',
+                                fontWeight: '400',
+                                lineHeight: 'normal'
+                            }}
+                        >
+                            Select 3 or more Aests to start curating your vibe.
+                        </Typography>
+
+                        <Box sx={{
+                            width: '100%',
+                            maxWidth: '900px',
+                            maxHeight: '400px',
+                            overflowY: 'auto',
+                            py: 2,
+                            px: 2,
+                            '&::-webkit-scrollbar': {
+                                width: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'rgba(0,0,0,0.1)',
+                                borderRadius: '10px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'gray',
+                                borderRadius: '10px',
+                            }
+                        }}>
+                            <MasonryGrid>
+                                {vibes.map((vibe) => (
+                                    <VibeCard 
+                                        key={vibe.id}
+                                        height={vibe.height}
+                                        selected={selectedVibes.includes(vibe.id)}
+                                        onClick={() => handleVibeToggle(vibe.id)}
+                                    >
+                                        <VibeImage 
+                                            src={vibe.image} 
+                                            alt={`Vibe ${vibe.id}`}
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.parentElement.style.background = '#6F91D9';
+                                            }}
+                                        />
+                                    </VibeCard>
+                                ))}
+                            </MasonryGrid>
+                        </Box>
+
+                        <ContinueButton
+                            onClick={handleContinue}
+                            disabled={!isStep6Valid}
+                        >
+                            Finish set up
+                        </ContinueButton>
+                    </Box>
+                ) : 
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '24px',
+                    width: '100%',
+                    height: '600px',
+                    justifyContent: 'center',
+                }}>
+                    <Typography 
+                        sx={{ 
+                            alignSelf: 'stretch',
+                            color: '#000D17',
+                            textAlign: 'center',
+                            fontFamily: 'Geologica',
+                            fontSize: '51px',
+                            fontStyle: 'normal',
+                            fontWeight: '700',
+                            lineHeight: 'normal',
+                            
+                        }}
+                    >
+                        You've got great taste!
+                    </Typography>
+                
+                    <Typography 
+                        sx={{ 
+                            alignSelf: 'stretch',
+                            color: '#000D17',
+                            textAlign: 'center',
+                            fontFamily: 'Geologica',
+                            fontSize: '21px',
+                            fontStyle: 'normal',
+                            fontWeight: '400',
+                            lineHeight: 'normal',
+                            paddingBottom: '10px'
+                        }}
+                    >
+                        Now let's make your feed shine...
+                    </Typography>
+                
+                    <SelectedVibesGrid>
+                        {getSelectedVibesData().map((vibe) => (
+                            <SelectedVibeCard 
+                                key={vibe.id}
+                                height={Math.min(vibe.height, 300)}
+                            >
+                                <VibeImage 
+                                    src={vibe.image} 
+                                    alt={`Selected Vibe ${vibe.id}`}
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.style.background = '#6F91D9';
+                                    }}
+                                />
+                            </SelectedVibeCard>
+                        ))}
+                    </SelectedVibesGrid>
+                </Box>
+                }
             </DialogContent>
         </StyledDialog>
     );
 };
 
-export default OnboardingModal; 
+export default OnboardingModal;

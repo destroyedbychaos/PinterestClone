@@ -4,16 +4,28 @@ import { Box, Avatar, Button } from "@mui/material";
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import MasonryGrid from "../../components/ui/MasonryGrid";
-import defaultBanner from "../../assets/images/sky.png";
-import defaultAvatar from "../../assets/images/noImgUser.png";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useNavigate } from "react-router-dom";
 import SavedPins from "../Saved/SavedPins.jsx";
 import { fetchSavedPins } from "../../utils/fetchSavedPins";
+import {apiUrl} from "../../env.js"
+const defaultBannerSvg = (
+  <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
+  </svg>
+);
 
-const API_BASE = "/api";
+const defaultAvatarSvg = (
+  <svg width="217" height="217" viewBox="0 0 217 217" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="209" height="209" rx="104.5" fill="#EAEFF9" stroke="white" strokeWidth="8"/>
+  </svg>
+);
+
+const API_BASE = apiUrl;
 
 const ProfileBoards = () => {
   const authState = useSelector((state) => state.auth);
+  const currentUser = useCurrentUser();
   const searchRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
@@ -35,32 +47,31 @@ const ProfileBoards = () => {
     setShowSavedOverlay(true);
   };
 
+
   useEffect(() => {
-    let isMounted = true;
-    const run = async () => {
-      try {
-        setLoadingProfile(true);
-        const res = await fetch(`${API_BASE}/Profile/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load profile");
-        const data = await res.json();
-        if (isMounted) setProfile(data);
-      } catch {
-        if (isMounted) setProfile(null);
-      } finally {
-        if (isMounted) setLoadingProfile(false);
-      }
-    };
-    if (token) run();
-    else {
-      setProfile(null);
+    if (currentUser) {
+      setProfile(currentUser);
       setLoadingProfile(false);
+    } else {
+      setProfile(null);
+      setLoadingProfile(true);
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+  }, [currentUser]);
+
+  const refreshProfile = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/Profile/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -115,12 +126,13 @@ const ProfileBoards = () => {
         setLoadingSaved(true);
         setSavedError('');
         const token = localStorage.getItem('token');
+
         const list = await fetchSavedPins(token, profile?.displayName || profile?.userName);
         if (active) setSavedPins(list);
       } catch (e) {
         if (active) {
           setSavedPins([]);
-          setSavedError(e.message || 'Помилка');
+          setSavedError(e.message || 'Error');
         }
       } finally {
         if (active) setLoadingSaved(false);
@@ -142,6 +154,15 @@ const ProfileBoards = () => {
     window.addEventListener('savedPinsChanged', onChanged);
     return () => window.removeEventListener('savedPinsChanged', onChanged);
   }, [activeTab, profile?.displayName, profile?.userName]);
+
+ 
+  useEffect(() => {
+    const onProfileUpdate = () => {
+      refreshProfile();
+    };
+    window.addEventListener('profileUpdated', onProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', onProfileUpdate);
+  }, []);
 
   const normalizedPins = useMemo(() => {
     return pins.map((pin) => {
@@ -167,8 +188,8 @@ const ProfileBoards = () => {
     });
   }, [pins, profile]);
 
-  const bannerUrl = profile?.bannerUrl || defaultBanner;
-  const avatarUrl = profile?.avatarUrl || defaultAvatar;
+  const bannerUrl = profile?.bannerUrl;
+  const avatarUrl = profile?.avatarUrl;
   const displayName = profile?.displayName || profile?.userName || "User";
 
   return (
@@ -179,25 +200,42 @@ const ProfileBoards = () => {
 
       <Box sx={{ flex: 1 }}>
         <ProfileHeader
-          user={authState?.user}
+          user={currentUser}
           onSearch={handleSearch}
           searchRef={searchRef}
           onFocusSearch={() => setShowSavedOverlay(true)}
         />
 
         <Box sx={{ bgcolor: "#fff", borderRadius: "16px", overflow: "hidden", mt: "30px" }}>
-          <Box
-            sx={{
-              width: "98%",
-              height: 180,
-              borderTopLeftRadius: "40px",
-              borderTopRightRadius: "40px",
-              overflow: "hidden",
-              backgroundImage: `url(${bannerUrl})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
+                     <Box
+             sx={{
+               width: "98%",
+               height: 180,
+               borderTopLeftRadius: "40px",
+               borderTopRightRadius: "40px",
+               overflow: "hidden",
+               display: "flex",
+               alignItems: "center",
+               justifyContent: "center",
+               bgcolor: "#EAEFF9",
+             }}
+           >
+             {bannerUrl ? (
+               <Box
+                 component="img"
+                 src={bannerUrl}
+                 sx={{
+                   width: "100%",
+                   height: "100%",
+                   objectFit: "cover",
+                 }}
+               />
+             ) : (
+               <Box sx={{ transform: "scale(0.1)" }}>
+                 {defaultBannerSvg}
+               </Box>
+             )}
+           </Box>
 
           <Box sx={{ position: "relative", px: 3, pb: 2, mt: -10 }}>
             <Box
@@ -210,11 +248,24 @@ const ProfileBoards = () => {
                 boxShadow: 1,
               }}
             >
-              <Avatar
-                src={avatarUrl}
-                alt="avatar"
-                sx={{ width: 112, height: 112, borderRadius: "50%" }}
-              />
+                             {avatarUrl ? (
+                 <Avatar
+                   src={avatarUrl}
+                   alt="avatar"
+                   sx={{ width: 140, height: 140, borderRadius: "50%" }}
+                 />
+               ) : (
+                 <Box 
+                   sx={{ 
+                     width: 140, 
+                     height: 140, 
+                     borderRadius: "50%",
+                     bgcolor: "#EAEFF9",
+                     border: "4px solid white",
+                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                   }}
+                 />
+               )}
             </Box>
 
             <Box
@@ -229,19 +280,21 @@ const ProfileBoards = () => {
                 p: 2,
               }}
             >
-              <Box sx={{ ml: 18, flex: 1 }}>
-                <Box sx={{ fontSize: 20, fontWeight: 700 }}>{displayName}</Box>
-                <Box sx={{ color: "#6b7280", fontSize: 14 }}>@{displayName}</Box>
-                <Box sx={{ color: "#111827", fontSize: 14, mt: 0.5 }}>
-                  <Box component="span" sx={{ fontWeight: 600 }}>
-                    {profile?.followersCount ?? 0} followers
-                  </Box>{" "}
-                  ·{" "}
-                  <Box component="span" sx={{ fontWeight: 600 }}>
-                    {profile?.followingCount ?? 0} following
-                  </Box>
-                </Box>
-              </Box>
+                             <Box sx={{ ml: 24, flex: 1 }}>
+                 <Box sx={{ fontSize: 20, fontWeight: 700 }}>{profile?.userName || displayName}</Box>
+                 <Box sx={{ color: "#6b7280", fontSize: 14, mt: 0.5, maxWidth: "400px" }}>
+                   {profile?.bio || "Looking for inspiration..."}
+                 </Box>
+                 <Box sx={{ color: "#111827", fontSize: 14, mt: 0.5 }}>
+                   <Box component="span" sx={{ fontWeight: 600 }}>
+                     {profile?.followersCount ?? 0} followers
+                   </Box>{" "}
+                   ·{" "}
+                   <Box component="span" sx={{ fontWeight: 600 }}>
+                     {profile?.followingCount ?? 0} following
+                   </Box>
+                 </Box>
+               </Box>
 
               <Button
                 variant="outlined"
@@ -338,27 +391,65 @@ const ProfileBoards = () => {
                         </Box>
                       </Box>
                     ))}
-                    {boards.length === 0 && (
-                      <Box sx={{ textAlign: "center", color: "#6b7280", py: 6 }}>
-                        No boards yet
-                      </Box>
-                    )}
+                                         {boards.length === 0 && (
+                       <Box sx={{ 
+                         textAlign: "center", 
+                         color: "#6b7280", 
+                         py: 6,
+                         gridColumn: "1 / -1",
+                         display: "flex",
+                         justifyContent: "center",
+                         alignItems: "center"
+                       }}>
+                         There are no boards yet...
+                       </Box>
+                     )}
                   </Box>
                 )}
               </>
             )}
 
-            {activeTab === 'Aests' && (
-              <>
-                {loadingSaved ? (
-                  <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
-                ) : savedError ? (
-                  <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
-                ) : (
-                  <MasonryGrid pins={savedPins} limitedMenu />
-                )}
-              </>
-            )}
+                         {activeTab === 'Aests' && (
+               <>
+                 {loadingSaved ? (
+                   <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
+                 ) : savedError ? (
+                   <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
+                                   ) : savedPins.length === 0 ? (
+                                         <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
+                       <Box sx={{ mb: 4 }}>
+                         There are no Aests saved yet, let's save the first one!
+                       </Box>
+                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                         <Button
+                           variant="contained"
+                           onClick={() => navigate('/')}
+                           sx={{
+                             display: "flex",
+                             width: "200px",
+                             padding: "12px 20px",
+                             alignItems: "center",
+                             gap: "12px",
+                             borderRadius: "100px",
+                             background: "#6F91D9",
+                             color: "white",
+                             textTransform: "none",
+                             fontWeight: 500,
+                             fontSize: "0.9rem",
+                             "&:hover": {
+                               background: "#5A7BC4"
+                             }
+                           }}
+                         >
+                           Go explore
+                         </Button>
+                       </Box>
+                     </Box>
+                  ) : (
+                   <MasonryGrid pins={savedPins} limitedMenu />
+                 )}
+               </>
+             )}
           </Box>
         </Box>
       </Box>

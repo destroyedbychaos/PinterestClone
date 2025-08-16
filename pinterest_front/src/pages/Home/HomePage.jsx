@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import OnboardingModal from '../../components/OnboardingModal';
@@ -9,25 +9,30 @@ import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
-import { IconButton } from '@mui/material';
-import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import settingsApi from '../../services/settingsApi';
+import { updateUser } from '../../../store/slices/AuthSlice';
 
-
-const API_BASE = '/api';
+const API_BASE = apiUrl;
 
 const HomePage = () => {
-    const [showOnboarding, setShowOnboarding] = useState(false);
-    const { user } = useSelector((state) => state.auth);
-    const [tags, setTags] = useState([]);
-    const [activeTag, setActiveTag] = useState('');
-    const [pins, setPins] = useState([]);
-    const [hiddenPinIds, setHiddenPinIds] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [search, setSearch] = useState('');
-    const navigate = useNavigate();
-    
-    
-    const token = localStorage.getItem('token');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const user = useCurrentUser();
+  const dispatch = useDispatch();
+  const [tags, setTags] = useState([]);
+  const [activeTag, setActiveTag] = useState('');
+  const [pins, setPins] = useState([]);
+  const [hiddenPinIds, setHiddenPinIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [imageSearchLoading, setImageSearchLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const isNewUser = localStorage.getItem('isNewUser');
@@ -36,6 +41,8 @@ const HomePage = () => {
       localStorage.removeItem('isNewUser');
     }
   }, []);
+
+
 
   useEffect(() => {
     setLoading(true);
@@ -176,14 +183,14 @@ const HomePage = () => {
                   e.target.style.borderColor = '#ddd';
                 }}
               >
-                ✕ Очистити результати пошуку
+                ✕ Clear search results
               </button>
             </div>
           )}
 
           {(loading || imageSearchLoading) ? (
             <div style={{ textAlign: 'center', marginTop: 40 }}>
-              {imageSearchLoading ? 'Пошук схожих зображень...' : 'Завантаження...'}
+                              {imageSearchLoading ? 'Searching for similar images...' : 'Loading...'}
             </div>
           ) : (
             <MasonryGrid
@@ -210,7 +217,31 @@ const HomePage = () => {
       <OnboardingModal
         open={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={async (userData) => {
+          try {
+
+            const settingsData = {
+              displayName: userData.name,
+              userName: userData.username,
+              gender: userData.gender === 'female' ? 'Female' : userData.gender === 'male' ? 'Male' : 'Other',
+              country: userData.country === 'ukraine' ? 'Ukraine (Україна)' : 
+                      userData.country === 'usa' ? 'United States' : 
+                      userData.country === 'uk' ? 'United Kingdom' : 'Ukraine (Україна)',
+              language: userData.language === 'english' ? 'English (UK)' : 
+                       userData.language === 'ukrainian' ? 'Ukrainian' : 'English (UK)'
+            };
+            
+            await settingsApi.updateSettings(settingsData);
+            
+            dispatch(updateUser(settingsData));
+            
+            console.log('Onboarding data saved:', userData);
+          } catch (error) {
+            console.error('Error saving onboarding data:', error);
+          }
+          
+          setShowOnboarding(false);
+        }}
       />
 
       <SearchModal

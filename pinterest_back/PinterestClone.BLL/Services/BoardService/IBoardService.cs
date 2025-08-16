@@ -15,6 +15,8 @@ namespace PinterestClone.BLL.Services.BoardService
             string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null);
         Task<BoardListDto> GetBoardsByUserId(string userId, int pageNumber = 1, int pageSize = 20,
             string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null);
+        Task<BoardListDto> GetBoardsByUsername(string username, int pageNumber = 1, int pageSize = 20,
+            string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null);
         Task<BoardResponseDto?> GetBoardByIdAsync(string boardId);
         Task<BoardResponseDto?> UpdateBoardAsync(string boardId, BoardSimpleDto updateBoard, string userId);
         Task<bool> DeleteBoardAsync(string boardId);

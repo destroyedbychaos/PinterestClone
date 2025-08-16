@@ -13,6 +13,7 @@ namespace PinterestClone.DAL.Repositories.PinRepository
         Task<Pin?> GetPinByIdAsync(string pinId);
         IQueryable<Pin> GetAllPins();
         IQueryable<Pin> GetPinsByUserid(string userId, int pageNumber = 1);
+        IQueryable<Pin> GetPinsByUsername(string username, int pageNumber = 1);
         IQueryable<Pin> GetPinsByBoardId(string boardId, int pageNumber = 1);
         Task<Pin?> UpdatePinAsync(string pinId, Pin updatePin, string userId);
         Task<bool> DeletePinAsync(Pin pin);

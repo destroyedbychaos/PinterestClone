@@ -366,7 +366,7 @@ const ImageSearchModal = ({ open, onClose, onSearchResults, onSearchStart }) => 
             </Typography>
             {selectedSearchArea === 'custom' && (
               <Typography variant="caption" color="text.secondary" display="block">
-                Пошук по вибраній області
+                Search in selected area
               </Typography>
             )}
           </Box>
@@ -501,7 +501,7 @@ const ImageSearchModal = ({ open, onClose, onSearchResults, onSearchStart }) => 
             }}
           >
             {loading ? <CircularProgress size={20} /> : (
-              selectedSearchArea === 'custom' ? 'Пошук по області' : 'Пошук по зображенню'
+                              selectedSearchArea === 'custom' ? 'Search by area' : 'Search by image'
             )}
           </Button>
         </Box>

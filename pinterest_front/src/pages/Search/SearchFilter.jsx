@@ -165,7 +165,7 @@ const SearchFilter = () => {
 
           {loading || imageSearchLoading ? (
             <div style={{ textAlign: "center", marginTop: 40 }}>
-              {imageSearchLoading ? "Пошук схожих зображень..." : "Завантаження..."}
+                              {imageSearchLoading ? "Searching for similar images..." : "Loading..."}
             </div>
           ) : (
             <MasonryGrid

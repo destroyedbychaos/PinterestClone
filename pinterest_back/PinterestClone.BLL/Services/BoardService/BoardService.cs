@@ -174,6 +174,71 @@ namespace PinterestClone.BLL.Services.BoardService
             };
         }
 
+        public async Task<BoardListDto> GetBoardsByUsername(string username, int pageNumber = 1, int pageSize = 20,
+        string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
+        {
+            pageNumber = Math.Max(1, pageNumber);
+            pageSize = Math.Max(1, pageSize);
+
+            var query = _boardRepository.GetBoardsByUsername(username);
+
+            if (isArchived.HasValue)
+            {
+                query = query.Where(b => b.IsArchived == isArchived.Value);
+            }
+            
+            query = sortBy?.ToLower() switch
+            {
+                "name" => isAscending ? query.OrderBy(b => b.Name) : query.OrderByDescending(b => b.Name),
+                "createdat" or "created" => isAscending ? query.OrderBy(b => b.CreatedAt) : query.OrderByDescending(b => b.CreatedAt),
+                "updatedat" or "updated" => isAscending ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt),
+                _ => query.OrderByDescending(b => b.CreatedAt)
+            };
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var boards = await _mapper.ProjectTo<BoardSimpleDto>(query)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(groupBy))
+            {
+                var groupedBoards = groupBy.ToLower() switch
+                {
+                    "privacy" => boards.GroupBy(b => b.IsPrivate)
+                        .ToDictionary(g => g.Key ? "Private" : "Public", g => g.ToList()),
+                    "archived" => boards.GroupBy(b => b.IsArchived)
+                        .ToDictionary(g => g.Key ? "Archived" : "Active", g => g.ToList()),
+                    "createdmonth" => boards.GroupBy(b => b.CreatedAt.ToString("yyyy-MM"))
+                        .ToDictionary(g => g.Key, g => g.ToList()),
+                    _ => null
+                };
+
+                if (groupedBoards != null)
+                {
+                    return new BoardListDto
+                    {
+                        GroupedBoards = groupedBoards,
+                        TotalCount = totalCount,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize,
+                        TotalPages = totalPages
+                    };
+                }
+            }
+
+            return new BoardListDto
+            {
+                Boards = boards,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<BoardResponseDto?> GetBoardByIdAsync(string boardId)
         {
             var board = await _boardRepository.GetBoardByIdAsync(boardId);

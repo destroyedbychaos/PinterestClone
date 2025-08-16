@@ -1,0 +1,13 @@
+.deactivation-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: white;
+  overflow: hidden;
+}
+
+.deactivation-main-content {
+  flex: 1;
+  position: relative;
+  background: white;
+  overflow: hidden;
+}

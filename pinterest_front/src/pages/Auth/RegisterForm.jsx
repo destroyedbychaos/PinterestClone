@@ -32,10 +32,11 @@ const RegisterForm = () => {
                 accessToken: response.accessToken
             }));
 
+            localStorage.setItem('userPassword', password);
             localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {
-            console.error('Помилка реєстрації:', err);
+            console.error('Registration error:', err);
         }
     };
 

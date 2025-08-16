@@ -306,7 +306,7 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("Bio")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("BirthDate")
+                    b.Property<DateTime?>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -333,6 +333,9 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsProfilePublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSearchPrivate")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Language")
@@ -645,6 +648,50 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("PinShares");
                 });
 
+            modelBuilder.Entity("PinterestClone.DAL.Models.ProfileReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProfileId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReportMessage")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("ReportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReportedByUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResolutionNotes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedAt");
+
+                    b.HasIndex("ReportedByUserId");
+
+                    b.HasIndex("ProfileId", "ReportedByUserId");
+
+                    b.ToTable("ProfileReports");
+                });
+
             modelBuilder.Entity("PinterestClone.DAL.Models.RefreshToken", b =>
                 {
                     b.Property<string>("Id")
@@ -741,6 +788,38 @@ namespace PinterestClone.DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("BlockedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("BlockedUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BlockerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockedUserId");
+
+                    b.HasIndex("BlockerId", "BlockedUserId")
+                        .IsUnique();
+
+                    b.ToTable("UserBlocks");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>
@@ -1021,6 +1100,25 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("SharedWithUser");
                 });
 
+            modelBuilder.Entity("PinterestClone.DAL.Models.ProfileReport", b =>
+                {
+                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Profile")
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "ReportedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReportedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+
+                    b.Navigation("ReportedByUser");
+                });
+
             modelBuilder.Entity("PinterestClone.DAL.Models.RefreshToken", b =>
                 {
                     b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
@@ -1041,6 +1139,25 @@ namespace PinterestClone.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
+                {
+                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "BlockedUser")
+                        .WithMany()
+                        .HasForeignKey("BlockedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Blocker")
+                        .WithMany()
+                        .HasForeignKey("BlockerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BlockedUser");
+
+                    b.Navigation("Blocker");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>

@@ -1,7 +1,5 @@
 ﻿import React, { memo } from "react";
 import { Outlet } from "react-router-dom";
-import Header from "./Header";
-import Footer from "./Footer";
 import SideMenu from "./SideMenu";
 
 const Layout = memo(() => {
@@ -10,14 +8,13 @@ const Layout = memo(() => {
              <div className="flex flex-1">
                 <SideMenu />
                 
-                <main className="flex-1">
+                <main className="flex-1 min-h-screen ml-36">
                     <div>
                         <Outlet />
                     </div>
                 </main>
             </div>
 
-            <Footer />
         </div>
     );
 });

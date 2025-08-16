@@ -38,7 +38,20 @@ function normalizePins(rawPins, fallbackAuthor) {
   });
 }
 
-export async function fetchSavedPins(token, fallbackAuthor) {
+/**
+ *
+ * @param {string} token 
+ * @param {string} fallbackAuthor 
+ * @param {string} targetUserId 
+ * @returns {Array} 
+ */
+export async function fetchSavedPins(token, fallbackAuthor, targetUserId = null) {
+
+  if (targetUserId) {
+    const rawPins = getLocalSavedPins(targetUserId);
+    return normalizePins(rawPins, fallbackAuthor);
+  }
+  
 
   const rawPins = getLocalSavedPins();
   return normalizePins(rawPins, fallbackAuthor);

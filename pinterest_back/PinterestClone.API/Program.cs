@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
@@ -11,6 +12,15 @@ using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.SmsService;
 using PinterestClone.BLL.Services.PhoneService;
 using PinterestClone.BLL.Services.NotificationService;
+using PinterestClone.BLL.Services.PinShareService;
+using PinterestClone.BLL.Services.PinReportService;
+using PinterestClone.BLL.Services.ProfileReportService;
+using PinterestClone.BLL.Services.UserBlockService;
+using PinterestClone.BLL.Services.EmailService;
+using PinterestClone.BLL.Services.PasswordResetService;
+using PinterestClone.BLL.Services.HiddenPinService;
+using PinterestClone.BLL.Services.ImageAnalysisService;
+using PinterestClone.BLL.Services.ImageSearchService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.BoardRepository;
@@ -18,11 +28,8 @@ using PinterestClone.DAL.Repositories.PinRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
 using PinterestClone.DAL.Repositories.PinShareRepository;
 using PinterestClone.DAL.Repositories.PinReportRepository;
-using PinterestClone.BLL.Services.PinShareService;
-using PinterestClone.BLL.Services.PinReportService;
-using PinterestClone.BLL.Services.EmailService;
-using PinterestClone.BLL.Services.PasswordResetService;
-using PinterestClone.BLL.Services.HiddenPinService;
+using PinterestClone.DAL.Repositories.ProfileReportRepository;
+using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using System.Text;
@@ -60,8 +67,8 @@ builder.Services.AddSwaggerGen(c =>
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -111,12 +118,14 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"] ?? throw new InvalidOperationException("JWT key not found"))),
         ValidIssuer = builder.Configuration["AuthSettings:issuer"],
         ValidAudience = builder.Configuration["AuthSettings:audience"],
-        ClockSkew = TimeSpan.Zero 
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
+    
 });
 
 // Existing services
@@ -133,8 +142,12 @@ builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPinShareRepository, PinShareRepository>();
 builder.Services.AddScoped<IPinReportRepository, PinReportRepository>();
+builder.Services.AddScoped<IProfileReportRepository, ProfileReportRepository>();
+builder.Services.AddScoped<IUserBlockRepository, UserBlockRepository>();
 builder.Services.AddScoped<IPinShareService, PinShareService>();
 builder.Services.AddScoped<IPinReportService, PinReportService>();
+builder.Services.AddScoped<IProfileReportService, ProfileReportService>();
+builder.Services.AddScoped<IUserBlockService, UserBlockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
@@ -183,7 +196,8 @@ app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 

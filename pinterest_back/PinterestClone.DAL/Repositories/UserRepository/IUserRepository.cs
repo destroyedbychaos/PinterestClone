@@ -17,5 +17,9 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         Task<List<User?>> GetFollowingAsync(string id);
         Task<bool> FollowUserAsync(string followerId, string targetId);
         Task<bool> UnfollowUserAsync(string followerId, string targetId);
+        Task<bool> IsFollowingAsync(string followerId, string targetId);
+        Task<int> GetFollowersCountAsync(string userId);
+        Task<int> GetFollowingCountAsync(string userId);
+        Task<bool> IsBlockedAsync(string blockerId, string blockedUserId);
     }
 }

@@ -1,17 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Box, Avatar, Button, TextField } from "@mui/material";
 import "./ProfileEdit.css";
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
-import defaultBanner from "../../assets/images/sky.png";
-import defaultAvatar from "../../assets/images/noImgUser.png";
 import { useNavigate } from "react-router-dom";
+import { useRefreshUserData } from "../../hooks/useCurrentUser";
+import {apiUrl} from "../../env.js"
 
-const API_BASE = "/api";
+const defaultBannerSvg = (
+  <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
+  </svg>
+);
+
+const defaultAvatarSvg = (
+  <svg width="217" height="217" viewBox="0 0 217 217" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="209" height="209" rx="104.5" fill="#EAEFF9" stroke="white" strokeWidth="8"/>
+  </svg>
+);
+
+const API_BASE = apiUrl;
 
 const ProfileEdit = () => {
   const authState = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const refreshUserData = useRefreshUserData();
   const searchRef = useRef(null);
 
   const [initial, setInitial] = useState(null);
@@ -77,6 +91,9 @@ const ProfileEdit = () => {
       const { url } = await res.json();
       setForm((s) => ({ ...s, avatarUrl: url }));
       setShowAvatarModal(false);
+      
+
+      await refreshUserData();
     }
   };
 
@@ -94,6 +111,9 @@ const ProfileEdit = () => {
       const { url } = await res.json();
       setForm((s) => ({ ...s, bannerUrl: url }));
       setShowBannerModal(false);
+      
+
+      await refreshUserData();
     }
   };
 
@@ -116,6 +136,10 @@ const ProfileEdit = () => {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to update profile");
+      
+
+      await refreshUserData();
+      
       navigate("/profile-boards");
     } finally {
       setSaving(false);
@@ -147,14 +171,18 @@ const ProfileEdit = () => {
         };
         setInitial(normalized);
         setForm(normalized);
+        
+
+        await refreshUserData();
       }
     } finally {
       setSaving(false);
     }
   };
 
-  const bannerUrl = form.bannerUrl || defaultBanner;
-  const avatarUrl = form.avatarUrl || defaultAvatar;
+  const bannerUrl = form.bannerUrl;
+  const avatarUrl = form.avatarUrl;
+  const currentUser = useSelector((state) => state.auth?.user);
 
   return (
     <div className="pe-layout">
@@ -163,12 +191,23 @@ const ProfileEdit = () => {
       </div>
 
       <div className="pe-main">
-        <ProfileHeader title="Edit profile" user={authState?.user} onSearch={handleSearch} searchRef={searchRef} onFocusSearch={() => {}} />
+        <ProfileHeader title="Edit profile" user={currentUser} onSearch={handleSearch} searchRef={searchRef} onFocusSearch={() => {}} />
 
         <div className="pe-wrap">
 
           <div className="pe-card">
-            <div className="pe-banner" style={{ backgroundImage: `url(${bannerUrl})` }}>
+            <div className="pe-banner" style={{ 
+              backgroundImage: bannerUrl ? `url(${bannerUrl})` : 'none',
+              backgroundColor: bannerUrl ? 'transparent' : '#EAEFF9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {!bannerUrl && (
+                <div style={{ transform: "scale(0.1)" }}>
+                  {defaultBannerSvg}
+                </div>
+              )}
               <button type="button" className="pe-banner-btn" onClick={() => setShowBannerModal(true)}>
                 Change header image
               </button>
@@ -177,7 +216,20 @@ const ProfileEdit = () => {
             <div className="pe-body">
               <div className="pe-avatar-col">
                 <div className="pe-avatar-box">
-                  <img className="pe-avatar" src={avatarUrl} alt="avatar" />
+                  {avatarUrl ? (
+                    <img className="pe-avatar" src={avatarUrl} alt="avatar" />
+                  ) : (
+                    <div 
+                      style={{ 
+                        width: '140px', 
+                        height: '140px', 
+                        borderRadius: '50%',
+                        backgroundColor: '#EAEFF9',
+                        border: '4px solid white',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                  )}
                 </div>
                 <button type="button" className="pe-change-image-btn" onClick={() => setShowAvatarModal(true)}>
                   Change image

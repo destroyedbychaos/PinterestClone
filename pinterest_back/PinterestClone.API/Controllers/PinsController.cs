@@ -92,6 +92,29 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        [HttpGet("user/{username}")]
+        public async Task<ActionResult<PinListDto>> GetUserPins(
+            string username,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetUserPinsAsync(username, pageNumber, pageSize, sortBy, isAscending);
+                
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting user pins: {ex.Message}");
+            }
+        }
+
         [HttpGet("tags")]
         public async Task<ActionResult<List<string>>> GetAllTags()
         {
@@ -220,27 +243,7 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<PinListDto>> GetUserPins(
-            string userId,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] string? sortBy = "createdAt",
-            [FromQuery] bool isAscending = false)
-        {
-            try
-            {
-                if (pageSize > 100) pageSize = 100;
-                if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize, sortBy, isAscending);
-                return Ok(pins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error getting user pins: {ex.Message}");
-            }
-        }
 
         [HttpGet("board/{boardId}")]
         public async Task<ActionResult<PinListDto>> GetBoardPins(
