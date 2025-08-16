@@ -1,12 +1,55 @@
 import { Box } from "@mui/material";
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { useTheme } from '@mui/material/styles';
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Icon as Iconify } from '@iconify/react';
 import icon from '../../assets/images/logo.png';
 
 const SideMenu = memo(({ isUnverified = false, flush = false }) => {
     const theme = useTheme();
+    const location = useLocation();
+    const [activeIcon, setActiveIcon] = useState('');
+
+    useEffect(() => {
+        const path = location.pathname;
+        if (path === '/') {
+            setActiveIcon('home');
+        } else if (path === '/add') {
+            setActiveIcon('add');
+        } else if (path === '/notifications') {
+            setActiveIcon('notifications');
+        } else if (path === '/comments') {
+            setActiveIcon('comments');
+        } else if (path === '/profile-boards') {
+            setActiveIcon('profile');
+        } else if (path === '/history') {
+            setActiveIcon('history');
+        } else if (path === '/settings') {
+            setActiveIcon('settings');
+        } else if (path === '/info') {
+            setActiveIcon('info');
+        } else {
+            setActiveIcon('');
+        }
+    }, [location.pathname]);
+
+    const getIconColor = (iconName) => {
+        return activeIcon === iconName ? theme.palette.primary.main : theme.palette.dark[500];
+    };
+
+    const getIconName = (iconType, isActive) => {
+        const iconMap = {
+            home: isActive ? 'octicon:home-fill-24' : 'octicon:home-24',
+            add: isActive ? 'akar-icons:circle-plus-fill' : 'octicon:plus-circle-24',
+            notifications: isActive ? 'octicon:bell-fill-24' : 'octicon:bell-24',
+            comments: isActive ? 'octicon:comment-discussion-24' : 'octicon:comment-discussion-24',
+            profile: isActive ? 'octicon:person-fill-24' : 'octicon:person-24',
+            history: isActive ? 'octicon:clock-fill-24' : 'octicon:clock-24',
+            settings: isActive ? 'octicon:gear-24' : 'octicon:gear-24',
+            info: isActive ? 'octicon:unverified-24' : 'octicon:unverified-24'
+        };
+        return iconMap[iconType] || iconMap[iconType];
+    };
 
     return (
         <Box sx={{ 
@@ -69,10 +112,10 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                                 className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
                             >
                                 <Iconify 
-                                    icon="octicon:unverified-24" 
+                                    icon={getIconName('info', activeIcon === 'info')} 
                                     width={35}
                                     height={35}
-                                    color={theme.palette.dark[500]}
+                                    color={getIconColor('info')}
                                 />
                             </Link>
                         ) : (
@@ -80,38 +123,86 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                                 <Box
                                   onClick={() => window.location.href = '/'}
                                   className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-blue-500/10 active:bg-blue-500/20 hover:scale-110 active:scale-95 cursor-pointer"
+                                  sx={{
+                                    backgroundColor: activeIcon === 'home' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                  }}
                                 >
-                                  <Iconify icon="octicon:home-fill-24" width={35} height={35} color={theme.palette.primary.main} />
+                                  <Iconify 
+                                    icon={getIconName('home', activeIcon === 'home')} 
+                                    width={35} 
+                                    height={35} 
+                                    color={getIconColor('home')} 
+                                  />
                                 </Box>
                                 <Link 
                                     to="/add"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'add' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                    <Iconify icon="octicon:plus-circle-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                    <Iconify 
+                                        icon={getIconName('add', activeIcon === 'add')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('add')} 
+                                    />
                                 </Link>
                                 <Link 
                                     to="/notifications"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'notifications' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                    <Iconify icon="octicon:bell-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                    <Iconify 
+                                        icon={getIconName('notifications', activeIcon === 'notifications')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('notifications')} 
+                                    />
                                 </Link>
                                 <Link 
                                     to="/comments"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'comments' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                    <Iconify icon="octicon:comment-discussion-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                    <Iconify 
+                                        icon={getIconName('comments', activeIcon === 'comments')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('comments')} 
+                                    />
                                 </Link>
                                 <Link 
                                     to="/profile-boards"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'profile' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                    <Iconify icon="octicon:person-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                    <Iconify 
+                                        icon={getIconName('profile', activeIcon === 'profile')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('profile')} 
+                                    />
                                 </Link>
                                 <Link 
                                     to="/history"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'history' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                    <Iconify icon="octicon:clock-24" width={35} height={35} color={theme.palette.dark[500]} />
+                                    <Iconify 
+                                        icon={getIconName('history', activeIcon === 'history')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('history')} 
+                                    />
                                 </Link>
                             </>
                         )}
@@ -126,13 +217,16 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                     {!isUnverified && (
                         <Link 
                             to="/settings"
-                            className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12"
+                            className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                            style={{
+                                backgroundColor: activeIcon === 'settings' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                            }}
                         >
                             <Iconify 
-                                icon="octicon:gear-24" 
+                                icon={getIconName('settings', activeIcon === 'settings')}
                                 width={35}
                                 height={35}
-                                color={theme.palette.dark[500]}
+                                color={getIconColor('settings')}
                             />
                         </Link>
                     )}
@@ -153,4 +247,3 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
 });
 
 export default SideMenu;
-
