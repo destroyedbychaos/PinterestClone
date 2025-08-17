@@ -45,6 +45,9 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.Claims, opt => opt.Ignore())
                 .ForMember(dest => dest.Logins, opt => opt.Ignore())
                 .ForMember(dest => dest.Tokens, opt => opt.Ignore());
+
+            CreateMap<User, UserSearchDto>();
+
         }
     }
 }
