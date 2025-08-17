@@ -32,42 +32,57 @@ namespace PinterestClone.API.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileVM model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-
-            if (!string.IsNullOrWhiteSpace(model.UserName) && model.UserName != user.UserName)
+            try
             {
-                var existing = await _userManager.FindByNameAsync(model.UserName);
-                if (existing != null && existing.Id != user.Id)
-                    return BadRequest(new { error = "Username already taken." });
+                if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var setNameResult = await _userManager.SetUserNameAsync(user, model.UserName);
-                if (!setNameResult.Succeeded)
-                    return BadRequest(setNameResult.Errors);
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in UpdateProfile");
+                    return Unauthorized("User not found");
+                }
+
+                Console.WriteLine($"Updating profile for user: {user.Email}");
+
+                if (!string.IsNullOrWhiteSpace(model.UserName) && model.UserName != user.UserName)
+                {
+                    var existing = await _userManager.FindByNameAsync(model.UserName);
+                    if (existing != null && existing.Id != user.Id)
+                        return BadRequest(new { error = "Username already taken." });
+
+                    var setNameResult = await _userManager.SetUserNameAsync(user, model.UserName);
+                    if (!setNameResult.Succeeded)
+                        return BadRequest(setNameResult.Errors);
+                }
+
+                if (model.DisplayName is not null)
+                    user.DisplayName = model.DisplayName;
+                if (model.Bio is not null)
+                    user.Bio = model.Bio;
+                if (model.Country is not null)
+                    user.Country = model.Country;
+                if (model.Language is not null)
+                    user.Language = model.Language;
+                if (model.DateOfBirth is not null)
+                    user.BirthDate = model.DateOfBirth.Value;
+                if (model.ProfileImageUrl is not null)
+                    user.AvatarUrl = string.IsNullOrWhiteSpace(model.ProfileImageUrl) ? null : model.ProfileImageUrl;
+                if (model.BannerImageUrl is not null)
+                    user.BannerUrl = string.IsNullOrWhiteSpace(model.BannerImageUrl) ? null : model.BannerImageUrl;
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                    return BadRequest(updateResult.Errors);
+
+                Console.WriteLine($"Profile updated successfully for user: {user.Email}");
+                return Ok(new { message = "Profile updated successfully." });
             }
-
-            if (model.DisplayName is not null)
-                user.DisplayName = model.DisplayName;
-            if (model.Bio is not null)
-                user.Bio = model.Bio;
-            if (model.Country is not null)
-                user.Country = model.Country;
-            if (model.Language is not null)
-                user.Language = model.Language;
-            if (model.DateOfBirth is not null)
-                user.BirthDate = model.DateOfBirth.Value;
-            if (model.ProfileImageUrl is not null)
-                user.AvatarUrl = string.IsNullOrWhiteSpace(model.ProfileImageUrl) ? null : model.ProfileImageUrl;
-            if (model.BannerImageUrl is not null)
-                user.BannerUrl = string.IsNullOrWhiteSpace(model.BannerImageUrl) ? null : model.BannerImageUrl;
-
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-                return BadRequest(updateResult.Errors);
-
-            return Ok(new { message = "Profile updated successfully." });
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UpdateProfile: {ex.Message}");
+                return BadRequest("Update failed");
+            }
         }
 
         [HttpPost("upload-avatar")]
@@ -76,21 +91,37 @@ namespace PinterestClone.API.Controllers
         [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
         [FromForm] FileUploadVM model)
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-            if (model.File == null) return BadRequest("Image file is required");
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in UploadAvatar");
+                    return Unauthorized("User not found");
+                }
+                
+                if (model.File == null) return BadRequest("Image file is required");
 
-            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
-                await imageService.DeleteImageAsync(user.AvatarUrl);
+                Console.WriteLine($"Uploading avatar for user: {user.Email}");
 
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
-            var url = imageService.GetImageUrl(fileName);
-            user.AvatarUrl = url;
+                if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                    await imageService.DeleteImageAsync(user.AvatarUrl);
 
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return BadRequest(result.Errors);
+                var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
+                var url = imageService.GetImageUrl(fileName);
+                user.AvatarUrl = url;
 
-            return Ok(new { url });
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded) return BadRequest(result.Errors);
+
+                Console.WriteLine($"Avatar uploaded successfully: {url}");
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UploadAvatar: {ex.Message}");
+                return BadRequest("Upload failed");
+            }
         }
 
         public class FileUploadVM
@@ -104,25 +135,39 @@ namespace PinterestClone.API.Controllers
             [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
             [FromForm] FileUploadVM model)
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized();
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in UploadBanner");
+                    return Unauthorized("User not found");
+                }
 
-            if (model.File == null)
-                return BadRequest("Image file is required");
+                if (model.File == null)
+                    return BadRequest("Image file is required");
 
-            if (!string.IsNullOrWhiteSpace(user.BannerUrl))
-                await imageService.DeleteImageAsync(user.BannerUrl);
+                Console.WriteLine($"Uploading banner for user: {user.Email}");
 
-            var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
-            var url = imageService.GetImageUrl(fileName);
-            user.BannerUrl = url;
+                if (!string.IsNullOrWhiteSpace(user.BannerUrl))
+                    await imageService.DeleteImageAsync(user.BannerUrl);
 
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
+                var url = imageService.GetImageUrl(fileName);
+                user.BannerUrl = url;
 
-            return Ok(new { url });
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
+
+                Console.WriteLine($"Banner uploaded successfully: {url}");
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UploadBanner: {ex.Message}");
+                return BadRequest("Upload failed");
+            }
         }
 
 
@@ -232,10 +277,23 @@ namespace PinterestClone.API.Controllers
         [Authorize]
         public async Task<ActionResult<UserProfileDto>> GetMyProfile()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in GetMyProfile");
+                    return Unauthorized("User not found");
+                }
 
-            return Ok(_mapper.Map<UserProfileDto>(user));
+                Console.WriteLine($"User found: {user.Email}, ID: {user.Id}");
+                return Ok(_mapper.Map<UserProfileDto>(user));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetMyProfile: {ex.Message}");
+                return Unauthorized("Authentication error");
+            }
         }
 
         [HttpGet("{displayName}")]
