@@ -13,6 +13,7 @@ import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.j
 import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
 import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 import SearchFilter from "../pages/Search/SearchFilter.jsx";
+import SearchProfile from "../pages/Search/SearchProfile.jsx";
 
 
 const BasicRoute = () => {
@@ -55,6 +56,9 @@ const BasicRoute = () => {
             </Route>
             <Route path="/search-filter" element={<LayoutWithoutFooter />}>
                 <Route index element={<SearchFilter/>} />
+            </Route>
+            <Route path="/search-profile" element={<LayoutWithoutFooter />}>
+                <Route index element={<SearchProfile/>} />
             </Route>
         </Routes>
     );

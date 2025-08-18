@@ -1,15 +1,26 @@
 import React, { useState } from "react";
 import { Box, Radio, RadioGroup, FormControlLabel, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const SearchFilterModal = ({ value, onChange, open, onClose }) => {
   const [selected, setSelected] = useState(value || "all");
+  const navigate = useNavigate();
 
   if (!open) return null;
 
   const handleChange = (event) => {
     const newValue = event.target.value;
     setSelected(newValue);
+
     if (onChange) onChange(newValue);
+
+    if (newValue === "profiles") {
+      navigate("/search-profile");
+      if (onClose) onClose();
+    } else if (newValue === "all") {
+      navigate("/search-filter");
+      if (onClose) onClose();
+    }
   };
 
   return (
@@ -24,9 +35,8 @@ const SearchFilterModal = ({ value, onChange, open, onClose }) => {
         alignItems: "flex-start",
         justifyContent: "flex-start",
         zIndex: 1000,
-        mt:"200px",
-        ml:"150px",
-        
+        mt: "200px",
+        ml: "150px",
       }}
       onClick={onClose}
     >

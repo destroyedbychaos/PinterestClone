@@ -254,7 +254,7 @@ namespace PinterestClone.API.Controllers
 
             return Ok(_mapper.Map<UserProfileDto>(user));
         }
-        [HttpGet]
+        [HttpGet("search")]
         [AllowAnonymous] 
         public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
             [FromQuery] string query,

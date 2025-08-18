@@ -121,7 +121,6 @@ const SearchModal = ({
             maxHeight: '90vh',
           }}
         >
-          {/* Інпут */}
           <Box style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0 16px', height: 44, borderRadius: 999, backgroundColor: '#f4f7fd',
@@ -182,7 +181,6 @@ const SearchModal = ({
             </Box>
           ) : (
             <>
-              {/* Recent searches */}
               <Typography variant="subtitle1" fontWeight={600} mb={1}>Recent searches</Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
                 {recentSearches.map((text, index) => (
@@ -204,7 +202,6 @@ const SearchModal = ({
                 ))}
               </Box>
 
-              {/* Recommendations */}
               {recommendations.length > 0 && (
                 <>
                   <Typography variant="subtitle1" fontWeight={600} mb={1}>You might like</Typography>
