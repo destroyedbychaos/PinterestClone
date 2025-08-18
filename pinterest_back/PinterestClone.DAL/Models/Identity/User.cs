@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -32,6 +33,15 @@ namespace PinterestClone.DAL.Models.Identity
         public virtual ICollection<Pin> Pins { get; set; } = [];
         public virtual ICollection<Comment> Comments { get; set; } = [];
         public virtual ICollection<Like> Likes { get; set; } = [];
+
+        public ICollection<UserFollow> FollowingRelations { get; set; } = new List<UserFollow>();
+        public ICollection<UserFollow> FollowerRelations { get; set; } = new List<UserFollow>();
+
+        [NotMapped]
+        public ICollection<User> Following => FollowingRelations.Select(f => f.Following).ToList();
+
+        [NotMapped]
+        public ICollection<User> Followers => FollowerRelations.Select(f => f.Follower).ToList();
 
         public virtual ICollection<UserClaim> Claims { get; set; } = [];
         public virtual ICollection<UserLogin> Logins { get; set; } = [];

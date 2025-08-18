@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using PinterestClone.BLL.Services.AuthService;
 using PinterestClone.BLL.Services.BoardService;
 using PinterestClone.BLL.Services.ImageService;
@@ -32,6 +33,7 @@ using System;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using PinterestClone.BLL.MappingProfiles;
+using PinterestClone.BLL.Services.UserService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,12 +111,14 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:key"] ?? throw new InvalidOperationException("JWT key not found"))),
         ValidIssuer = builder.Configuration["AuthSettings:issuer"],
         ValidAudience = builder.Configuration["AuthSettings:audience"],
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.FromMinutes(5)
     };
+    
 });
 
 
@@ -140,6 +144,7 @@ builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
 builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 //automapper
  
@@ -148,6 +153,7 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddMaps(typeof(PinMappingProfile).Assembly);
     cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
     cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
+    cfg.AddMaps(typeof(UserMappingProfile).Assembly);
 });
 
 var app = builder.Build();
@@ -176,6 +182,8 @@ app.UseCors(policy => policy
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
+
 
 app.UseAuthentication();
 app.UseAuthorization();

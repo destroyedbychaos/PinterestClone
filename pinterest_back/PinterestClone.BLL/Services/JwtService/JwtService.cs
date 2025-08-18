@@ -161,28 +161,41 @@ namespace PinterestClone.BLL.Services.JwtService
         private ClaimsPrincipal GetPrincipals(string accessToken)
         {
             var jwtSecurityKey = _configuration["AuthSettings:key"];
+            var issuer = _configuration["AuthSettings:issuer"];
+            var audience = _configuration["AuthSettings:audience"];
 
             var validationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = false,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecurityKey ?? throw new InvalidOperationException("JWT key not found")))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecurityKey ?? throw new InvalidOperationException("JWT key not found"))),
+                ValidIssuer = issuer,
+                ValidAudience = audience,
+                ClockSkew = TimeSpan.FromMinutes(5)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            var principals = tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken securityToken);
-
-            var jwtSecurityToken = securityToken as JwtSecurityToken;
-
-            if(jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256))
+            try
             {
+                var principals = tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken securityToken);
+
+                var jwtSecurityToken = securityToken as JwtSecurityToken;
+
+                if(jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256))
+                {
+                    throw new SecurityTokenException("Invalid access token");
+                }
+
+                return principals;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Token validation failed: {ex.Message}");
                 throw new SecurityTokenException("Invalid access token");
             }
-
-            return principals;
         }
     }
 }
