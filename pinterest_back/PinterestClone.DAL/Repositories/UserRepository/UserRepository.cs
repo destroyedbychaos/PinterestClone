@@ -112,18 +112,45 @@ namespace PinterestClone.DAL.Repositories.UserRepository
 
         public async Task<List<User>> GetFollowersAsync(string userId)
         {
-            return await _context.UserFollows
+            var followers = await _context.UserFollows
                 .Where(uf => uf.FollowingId == userId)
                 .Select(uf => uf.Follower)
                 .ToListAsync();
+            
+            return followers ?? new List<User>();
         }
 
         public async Task<List<User>> GetFollowingAsync(string userId)
         {
-            return await _context.UserFollows
+            var following = await _context.UserFollows
                 .Where(uf => uf.FollowerId == userId)
                 .Select(uf => uf.Following)
                 .ToListAsync();
+            
+            return following ?? new List<User>();
+        }
+
+        public async Task<bool> IsFollowingAsync(string followerId, string targetId)
+        {
+            return await _context.UserFollows
+                .AnyAsync(uf => uf.FollowerId == followerId && uf.FollowingId == targetId);
+        }
+
+        public async Task<int> GetFollowersCountAsync(string userId)
+        {
+            return await _context.UserFollows
+                .CountAsync(uf => uf.FollowingId == userId);
+        }
+
+        public async Task<int> GetFollowingCountAsync(string userId)
+        {
+            return await _context.UserFollows
+                .CountAsync(uf => uf.FollowerId == userId);
+        }
+
+        public async Task<bool> IsBlockedAsync(string blockerId, string blockedUserId)
+        {
+            return await _context.UserBlocks.AnyAsync(ub => ub.BlockerId == blockerId && ub.BlockedUserId == blockedUserId);
         }
     }
 }

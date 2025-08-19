@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PinterestClone.DAL.Data;
@@ -11,9 +12,11 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250819203539_AddProfileReportsTable")]
+    partial class AddProfileReportsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -787,38 +790,6 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("BlockedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("BlockedUserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("BlockerId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BlockedUserId");
-
-                    b.HasIndex("BlockerId", "BlockedUserId")
-                        .IsUnique();
-
-                    b.ToTable("UserBlocks");
-                });
-
             modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>
                 {
                     b.Property<string>("FollowerId")
@@ -1136,25 +1107,6 @@ namespace PinterestClone.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "BlockedUser")
-                        .WithMany()
-                        .HasForeignKey("BlockedUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Blocker")
-                        .WithMany()
-                        .HasForeignKey("BlockerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BlockedUser");
-
-                    b.Navigation("Blocker");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>

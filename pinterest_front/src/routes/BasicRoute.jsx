@@ -14,6 +14,7 @@ import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
 import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 import SearchFilter from "../pages/Search/SearchFilter.jsx";
 import SearchProfile from "../pages/Search/SearchProfile.jsx";
+import UserProfile from "../pages/Profile/UserProfile.jsx";
 
 
 
@@ -60,6 +61,11 @@ const BasicRoute = () => {
             </Route>
             <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
+            </Route>
+            
+
+            <Route path="/user/:username" element={<LayoutWithoutFooter />}>
+                <Route index element={<UserProfile/>} />
             </Route>
         </Routes>
     );

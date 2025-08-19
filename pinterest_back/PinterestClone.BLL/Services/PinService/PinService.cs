@@ -128,6 +128,31 @@ namespace PinterestClone.BLL.Services.PinService
             };
         }
 
+        public async Task<PinListDto?> GetUserPinsByUsernameAsync(string username, int pageNumber = 1, int pageSize = 20, string? sortBy = "createdAt", bool isAscending = false)
+        {
+            var query = _pinRepository.GetPinsByUsername(username);
+
+            query = ApplySorting(query, sortBy, isAscending);
+
+            int totalCount = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var pins = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => _mapper.Map<PinSimpleDto>(p))
+                .ToListAsync();
+
+            return new PinListDto
+            {
+                Pins = pins,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<PinListDto?> GetBoardPinsAsync(string boardId, int pageNumber = 1, int pageSize = 20, string? sortBy = "createdAt", bool isAscending = false)
         {
             var query = _pinRepository.GetPinsByBoardId(boardId);

@@ -84,6 +84,30 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        [HttpGet("user/username/{username}")]
+        public async Task<ActionResult<BoardListDto>> GetUserBoardsByUsername(
+            string username,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] bool isAscending = false,
+            [FromQuery] bool? isArchived = null,
+            [FromQuery] string? groupBy = null)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var boards = await _boardService.GetBoardsByUsername(username, pageNumber, pageSize, sortBy, isAscending, isArchived, groupBy);
+                return Ok(boards);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting user boards: {ex.Message}");
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<BoardResponseDto>> GetBoard(string id)
         {

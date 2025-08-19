@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Box, Avatar, Typography, Button, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import SideMenu from "../../components/layout/SideMenu";
 import SearchHeader from "../../components/layout/SearchHeader";
 import SearchFilterModal from "../../components/SearchFilterModal";
+import defaultAvatar from "../../assets/images/noImgUser.png";
 
 const API_BASE = "/api";
 
@@ -15,8 +17,11 @@ const SearchProfile = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [followingStates, setFollowingStates] = useState({});
+  const [loadingFollows, setLoadingFollows] = useState({});
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     if (!query.trim()) {
@@ -29,11 +34,18 @@ const SearchProfile = () => {
       try {
         const res = await fetch(
           `${API_BASE}/profile/search?query=${encodeURIComponent(query)}`,
-          { headers: { Authorization: `Bearer ${user?.token}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (!res.ok) throw new Error("Помилка пошуку");
+        if (!res.ok) throw new Error("Search error");
         const data = await res.json();
         setResults(data.items || []);
+        
+
+        const followingStates = {};
+        data.items?.forEach(item => {
+          followingStates[item.id] = item.isFollowing || false;
+        });
+        setFollowingStates(followingStates);
       } catch (err) {
         console.error(err);
       } finally {
@@ -43,7 +55,129 @@ const SearchProfile = () => {
 
     const delay = setTimeout(fetchProfiles, 400);
     return () => clearTimeout(delay);
-  }, [query, user]);
+  }, [query, token]);
+
+ 
+  useEffect(() => {
+    const onProfileUpdate = async () => {
+      if (!query.trim() || results.length === 0) return;
+      
+      try {
+  
+        const res = await fetch(
+          `${API_BASE}/profile/search?query=${encodeURIComponent(query)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const newFollowingStates = {};
+          data.items?.forEach(item => {
+            newFollowingStates[item.id] = item.isFollowing || false;
+          });
+          setFollowingStates(newFollowingStates);
+        }
+      } catch (error) {
+        console.error('Error updating following states:', error);
+      }
+    };
+
+    window.addEventListener('profileUpdated', onProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', onProfileUpdate);
+  }, [query, token, results.length]);
+
+
+  useEffect(() => {
+    const onWindowFocus = async () => {
+      if (!query.trim() || results.length === 0) return;
+      
+      try {
+        const res = await fetch(
+          `${API_BASE}/profile/search?query=${encodeURIComponent(query)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const newFollowingStates = {};
+          data.items?.forEach(item => {
+            newFollowingStates[item.id] = item.isFollowing || false;
+          });
+          setFollowingStates(newFollowingStates);
+        }
+      } catch (error) {
+        console.error('Error updating following states on focus:', error);
+      }
+    };
+
+    window.addEventListener('focus', onWindowFocus);
+    return () => window.removeEventListener('focus', onWindowFocus);
+  }, [query, token, results.length]);
+
+  const handleFollow = async (userId) => {
+    if (!token || !user) {
+      toast.error('You need to log in');
+      navigate('/login');
+      return;
+    }
+
+ 
+    setLoadingFollows(prev => ({ ...prev, [userId]: true }));
+
+    try {
+      const isCurrentlyFollowing = followingStates[userId];
+      
+
+      setFollowingStates(prev => ({
+        ...prev,
+        [userId]: !isCurrentlyFollowing
+      }));
+
+      console.log(`Attempting to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user ${userId}`);
+      console.log(`Token: ${token ? 'Present' : 'Missing'}`);
+      
+      const response = await fetch(`${API_BASE}/profile/${userId}/${isCurrentlyFollowing ? 'unfollow' : 'follow'}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log(`Response status: ${response.status}`);
+      
+      if (response.ok) {
+        toast.success(isCurrentlyFollowing ? 'Successfully unfollowed' : 'Successfully followed');
+        
+    
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+      } else {
+        const errorText = await response.text();
+        console.error(`Follow/Unfollow failed: ${response.status} - ${errorText}`);
+        
+
+        setFollowingStates(prev => ({
+          ...prev,
+          [userId]: isCurrentlyFollowing
+        }));
+        toast.error('Error following/unfollowing');
+      }
+    } catch (error) {
+
+      const isCurrentlyFollowing = followingStates[userId];
+      setFollowingStates(prev => ({
+        ...prev,
+        [userId]: isCurrentlyFollowing
+      }));
+      console.error('Error following user:', error);
+      toast.error('Error following/unfollowing');
+    } finally {
+
+      setLoadingFollows(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleProfileClick = (username) => {
+    navigate(`/user/${username}`);
+  };
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
@@ -138,42 +272,85 @@ const SearchProfile = () => {
                       "&:hover": { boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar src={profile.avatarUrl} alt={profile.userName} sx={{ width: 56, height: 56 }} />
-                      <Box>
-                        <Typography sx={{ fontWeight: 600, fontSize: 18 }}>{profile.displayName}</Typography>
-                        <Typography sx={{ color: "gray", fontSize: 15 }}>@{profile.userName}</Typography>
-                      </Box>
+                    <Box 
+                      sx={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: 2,
+                        cursor: "pointer",
+                        flex: 1
+                      }}
+                      onClick={() => handleProfileClick(profile.userName)}
+                    >
+                      <Avatar 
+                        src={profile.avatarUrl && !/^https?:\/\//.test(profile.avatarUrl) 
+                          ? (profile.avatarUrl.startsWith("/") ? profile.avatarUrl : `/images/${profile.avatarUrl.replace(/^.*[\\/]/, "")}`)
+                          : (profile.avatarUrl || defaultAvatar)
+                        } 
+                        alt={profile.userName} 
+                        sx={{ width: 56, height: 56 }} 
+                      />
+                                             <Box>
+                                                 <Typography sx={{ fontWeight: 600, fontSize: 18 }}>{profile.userName}</Typography>
+                        <Typography sx={{ color: "gray", fontSize: 14, mt: 0.5 }} noWrap>
+                          {profile.bio || "Looking for inspiration..."}
+                        </Typography>
+                       </Box>
                     </Box>
 
-                    <Button
-                      variant="contained"
-                      sx={{
-                        borderRadius: "999px",
-                        backgroundColor: "#6780E2",
-                        textTransform: "none",
-                        fontWeight: 500,
-                        px: 4,
-                        py: 1,
-                        fontSize: 15,
-                        "&:hover": { backgroundColor: "#4f65c7" },
-                      }}
-                    >
-                      Follow
-                    </Button>
+                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                       {user?.id !== profile.id && (
+                         <Button
+                           variant={followingStates[profile.id] ? "outlined" : "contained"}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleFollow(profile.id);
+                           }}
+                           disabled={loadingFollows[profile.id]}
+                                                       sx={{
+                              display: "flex",
+                              width: "140px",
+                              padding: "10px 20px",
+                              alignItems: "center",
+                              gap: "10px",
+                              borderRadius: "100px",
+                              backgroundColor: followingStates[profile.id] ? "#D7E0F4" : "#6780E2",
+                              color: followingStates[profile.id] ? "#01233F" : "white",
+                              borderColor: followingStates[profile.id] ? "#D7E0F4" : "#6780E2",
+                              textTransform: "none",
+                              fontWeight: 500,
+                              fontSize: 15,
+                              "&:hover": { 
+                                backgroundColor: followingStates[profile.id] ? "#C7D0E4" : "#4f65c7" 
+                              },
+                              "&:disabled": {
+                                backgroundColor: "#f5f5f5",
+                                color: "#999",
+                                borderColor: "#ddd"
+                              }
+                            }}
+                         >
+                           {loadingFollows[profile.id] ? (
+                             <CircularProgress size={16} color="inherit" />
+                           ) : (
+                             followingStates[profile.id] ? 'Unfollow' : 'Follow'
+                           )}
+                         </Button>
+                       )}
+                     </Box>
                   </Box>
                 ))}
               </Box>
             ) : query ? (
-              <Typography>Нічого не знайдено</Typography>
+              <Typography>Nothing found</Typography>
             ) : null}
           </Box>
         </Box>
       </Box>
 
-      <SearchFilterModal open={showSearchFilterModal} onClose={() => setShowSearchFilterModal(false)} />
-    </Box>
-  );
-};
+             <SearchFilterModal open={showSearchFilterModal} onClose={() => setShowSearchFilterModal(false)} />
+     </Box>
+   );
+ };
 
 export default SearchProfile;

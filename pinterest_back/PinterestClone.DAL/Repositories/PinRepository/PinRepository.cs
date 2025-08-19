@@ -57,6 +57,16 @@ namespace PinterestClone.DAL.Repositories.PinRepository
                 .Where(p => p.UserId == userId);
         }
 
+        public IQueryable<Pin> GetPinsByUsername(string username, int pageNumber = 1)
+        {
+            return _context.Pins
+                .Include(p => p.User)
+                .Include(p => p.BoardPins).ThenInclude(bp => bp.Board)
+                .Include(p => p.Likes)
+                .Include(p => p.Comments)
+                .Where(p => p.User.UserName == username);
+        }
+
         public IQueryable<Pin> GetPinsByBoardId(string boardId, int pageNumber = 1)
         {
             var guid = Guid.Parse(boardId);

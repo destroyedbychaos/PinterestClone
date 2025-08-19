@@ -4,9 +4,20 @@ import { Box, Avatar, Button, TextField } from "@mui/material";
 import "./ProfileEdit.css";
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
-import defaultBanner from "../../assets/images/sky.png";
-import defaultAvatar from "../../assets/images/noImgUser.png";
 import { useNavigate } from "react-router-dom";
+
+
+const defaultBannerSvg = (
+  <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
+  </svg>
+);
+
+const defaultAvatarSvg = (
+  <svg width="217" height="217" viewBox="0 0 217 217" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="209" height="209" rx="104.5" fill="#EAEFF9" stroke="white" strokeWidth="8"/>
+  </svg>
+);
 
 const API_BASE = "/api";
 
@@ -153,8 +164,8 @@ const ProfileEdit = () => {
     }
   };
 
-  const bannerUrl = form.bannerUrl || defaultBanner;
-  const avatarUrl = form.avatarUrl || defaultAvatar;
+  const bannerUrl = form.bannerUrl;
+  const avatarUrl = form.avatarUrl;
 
   return (
     <div className="pe-layout">
@@ -168,7 +179,18 @@ const ProfileEdit = () => {
         <div className="pe-wrap">
 
           <div className="pe-card">
-            <div className="pe-banner" style={{ backgroundImage: `url(${bannerUrl})` }}>
+            <div className="pe-banner" style={{ 
+              backgroundImage: bannerUrl ? `url(${bannerUrl})` : 'none',
+              backgroundColor: bannerUrl ? 'transparent' : '#EAEFF9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {!bannerUrl && (
+                <div style={{ transform: "scale(0.1)" }}>
+                  {defaultBannerSvg}
+                </div>
+              )}
               <button type="button" className="pe-banner-btn" onClick={() => setShowBannerModal(true)}>
                 Change header image
               </button>
@@ -177,7 +199,20 @@ const ProfileEdit = () => {
             <div className="pe-body">
               <div className="pe-avatar-col">
                 <div className="pe-avatar-box">
-                  <img className="pe-avatar" src={avatarUrl} alt="avatar" />
+                  {avatarUrl ? (
+                    <img className="pe-avatar" src={avatarUrl} alt="avatar" />
+                  ) : (
+                    <div 
+                      style={{ 
+                        width: '140px', 
+                        height: '140px', 
+                        borderRadius: '50%',
+                        backgroundColor: '#EAEFF9',
+                        border: '4px solid white',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                  )}
                 </div>
                 <button type="button" className="pe-change-image-btn" onClick={() => setShowAvatarModal(true)}>
                   Change image

@@ -10,22 +10,28 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using PinterestClone.BLL.Services.UserService;
+using PinterestClone.BLL.Services.ProfileReportService;
+using PinterestClone.BLL.Services.UserBlockService;
 
 namespace PinterestClone.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class ProfileController : ControllerBase
+    public class ProfileController : BaseController
     {
         private readonly UserManager<User> _userManager;
         private readonly IUserService _userService;
+        private readonly IProfileReportService _profileReportService;
+        private readonly IUserBlockService _userBlockService;
         private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<User> userManager, IUserService userService, IMapper mapper)
+        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper)
         {
             _userManager = userManager;
             _userService = userService;
+            _profileReportService = profileReportService;
+            _userBlockService = userBlockService;
             _mapper = mapper;
         }
 
@@ -246,7 +252,7 @@ namespace PinterestClone.API.Controllers
             var emailResult = await _userManager.SetEmailAsync(user, model.NewEmail);
             if (!emailResult.Succeeded) return BadRequest(emailResult.Errors);
 
-            // За потреби: синхронізуємо UserName з email (можна прибрати, якщо не треба)
+
             var userNameResult = await _userManager.SetUserNameAsync(user, model.NewEmail);
             if (!userNameResult.Succeeded) return BadRequest(userNameResult.Errors);
 
@@ -287,7 +293,17 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"User found: {user.Email}, ID: {user.Id}");
-                return Ok(_mapper.Map<UserProfileDto>(user));
+                
+                var userDto = _mapper.Map<UserProfileDto>(user);
+                
+
+                var followersCount = await _userService.GetFollowersCountAsync(user.Id);
+                var followingCount = await _userService.GetFollowingCountAsync(user.Id);
+                
+                userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
+                userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
+                
+                return Ok(userDto);
             }
             catch (Exception ex)
             {
@@ -305,37 +321,134 @@ namespace PinterestClone.API.Controllers
 
             if (user == null) return NotFound();
 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+
+            bool isBlocked = false;
+            bool isBlockedBy = false;
+            
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
+            {
+                var isBlockedResponse = await _userService.IsBlockedAsync(currentUserId, user.Id);
+                var isBlockedByResponse = await _userService.IsBlockedAsync(user.Id, currentUserId);
+                
+                isBlocked = isBlockedResponse.Success && (bool)isBlockedResponse.Payload;
+                isBlockedBy = isBlockedByResponse.Success && (bool)isBlockedByResponse.Payload;
+            }
+            
             if (!user.IsProfilePublic)
             {
-                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (currentUserId != user.Id)
                     return Forbid();
             }
 
-            return Ok(_mapper.Map<UserProfileDto>(user));
+            var userDto = _mapper.Map<UserProfileDto>(user);
+            
+
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
+            {
+                var isFollowing = await _userService.IsFollowingAsync(currentUserId, user.Id);
+                userDto.IsFollowing = isFollowing.Success && (bool)isFollowing.Payload;
+            }
+
+
+            var followersCount = await _userService.GetFollowersCountAsync(user.Id);
+            var followingCount = await _userService.GetFollowingCountAsync(user.Id);
+            
+            userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
+            userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
+
+
+            userDto.IsBlocked = isBlocked;
+            userDto.IsBlockedBy = isBlockedBy;
+
+            return Ok(userDto);
+        }
+
+        [HttpGet("username/{username}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<UserProfileDto>> GetUserProfileByUsername(string username)
+        {
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.UserName == username);
+
+            if (user == null) return NotFound();
+
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+
+            bool isBlocked = false;
+            bool isBlockedBy = false;
+            
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
+            {
+                var isBlockedResponse = await _userService.IsBlockedAsync(currentUserId, user.Id);
+                var isBlockedByResponse = await _userService.IsBlockedAsync(user.Id, currentUserId);
+                
+                isBlocked = isBlockedResponse.Success && (bool)isBlockedResponse.Payload;
+                isBlockedBy = isBlockedByResponse.Success && (bool)isBlockedByResponse.Payload;
+            }
+            
+            if (!user.IsProfilePublic)
+            {
+                if (currentUserId != user.Id)
+                    return Forbid();
+            }
+
+            var userDto = _mapper.Map<UserProfileDto>(user);
+            
+
+            if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
+            {
+                var isFollowing = await _userService.IsFollowingAsync(currentUserId, user.Id);
+                userDto.IsFollowing = isFollowing.Success && (bool)isFollowing.Payload;
+            }
+
+
+            var followersCount = await _userService.GetFollowersCountAsync(user.Id);
+            var followingCount = await _userService.GetFollowingCountAsync(user.Id);
+            
+            userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
+            userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
+
+
+            userDto.IsBlocked = isBlocked;
+            userDto.IsBlockedBy = isBlockedBy;
+
+            return Ok(userDto);
         }
         [HttpGet("search")]
         [AllowAnonymous] 
         public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
-            [FromQuery] string query,
+            [FromQuery] string query = "",
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return BadRequest(new { error = "Query is required." });
-
-            var normalizedQuery = query.Trim().ToLower();
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 50);
 
-            var usersQuery = _userManager.Users
-                .AsNoTracking()
-                .Where(u =>
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var usersQuery = _userManager.Users.AsNoTracking();
+
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var normalizedQuery = query.Trim().ToLower();
+                usersQuery = usersQuery.Where(u =>
                     u.UserName.ToLower().Contains(normalizedQuery) ||
                     (u.DisplayName != null && u.DisplayName.ToLower().Contains(normalizedQuery)) ||
                     (u.Email != null && u.Email.ToLower().Contains(normalizedQuery))
-                )
-                .OrderBy(u => u.UserName);
+                );
+            }
+
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                usersQuery = usersQuery.Where(u => u.Id != currentUserId);
+            }
+
+            usersQuery = usersQuery.OrderBy(u => u.UserName);
 
             var total = await usersQuery.CountAsync();
             var users = await usersQuery
@@ -344,6 +457,18 @@ namespace PinterestClone.API.Controllers
                 .ToListAsync();
 
             var result = _mapper.Map<IEnumerable<UserSearchDto>>(users);
+
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                var resultList = result.ToList();
+                foreach (var userDto in resultList)
+                {
+                    var isFollowing = await _userService.IsFollowingAsync(currentUserId, userDto.Id);
+                    userDto.IsFollowing = isFollowing.Success && (bool)isFollowing.Payload;
+                }
+                result = resultList;
+            }
 
             return Ok(new
             {
@@ -394,23 +519,222 @@ namespace PinterestClone.API.Controllers
         [HttpPost("{targetUserId}/follow")]
         public async Task<IActionResult> FollowUser(string targetUserId)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _userService.FollowUserAsync(currentUserId!, targetUserId);
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    Console.WriteLine("CurrentUserId is null or empty");
+                    return Unauthorized("User not authenticated");
+                }
 
-            if (!result.Success) return BadRequest(result.Message);
+                if (string.IsNullOrEmpty(targetUserId))
+                {
+                    Console.WriteLine("TargetUserId is null or empty");
+                    return BadRequest("Target user ID is required");
+                }
 
-            return Ok(result.Message);
+                Console.WriteLine($"Following user: {currentUserId} -> {targetUserId}");
+                
+                var result = await _userService.FollowUserAsync(currentUserId, targetUserId);
+
+                if (!result.Success)
+                {
+                    Console.WriteLine($"Follow failed: {result.Message}");
+                    return BadRequest(result.Message);
+                }
+
+                Console.WriteLine("Follow successful");
+                return Ok(result.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in FollowUser: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
         [HttpPost("{targetUserId}/unfollow")]
         public async Task<IActionResult> UnfollowUser(string targetUserId)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _userService.UnfollowUserAsync(currentUserId!, targetUserId);
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    Console.WriteLine("CurrentUserId is null or empty");
+                    return Unauthorized("User not authenticated");
+                }
 
-            if (!result.Success) return BadRequest(result.Message);
+                if (string.IsNullOrEmpty(targetUserId))
+                {
+                    Console.WriteLine("TargetUserId is null or empty");
+                    return BadRequest("Target user ID is required");
+                }
 
-            return Ok(result.Message);
+                Console.WriteLine($"Unfollowing user: {currentUserId} -> {targetUserId}");
+                
+                var result = await _userService.UnfollowUserAsync(currentUserId, targetUserId);
+
+                if (!result.Success)
+                {
+                    Console.WriteLine($"Unfollow failed: {result.Message}");
+                    return BadRequest(result.Message);
+                }
+
+                Console.WriteLine("Unfollow successful");
+                return Ok(result.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UnfollowUser: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpPost("{userId}/report")]
+        public async Task<IActionResult> ReportUser(string userId, [FromBody] ReportProfileDto reportProfileDto)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (reportProfileDto.ProfileId != userId)
+            {
+                return BadRequest("Profile ID mismatch");
+            }
+
+            try
+            {
+                var result = await _profileReportService.ReportProfileAsync(reportProfileDto, currentUserId);
+                return GetResult(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ReportUser: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpPost("{targetUserId}/block")]
+        public async Task<IActionResult> BlockUser(string targetUserId)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    Console.WriteLine("CurrentUserId is null or empty");
+                    return Unauthorized("User not authenticated");
+                }
+
+                if (string.IsNullOrEmpty(targetUserId))
+                {
+                    Console.WriteLine("TargetUserId is null or empty");
+                    return BadRequest("Target user ID is required");
+                }
+
+                Console.WriteLine($"Blocking user: {currentUserId} -> {targetUserId}");
+                
+                var result = await _userBlockService.BlockUserAsync(currentUserId, targetUserId);
+
+                if (!result.Success)
+                {
+                    Console.WriteLine($"Block failed: {result.Message}");
+                    return BadRequest(result.Message);
+                }
+
+                Console.WriteLine("Block successful");
+                return Ok(result.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in BlockUser: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpDelete("{targetUserId}/block")]
+        public async Task<IActionResult> UnblockUser(string targetUserId)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    Console.WriteLine("CurrentUserId is null or empty");
+                    return Unauthorized("User not authenticated");
+                }
+
+                if (string.IsNullOrEmpty(targetUserId))
+                {
+                    Console.WriteLine("TargetUserId is null or empty");
+                    return BadRequest("Target user ID is required");
+                }
+
+                Console.WriteLine($"Unblocking user: {currentUserId} -> {targetUserId}");
+                
+                var result = await _userBlockService.UnblockUserAsync(currentUserId, targetUserId);
+
+                if (!result.Success)
+                {
+                    Console.WriteLine($"Unblock failed: {result.Message}");
+                    return BadRequest(result.Message);
+                }
+
+                Console.WriteLine("Unblock successful");
+                return Ok(result.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UnblockUser: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpGet("{targetUserId}/block-status")]
+        public async Task<IActionResult> GetBlockStatus(string targetUserId)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    Console.WriteLine("CurrentUserId is null or empty");
+                    return Unauthorized("User not authenticated");
+                }
+
+                if (string.IsNullOrEmpty(targetUserId))
+                {
+                    Console.WriteLine("TargetUserId is null or empty");
+                    return BadRequest("Target user ID is required");
+                }
+
+                Console.WriteLine($"Checking block status: {currentUserId} -> {targetUserId}");
+                
+                var result = await _userBlockService.IsBlockedAsync(currentUserId, targetUserId);
+
+                if (!result.Success)
+                {
+                    Console.WriteLine($"Block status check failed: {result.Message}");
+                    return BadRequest(result.Message);
+                }
+
+                Console.WriteLine("Block status check successful");
+                return Ok(result.Payload);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetBlockStatus: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

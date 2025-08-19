@@ -4,5 +4,6 @@ namespace PinterestClone.BLL.Services.EmailService
     {
         Task<bool> SendEmailAsync(string to, string subject, string body);
         Task<bool> SendPinReportEmailAsync(string pinId, string pinTitle, string reportedByUser, string reportMessage);
+        Task<bool> SendProfileReportEmailAsync(string profileId, string profileUsername, string reportedByUser, string reportMessage);
     }
 } 

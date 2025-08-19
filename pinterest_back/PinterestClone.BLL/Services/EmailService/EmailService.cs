@@ -77,5 +77,25 @@ namespace PinterestClone.BLL.Services.EmailService
 
             return await SendEmailAsync(supportEmail, subject, body);
         }
+
+        public async Task<bool> SendProfileReportEmailAsync(string profileId, string profileUsername, string reportedByUser, string reportMessage)
+        {
+            var supportEmail = _configuration["EmailSettings:SupportEmail"] ?? "supporrrttt138532@gmail.com";
+            var subject = $"Нова скарга на профіль: {profileUsername}";
+            
+            var body = $@"
+                <h2>Нова скарга на профіль</h2>
+                <p><strong>ID профілю:</strong> {profileId}</p>
+                <p><strong>Username профілю:</strong> {profileUsername}</p>
+                <p><strong>Скаргу подав:</strong> {reportedByUser}</p>
+                <p><strong>Час скарги:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                <hr>
+                <h3>Текст скарги:</h3>
+                <p>{reportMessage}</p>
+                <hr>
+                <p><em>Це автоматичне повідомлення з Pinterest Clone</em></p>";
+
+            return await SendEmailAsync(supportEmail, subject, body);
+        }
     }
 } 
