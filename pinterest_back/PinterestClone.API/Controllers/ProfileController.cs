@@ -353,6 +353,7 @@ namespace PinterestClone.API.Controllers
                 totalPages = (int)Math.Ceiling(total / (double)pageSize),
                 items = result
             });
+        }
 
         [HttpGet("followers")]
         [Authorize]
