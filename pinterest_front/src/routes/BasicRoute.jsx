@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import NotFoundPage from "../components/NotFoundPage";
 import HomePage from "../pages/Home/HomePage";
 import Layout from "../components/layout/Layout";
-import LayoutWithoutFooter from "../components/layout/LayoutWithoutFooter";
+import LayoutWithoutSideMenu from "../components/layout/LayoutWithoutSideMenu";
 import LoginForm from "../pages/Auth/LoginForm.jsx";
 import RegisterForm from "../pages/Auth/RegisterForm.jsx";
 import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
@@ -16,6 +16,7 @@ import SearchFilter from "../pages/Search/SearchFilter.jsx";
 import SearchProfile from "../pages/Search/SearchProfile.jsx";
 
 
+
 const BasicRoute = () => {
     return (
         <Routes>
@@ -25,39 +26,39 @@ const BasicRoute = () => {
                 <Route path="*" element={<NotFoundPage />} />
             </Route>
             
-            <Route path="/register" element={<LayoutWithoutFooter />}>
+            <Route path="/register" element={<LayoutWithoutSideMenu />}>
                 <Route index element={<RegisterForm/>} />
             </Route>
             
-            <Route path="/login" element={<LayoutWithoutFooter />}>
+            <Route path="/login" element={<LayoutWithoutSideMenu />}>
                 <Route index element={<LoginForm/>} />
             </Route>
             
-            <Route path="/forgotpassword" element={<LayoutWithoutFooter />}>
+            <Route path="/forgotpassword" element={<Layout />}>
                 <Route index element={<ForgotPassword/>} />
             </Route>
             
-            <Route path="/verify-code" element={<LayoutWithoutFooter />}>
+            <Route path="/verify-code" element={<Layout />}>
                 <Route index element={<VerifyCode/>} />
             </Route>
             
-            <Route path="/reset-password" element={<LayoutWithoutFooter />}>
+            <Route path="/reset-password" element={<Layout />}>
                 <Route index element={<ResetPassword/>} />
             </Route>
             
-            <Route path="/password-reset-success" element={<LayoutWithoutFooter />}>
+            <Route path="/password-reset-success" element={<Layout />}>
                 <Route index element={<PasswordResetSuccess/>} />
             </Route>
-            <Route path="/profile-boards" element={<LayoutWithoutFooter />}>
+            <Route path="/profile-boards" element={<Layout />}>
                 <Route index element={<ProfileBoards/>} />
             </Route>
-            <Route path="/profile-edit" element={<LayoutWithoutFooter />}>
+            <Route path="/profile-edit" element={<Layout />}>
                 <Route index element={<ProfileEdit/>} />
             </Route>
-            <Route path="/search-filter" element={<LayoutWithoutFooter />}>
+            <Route path="/search-filter" element={<Layout />}>
                 <Route index element={<SearchFilter/>} />
             </Route>
-            <Route path="/search-profile" element={<LayoutWithoutFooter />}>
+            <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
             </Route>
         </Routes>

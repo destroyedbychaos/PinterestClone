@@ -60,10 +60,10 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
             display: 'flex', 
             padding: flush ? 0 : '44px 0',
             alignItems: 'flex-start',
-            position: flush ? 'fixed' : 'relative',
-            top: flush ? 0 : 'auto',
-            left: flush ? 0 : 'auto',
-            zIndex: flush ? 1000 : 'auto'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            zIndex: 1000
         }}>
             <Box sx={{
                 width: '108px',
@@ -120,20 +120,20 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                             </Link>
                         ) : (
                             <>
-                                <Box
-                                  onClick={() => window.location.href = '/'}
-                                  className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-blue-500/10 active:bg-blue-500/20 hover:scale-110 active:scale-95 cursor-pointer"
-                                  sx={{
-                                    backgroundColor: activeIcon === 'home' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
-                                  }}
+                                <Link 
+                                    to="/"
+                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'home' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
+                                    }}
                                 >
-                                  <Iconify 
-                                    icon={getIconName('home', activeIcon === 'home')} 
-                                    width={35} 
-                                    height={35} 
-                                    color={getIconColor('home')} 
-                                  />
-                                </Box>
+                                    <Iconify 
+                                        icon={getIconName('home', activeIcon === 'home')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('home')} 
+                                    />
+                                </Link>
                                 <Link 
                                     to="/add"
                                     className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
