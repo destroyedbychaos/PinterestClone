@@ -5,12 +5,15 @@ import { useNFT } from "../../hooks/useNFT.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
 import MarketplaceNFTCard from "../../components/nft-market/MarketplaceNFTCard.jsx";
+import NFTIntroAnimation from "../../components/nft-market/NFTIntroAnimation.jsx";
+import { useIntroAnimation } from "../../hooks/useIntroAnimation.js";
 import { toast } from "react-toastify";
 
 const Index = () => {
   const { getAllNFTs, isLoading } = useNFT();
   const { isAuthenticated } = useAuth();
   const { account } = useWeb3();
+  const { showIntro, isLoading: introLoading, completeIntro } = useIntroAnimation();
   const [nfts, setNfts] = useState([]);
   const [loadingNFTs, setLoadingNFTs] = useState(true);
   const [stats, setStats] = useState({
@@ -19,7 +22,6 @@ const Index = () => {
     totalCreators: 0,
     totalVolume: 0
   });
-
 
   useEffect(() => {
     loadNFTs();
@@ -40,7 +42,6 @@ const Index = () => {
       recent.sort((a, b) => new Date(b.createdAt || b.updatedAt || b.listedAt || 0) - new Date(a.createdAt || a.updatedAt || a.listedAt || 0));
       setNfts(recent.slice(0, 4));
       
-
       const totalNFTs = listed.length || 0;
       const mintedNFTs = listed.filter(nft => nft.isMinted).length;
       const creators = new Set(listed.map(nft => nft.creatorWalletAddress)).size;
@@ -62,11 +63,24 @@ const Index = () => {
       setLoadingNFTs(false);
     }
   };
+
+
+  if (introLoading || showIntro) {
+    return (
+      <div className="min-h-screen">
+        {showIntro && <NFTIntroAnimation onComplete={completeIntro} />}
+        {introLoading && (
+          <div className="fixed inset-0 bg-black z-40 flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
-
       <section className="relative py-24 overflow-hidden">
-
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-pink-900/20"></div>
 
         <div className="absolute inset-0 overflow-hidden">
@@ -123,7 +137,6 @@ const Index = () => {
           </div>
           
           {loadingNFTs ? (
-
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2">
               {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index} className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden animate-pulse">
@@ -151,23 +164,22 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-                <div className="mb-6">
-                  <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  <h3 className="text-xl font-semibold text-white mb-2">Поки що немає NFT</h3>
-                  <p className="text-gray-400">Станьте першим хто створить NFT на нашому маркетплейсі!</p>
-                </div>
-                <Link to="/nft-market/create">
-                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3">
-                    Створити NFT
-                  </Button>
-                </Link>
+              <div className="mb-6">
+                <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <h3 className="text-xl font-semibold text-white mb-2">Поки що немає NFT</h3>
+                <p className="text-gray-400">Станьте першим хто створить NFT на нашому маркетплейсі!</p>
               </div>
-            )}
+              <Link to="/nft-market/create">
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3">
+                  Створити NFT
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
-
 
       <section className="py-16 bg-gray-900/30">
         <div className="container mx-auto px-4">
