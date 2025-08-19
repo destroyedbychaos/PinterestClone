@@ -41,6 +41,14 @@ namespace PinterestClone.DAL.Repositories.BoardRepository
                 .Include(b => b.BoardPins).ThenInclude(bp => bp.Pin);
         }
 
+        public IQueryable<Board> GetBoardsByUsername(string username, int pageNumber = 1, int pageSize = 20)
+        {
+            return _context.Boards
+                .Where(b => b.User.UserName == username)
+                .Include(b => b.User)
+                .Include(b => b.BoardPins).ThenInclude(bp => bp.Pin);
+        }
+
         public Task<Board?> GetBoardByIdAsync(string boardId)
         {
             Guid guid = new Guid(boardId);

@@ -19,5 +19,9 @@ namespace PinterestClone.BLL.Services.UserService
         Task<ServiceResponse> GetFollowingAsync(UserProfileDto user);
         Task<ServiceResponse> FollowUserAsync(string followerId, string targetId);
         Task<ServiceResponse> UnfollowUserAsync(string followerId, string targetId);
+        Task<ServiceResponse> IsFollowingAsync(string followerId, string targetId);
+        Task<ServiceResponse> GetFollowersCountAsync(string userId);
+        Task<ServiceResponse> GetFollowingCountAsync(string userId);
+        Task<ServiceResponse> IsBlockedAsync(string blockerId, string blockedUserId);
     }
 }

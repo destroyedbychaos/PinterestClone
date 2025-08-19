@@ -21,10 +21,12 @@ namespace PinterestClone.DAL.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PinShare> PinShares { get; set; }
         public DbSet<PinReport> PinReports { get; set; }
+        public DbSet<ProfileReport> ProfileReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<HiddenPin> HiddenPins { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
+        public DbSet<UserBlock> UserBlocks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -154,6 +156,24 @@ namespace PinterestClone.DAL.Data
             builder.Entity<PinReport>()
                 .HasIndex(pr => pr.ReportedAt);
 
+            builder.Entity<ProfileReport>()
+                .HasOne(pr => pr.Profile)
+                .WithMany()
+                .HasForeignKey(pr => pr.ProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProfileReport>()
+                .HasOne(pr => pr.ReportedByUser)
+                .WithMany()
+                .HasForeignKey(pr => pr.ReportedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProfileReport>()
+                .HasIndex(pr => new { pr.ProfileId, pr.ReportedByUserId });
+
+            builder.Entity<ProfileReport>()
+                .HasIndex(pr => pr.ReportedAt);
+
             builder.Entity<PasswordResetCode>()
                 .HasIndex(prc => new { prc.Email, prc.Code });
 
@@ -193,6 +213,22 @@ namespace PinterestClone.DAL.Data
                 .WithMany(u => u.FollowerRelations)
                 .HasForeignKey(uf => uf.FollowingId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserBlock>()
+                .HasOne(ub => ub.Blocker)
+                .WithMany()
+                .HasForeignKey(ub => ub.BlockerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserBlock>()
+                .HasOne(ub => ub.BlockedUser)
+                .WithMany()
+                .HasForeignKey(ub => ub.BlockedUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserBlock>()
+                .HasIndex(ub => new { ub.BlockerId, ub.BlockedUserId })
+                .IsUnique();
         }
     }
 } 

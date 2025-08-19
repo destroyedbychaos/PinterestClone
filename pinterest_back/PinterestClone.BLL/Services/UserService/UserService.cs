@@ -67,23 +67,23 @@ namespace PinterestClone.BLL.Services.UserService
         {
             var followers = await _userRepository.GetFollowersAsync(user.Id);
 
-            if (followers == null)
+            if (followers == null || followers.Count == 0)
             {
                 return ServiceResponse.OkResponse($"The user has no followers.");
             }
 
             var followersDto = _mapper.Map<List<UserProfileDto>>(followers);
 
-            return ServiceResponse.OkResponse($"Folowers found.", followersDto);
+            return ServiceResponse.OkResponse($"Followers found.", followersDto);
         }
 
         public async Task<ServiceResponse> GetFollowingAsync(UserProfileDto user)
         {
             var following = await _userRepository.GetFollowingAsync(user.Id);
 
-            if (following == null)
+            if (following == null || following.Count == 0)
             {
-                return ServiceResponse.OkResponse($"The user has follows no one.");
+                return ServiceResponse.OkResponse($"The user follows no one.");
             }
 
             var followingDto = _mapper.Map<List<UserProfileDto>>(following);
@@ -93,10 +93,10 @@ namespace PinterestClone.BLL.Services.UserService
 
         public async Task<ServiceResponse> FollowUserAsync(string followerId, string targetUserId)
         {
-            var follower = _userRepository.GetByIdAsync(followerId);
+            var follower = await _userRepository.GetByIdAsync(followerId);
             if (follower == null) return ServiceResponse.BadRequestResponse("Could not follow due to login issue.");
 
-            var target = _userRepository.GetByIdAsync(targetUserId);
+            var target = await _userRepository.GetByIdAsync(targetUserId);
             if (target == null) return ServiceResponse.BadRequestResponse("Could not follow due to incorrect UserId provided.");
 
             var success = await _userRepository.FollowUserAsync(followerId, targetUserId);
@@ -108,10 +108,10 @@ namespace PinterestClone.BLL.Services.UserService
 
         public async Task<ServiceResponse> UnfollowUserAsync(string followerId, string targetUserId)
         {
-            var follower = _userRepository.GetByIdAsync(followerId);
+            var follower = await _userRepository.GetByIdAsync(followerId);
             if (follower == null) return ServiceResponse.BadRequestResponse("Could not unfollow due to login issue.");
 
-            var target = _userRepository.GetByIdAsync(targetUserId);
+            var target = await _userRepository.GetByIdAsync(targetUserId);
             if (target == null) return ServiceResponse.BadRequestResponse("Could not unfollow due to incorrect UserId provided.");
 
             var success = await _userRepository.UnfollowUserAsync(followerId, targetUserId);
@@ -119,6 +119,30 @@ namespace PinterestClone.BLL.Services.UserService
             if (!success) return ServiceResponse.BadRequestResponse("Could not unfollow the user.");
 
             return ServiceResponse.OkResponse("Unfollowed successfully.");
+        }
+
+        public async Task<ServiceResponse> IsFollowingAsync(string followerId, string targetId)
+        {
+            var isFollowing = await _userRepository.IsFollowingAsync(followerId, targetId);
+            return ServiceResponse.OkResponse("Following status checked.", isFollowing);
+        }
+
+        public async Task<ServiceResponse> GetFollowersCountAsync(string userId)
+        {
+            var count = await _userRepository.GetFollowersCountAsync(userId);
+            return ServiceResponse.OkResponse("Followers count retrieved.", count);
+        }
+
+        public async Task<ServiceResponse> GetFollowingCountAsync(string userId)
+        {
+            var count = await _userRepository.GetFollowingCountAsync(userId);
+            return ServiceResponse.OkResponse("Following count retrieved.", count);
+        }
+
+        public async Task<ServiceResponse> IsBlockedAsync(string blockerId, string blockedUserId)
+        {
+            var isBlocked = await _userRepository.IsBlockedAsync(blockerId, blockedUserId);
+            return ServiceResponse.OkResponse("Block status checked.", isBlocked);
         }
     }
 }

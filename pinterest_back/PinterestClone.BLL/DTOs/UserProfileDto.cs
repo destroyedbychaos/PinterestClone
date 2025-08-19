@@ -23,5 +23,8 @@ namespace PinterestClone.BLL.DTOs
 
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
+        public bool IsFollowing { get; set; }
+        public bool IsBlocked { get; set; }
+        public bool IsBlockedBy { get; set; }
     }
 }

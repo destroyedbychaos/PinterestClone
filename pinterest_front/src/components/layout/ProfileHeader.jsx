@@ -6,8 +6,10 @@ import { logout } from "../../../store/slices/AuthSlice";
 import { useNavigate } from "react-router-dom";
 import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
 
-const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch, title }) => {
+const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch, title, onOpenNotifications }) => {
   const [showMenu, setShowMenu] = useState(false);
+  
+
   const profileRef = useRef(null);
   const menuRef = useRef(null);
   const dispatch = useDispatch();
@@ -50,6 +52,9 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
             }}
           />
         </div>
+
+
+
 
         {user ? (
           <div
@@ -108,6 +113,9 @@ ProfileHeader.propTypes = {
   onFocusSearch: PropTypes.func,
   searchRef: PropTypes.object,
   title: PropTypes.string,
+  onOpenNotifications: PropTypes.func,
+
 };
 
 export default ProfileHeader;
+
