@@ -4,12 +4,16 @@ import PropTypes from "prop-types";
 import "./PinCard.css";
 import ReportModal from "./ReportModal";
 import NotificationToast from "./NotificationToast";
+import SaveToProfileModal from "./SaveToProfileModal";
 import { savePin as persistSavePin, unsavePin as persistUnsavePin, isPinSaved } from "../../utils/savedPinsStorage";
 
 const PinCard = ({ image, title, description, author, tags, height, pinId, onPinHidden, limitedMenu = false, hideSaveButton = false, disableUnsave = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveButtonPosition, setSaveButtonPosition] = useState(null);
+  const [isModalHovered, setIsModalHovered] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
   const [isSaved, setIsSaved] = useState(false);
   const buttonRef = useRef(null);
@@ -72,12 +76,79 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
     }
   };
 
+  const handleSaveToProfileOrBoard = async (pinData, boardId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showNotification('Необхідно авторизуватися', 'warning');
+        return;
+      }
+
+      if (boardId) {
+
+        console.log('Saving pin to board:', pinId, boardId);
+        const response = await fetch(`/api/pins/${pinId}/boards/${boardId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          showNotification('Пін збережено в дошка', 'success');
+        } else {
+          const errorText = await response.text();
+          console.error('Failed to save to board:', errorText);
+          showNotification('Помилка при збереженні в дошка', 'error');
+        }
+      } else {
+
+        persistSavePin(getPinObject());
+        setIsSaved(true);
+        showNotification('Пін збережено в профіль', 'success');
+      }
+    } catch (error) {
+      console.error('Error saving pin:', error);
+      showNotification('Помилка при збереженні', 'error');
+    }
+  };
+
   const handleSecondaryAction = () => {
     handleSavePin();
   };
 
-  const handleSecondaryButtonClick = () => {
-    handleSavePin();
+  const handleSecondaryButtonMouseEnter = () => {
+    if (saveButtonRef.current) {
+      const rect = saveButtonRef.current.getBoundingClientRect();
+      setSaveButtonPosition({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      });
+    }
+    setShowSaveModal(true);
+  };
+
+  const handleSecondaryButtonMouseLeave = () => {
+    setTimeout(() => {
+      if (!isModalHovered) {
+        setShowSaveModal(false);
+        setSaveButtonPosition(null);
+      }
+    }, 150);
+  };
+
+  const handleModalMouseEnter = () => {
+    setIsModalHovered(true);
+  };
+
+  const handleModalMouseLeave = () => {
+    setIsModalHovered(false);
+
+    setShowSaveModal(false);
+    setSaveButtonPosition(null);
   };
 
   const handleSeeMoreLikeThis = () => {
@@ -223,13 +294,19 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
   }, [showMenu]);
 
   const getSaveButtonClass = () => {
+    let baseClass = 'save';
+    
     if (limitedMenu) {
-      return 'save save--saved save--sm';
+      baseClass += ' save--saved save--sm';
+    } else if (isSaved) {
+      baseClass += ' save--saved';
     }
-    if (isSaved) {
-      return 'save save--saved';
+    
+    if (showSaveModal) {
+      baseClass += ' save--modal-active';
     }
-    return 'save';
+    
+    return baseClass;
   };
 
   return (
@@ -243,12 +320,23 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       
 
              {!hideSaveButton && !disableUnsave && (
-       <button
-         ref={saveButtonRef}
-         className={getSaveButtonClass()}
-         onClick={handleSavePin}
-         aria-label={isSaved ? 'Unsave pin' : 'Save pin'}
-       >
+               <button
+          ref={saveButtonRef}
+          className={getSaveButtonClass()}
+          onClick={isSaved ? handleSavePin : () => {
+            if (saveButtonRef.current) {
+              const rect = saveButtonRef.current.getBoundingClientRect();
+              setSaveButtonPosition({
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+              });
+            }
+            setShowSaveModal(true);
+          }}
+          aria-label={isSaved ? 'Unsave pin' : 'Save pin'}
+        >
                  {limitedMenu ? (
            <svg className="save-icon save-icon--sm" width="16" height="16" viewBox="0 0 24 24" fill="none">
              <path d="M6 6L18 18M18 6L6 18" stroke="#EAEFF9" strokeWidth="2" strokeLinecap="round" />
@@ -267,18 +355,19 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       </button>
       )}
 
-      {!limitedMenu && !hideSaveButton && !disableUnsave && (
-        <button
-          className={`alt ${isSaved ? 'alt--saved' : ''}`}
-          onClick={handleSecondaryButtonClick}
-          aria-label={'Secondary action'}
-        >
-          <span>Profile</span>
-          <svg className="alt-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      )}
+             {!limitedMenu && !hideSaveButton && !disableUnsave && (
+                  <button
+            className={`alt ${isSaved ? 'alt--saved' : ''} ${showSaveModal ? 'alt--active' : ''}`}
+            onMouseEnter={handleSecondaryButtonMouseEnter}
+            onMouseLeave={handleSecondaryButtonMouseLeave}
+            aria-label={'Secondary action'}
+          >
+           <span>Profile</span>
+           <svg className="alt-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+             <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+           </svg>
+         </button>
+       )}
 
       <button
         ref={buttonRef}
@@ -341,20 +430,36 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
         document.body
       )}
 
-      <ReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReportSubmit}
-        pinId={pinId}
-        pinTitle={title}
-      />
+             <ReportModal
+         isOpen={showReportModal}
+         onClose={() => setShowReportModal(false)}
+         onSubmit={handleReportSubmit}
+         pinId={pinId}
+         pinTitle={title}
+       />
 
-      <NotificationToast
-        isVisible={notification.show}
-        message={notification.message}
-        type={notification.type}
-        onClose={hideNotification}
-      />
+               {showSaveModal && createPortal(
+          <SaveToProfileModal
+            isOpen={showSaveModal}
+            onClose={() => {
+              setShowSaveModal(false);
+              setSaveButtonPosition(null);
+            }}
+            onSave={handleSaveToProfileOrBoard}
+            pinData={getPinObject()}
+            buttonPosition={saveButtonPosition}
+            onMouseEnter={handleModalMouseEnter}
+            onMouseLeave={handleModalMouseLeave}
+          />,
+          document.body
+        )}
+
+       <NotificationToast
+         isVisible={notification.show}
+         message={notification.message}
+         type={notification.type}
+         onClose={hideNotification}
+       />
     </div>
   );
 };

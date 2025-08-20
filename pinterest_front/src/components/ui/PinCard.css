@@ -16,6 +16,12 @@
   pointer-events: auto;
 }
 
+.pin .save--modal-active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
 .img {
   width: 100%;
   display: block;
@@ -179,6 +185,15 @@
   background: #555555 !important;
   border-color: #555555 !important;
   box-shadow: 0 4px 16px rgba(102, 102, 102, 0.3);
+}
+
+.alt--active {
+  opacity: 1 !important;
+  transform: translateX(0) scale(1) !important;
+  pointer-events: auto !important;
+  background: var(--Blue-600, #5A7BB8) !important;
+  border-color: var(--Blue-600, #5A7BB8) !important;
+  box-shadow: 0 4px 16px rgba(111, 145, 217, 0.3) !important;
 }
 
 
