@@ -34,7 +34,7 @@ const ForgotPassword = () => {
         } else if (data.message) {
           setError(data.message)
         } else {
-          setError('Щось пішло не так. Спробуйте ще раз.')
+          setError('Something went wrong. Please try again.')
         }
         return
       }
@@ -44,7 +44,7 @@ const ForgotPassword = () => {
         navigate('/verify-code', { state: { email } })
       }, 1000)
     } catch (err) {
-      setError('Помилка з\'єднання. Перевірте ваше інтернет-з\'єднання.')
+              setError('Connection error. Please check your internet connection.')
     } finally {
       setLoading(false)
     }

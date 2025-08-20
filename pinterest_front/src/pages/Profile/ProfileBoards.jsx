@@ -4,6 +4,10 @@ import { Box, Avatar, Button } from "@mui/material";
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import MasonryGrid from "../../components/ui/MasonryGrid";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useNavigate } from "react-router-dom";
+import SavedPins from "../Saved/SavedPins.jsx";
+import { fetchSavedPins } from "../../utils/fetchSavedPins";
 
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -16,14 +20,12 @@ const defaultAvatarSvg = (
     <rect x="4" y="4" width="209" height="209" rx="104.5" fill="#EAEFF9" stroke="white" strokeWidth="8"/>
   </svg>
 );
-import { useNavigate } from "react-router-dom";
-import SavedPins from "../Saved/SavedPins.jsx";
-import { fetchSavedPins } from "../../utils/fetchSavedPins";
 
 const API_BASE = "/api";
 
 const ProfileBoards = () => {
   const authState = useSelector((state) => state.auth);
+  const currentUser = useCurrentUser();
   const searchRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
@@ -45,6 +47,17 @@ const ProfileBoards = () => {
     setShowSavedOverlay(true);
   };
 
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfile(currentUser);
+      setLoadingProfile(false);
+    } else {
+      setProfile(null);
+      setLoadingProfile(true);
+    }
+  }, [currentUser]);
+
   const refreshProfile = async () => {
     if (!token) return;
     try {
@@ -59,33 +72,6 @@ const ProfileBoards = () => {
       console.error('Error refreshing profile:', error);
     }
   };
-
-  useEffect(() => {
-    let isMounted = true;
-    const run = async () => {
-      try {
-        setLoadingProfile(true);
-        const res = await fetch(`${API_BASE}/Profile/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load profile");
-        const data = await res.json();
-        if (isMounted) setProfile(data);
-      } catch {
-        if (isMounted) setProfile(null);
-      } finally {
-        if (isMounted) setLoadingProfile(false);
-      }
-    };
-    if (token) run();
-    else {
-      setProfile(null);
-      setLoadingProfile(false);
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
 
   useEffect(() => {
     let isMounted = true;
@@ -140,12 +126,13 @@ const ProfileBoards = () => {
         setLoadingSaved(true);
         setSavedError('');
         const token = localStorage.getItem('token');
+
         const list = await fetchSavedPins(token, profile?.displayName || profile?.userName);
         if (active) setSavedPins(list);
       } catch (e) {
         if (active) {
           setSavedPins([]);
-          setSavedError(e.message || 'Помилка');
+          setSavedError(e.message || 'Error');
         }
       } finally {
         if (active) setLoadingSaved(false);
@@ -213,7 +200,7 @@ const ProfileBoards = () => {
 
       <Box sx={{ flex: 1 }}>
         <ProfileHeader
-          user={authState?.user}
+          user={currentUser}
           onSearch={handleSearch}
           searchRef={searchRef}
           onFocusSearch={() => setShowSavedOverlay(true)}

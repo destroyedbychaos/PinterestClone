@@ -35,12 +35,13 @@ const SavedPins = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
+
         const list = await fetchSavedPins(token, user?.displayName || user?.userName);
         list.forEach(p => (p.isSaved = true));
         setPins(list);
         setSavedIds(list.map(p => (p.id || '').toString()));
       } catch (e) {
-        setError(e.message || 'Помилка');
+        setError(e.message || 'Error');
       } finally {
         setLoading(false);
       }
@@ -52,6 +53,7 @@ const SavedPins = () => {
   useEffect(() => {
     const onChanged = () => {
       const token = localStorage.getItem('token');
+
       fetchSavedPins(token, user?.displayName || user?.userName)
         .then((list) => {
           list.forEach(p => (p.isSaved = true));
@@ -240,7 +242,11 @@ const SavedPins = () => {
                   </div>
                   <div className="profile-dropdown-menu__accounts">Your accounts</div>
                   <button className="profile-dropdown-menu__btn" onClick={() => { setShowMenu(false); navigate('/register'); }}>Add account</button>
-                  <button className="profile-dropdown-menu__btn profile-dropdown-menu__btn--logout" onClick={() => { dispatch(logout()); setShowMenu(false); window.location.reload(); }}>Log out</button>
+                  <button className="profile-dropdown-menu__btn profile-dropdown-menu__btn--logout" onClick={() => { 
+                  dispatch(logout()); 
+                  setShowMenu(false); 
+                  window.location.reload(); 
+                }}>Log out</button>
                 </div>
               )}
             </div>
@@ -249,7 +255,7 @@ const SavedPins = () => {
 
         <Box sx={{ padding: '0 24px' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', marginTop: 40 }}>Завантаження...</div>
+                          <div style={{ textAlign: 'center', marginTop: 40 }}>Loading...</div>
           ) : error ? (
             <div style={{ textAlign: 'center', marginTop: 40, color: 'crimson' }}>{error}</div>
           ) : (
@@ -262,7 +268,7 @@ const SavedPins = () => {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                   });
-                  if (!res.ok) throw new Error('Не вдалося прибрати пін');
+                  if (!res.ok) throw new Error('Failed to remove pin');
                   setPins(prev => prev.filter(p => p.id !== id));
                   setSavedIds(prev => prev.filter(x => x !== id));
                 } catch (e) {

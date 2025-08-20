@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Box, Avatar, Button, TextField } from "@mui/material";
 import "./ProfileEdit.css";
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import { useNavigate } from "react-router-dom";
+import { useRefreshUserData } from "../../hooks/useCurrentUser";
 
 
 const defaultBannerSvg = (
@@ -23,6 +24,8 @@ const API_BASE = "/api";
 
 const ProfileEdit = () => {
   const authState = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const refreshUserData = useRefreshUserData();
   const searchRef = useRef(null);
 
   const [initial, setInitial] = useState(null);
@@ -88,6 +91,9 @@ const ProfileEdit = () => {
       const { url } = await res.json();
       setForm((s) => ({ ...s, avatarUrl: url }));
       setShowAvatarModal(false);
+      
+
+      await refreshUserData();
     }
   };
 
@@ -105,6 +111,9 @@ const ProfileEdit = () => {
       const { url } = await res.json();
       setForm((s) => ({ ...s, bannerUrl: url }));
       setShowBannerModal(false);
+      
+
+      await refreshUserData();
     }
   };
 
@@ -127,6 +136,10 @@ const ProfileEdit = () => {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to update profile");
+      
+
+      await refreshUserData();
+      
       navigate("/profile-boards");
     } finally {
       setSaving(false);
@@ -158,6 +171,9 @@ const ProfileEdit = () => {
         };
         setInitial(normalized);
         setForm(normalized);
+        
+
+        await refreshUserData();
       }
     } finally {
       setSaving(false);
@@ -166,6 +182,7 @@ const ProfileEdit = () => {
 
   const bannerUrl = form.bannerUrl;
   const avatarUrl = form.avatarUrl;
+  const currentUser = useSelector((state) => state.auth?.user);
 
   return (
     <div className="pe-layout">
@@ -174,7 +191,7 @@ const ProfileEdit = () => {
       </div>
 
       <div className="pe-main">
-        <ProfileHeader title="Edit profile" user={authState?.user} onSearch={handleSearch} searchRef={searchRef} onFocusSearch={() => {}} />
+        <ProfileHeader title="Edit profile" user={currentUser} onSearch={handleSearch} searchRef={searchRef} onFocusSearch={() => {}} />
 
         <div className="pe-wrap">
 

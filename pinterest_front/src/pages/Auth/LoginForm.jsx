@@ -28,7 +28,7 @@ const LoginForm = () => {
             }));
             navigate('/');
         } catch (err) {
-            console.error('Помилка логіну:', err);
+            console.error('Login error:', err);
         }
     };
 

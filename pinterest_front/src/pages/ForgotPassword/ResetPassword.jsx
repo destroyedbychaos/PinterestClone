@@ -78,7 +78,7 @@ const ResetPassword = () => {
         if (data.message) {
           setError(data.message)
         } else {
-          setError('Помилка при зміні пароля')
+          setError('Error changing password')
         }
         return
       }
@@ -89,7 +89,7 @@ const ResetPassword = () => {
       }, 2000)
       
     } catch (err) {
-      setError('Помилка з\'єднання. Перевірте ваше інтернет-з\'єднання.')
+              setError('Connection error. Please check your internet connection.')
     } finally {
       setLoading(false)
     }

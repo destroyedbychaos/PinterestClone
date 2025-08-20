@@ -25,7 +25,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
       onClose();
     } catch (error) {
       console.error('Error submitting report:', error);
-      alert('Помилка при відправці скарги. Спробуйте ще раз.');
+              alert('Error sending report. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +109,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
-                Скасувати
+                Cancel
               </button>
               <button 
                 type="submit" 

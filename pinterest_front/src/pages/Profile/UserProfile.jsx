@@ -18,6 +18,15 @@ import { toast } from 'react-toastify';
 import SideMenu from '../../components/layout/SideMenu';
 import ProfileHeader from '../../components/layout/ProfileHeader';
 import MasonryGrid from '../../components/ui/MasonryGrid';
+import { 
+  getUserDisplayName, 
+  getUserAvatarInitial, 
+  getUserUsername, 
+  hasUserAvatar, 
+  getUserAvatarUrl
+} from '../../utils/userUtils';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { fetchSavedPins } from '../../utils/fetchSavedPins';
 
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,8 +45,10 @@ const API_BASE = '/api';
 const UserProfile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useSelector((state) => state.auth);
   const token = localStorage.getItem('token');
+  
+
+  const currentUser = useCurrentUser();
 
   const [userProfile, setUserProfile] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -72,6 +83,8 @@ const UserProfile = () => {
       loadUserProfile();
     }
   }, [username]);
+
+
 
   useEffect(() => {
     if (userProfile && isProfileAccessible) {
@@ -112,7 +125,7 @@ const UserProfile = () => {
         toast.error('Профіль не знайдено');
         navigate('/');
       } else {
-        toast.error('Помилка завантаження профілю');
+        toast.error('Error loading profile');
         navigate('/');
       }
     } catch (error) {
@@ -134,15 +147,18 @@ const UserProfile = () => {
       
       if (activeTab === 'Aests') {
 
-        const response = await fetch(`${API_BASE}/favorites/user/${username}?pageNumber=1&pageSize=20`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          setPins(data.pins || data.items || []);
-        } else if (response.status === 404 && isMounted) {
-
-          setPins([]);
+        const token = localStorage.getItem('token');
+        const targetUserId = userProfile?.id;
+        
+        if (targetUserId) {
+          const list = await fetchSavedPins(token, userProfile?.displayName || userProfile?.userName, targetUserId);
+          if (isMounted) {
+            setPins(list);
+          }
+        } else {
+          if (isMounted) {
+            setPins([]);
+          }
         }
       } else if (activeTab === 'Boards') {
 
@@ -172,7 +188,7 @@ const UserProfile = () => {
     } catch (error) {
       console.error('Error loading user content:', error);
       if (isMounted) {
-        toast.error('Помилка завантаження контенту');
+        toast.error('Error loading content');
       }
     } finally {
       if (isMounted) {
@@ -205,7 +221,7 @@ const UserProfile = () => {
 
         window.dispatchEvent(new CustomEvent('profileUpdated'));
       } else {
-        toast.error('Помилка при підписці');
+        toast.error('Error subscribing');
       }
     } catch (error) {
       console.error('Error following user:', error);
@@ -242,13 +258,13 @@ const UserProfile = () => {
 
   const handleShareTelegram = () => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out this profile: ${userProfile.userName}`);
+    const text = encodeURIComponent(`Check out this profile: ${getUserDisplayName(userProfile)}`);
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
   };
 
   const handleShareX = () => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out this profile: ${userProfile.userName}`);
+    const text = encodeURIComponent(`Check out this profile: ${getUserDisplayName(userProfile)}`);
     window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
   };
 
@@ -385,7 +401,7 @@ const UserProfile = () => {
         setIsBlocked(true);
         navigate('/');
       } else {
-        toast.error('Помилка при блокуванні');
+        toast.error('Error blocking user');
       }
     } catch (error) {
       console.error('Error blocking user:', error);
@@ -413,7 +429,7 @@ const UserProfile = () => {
         setShowUnblockConfirmModal(false);
         setIsBlocked(false);
       } else {
-        toast.error('Помилка при розблокуванні');
+        toast.error('Error unblocking user');
       }
     } catch (error) {
       console.error('Error unblocking user:', error);
@@ -467,7 +483,7 @@ const UserProfile = () => {
       } else {
         const errorText = await response.text();
         console.error('Profile report error:', response.status, errorText);
-        toast.error('Помилка при відправці скарги');
+        toast.error('Error sending report');
       }
     } catch (error) {
       console.error('Error reporting user:', error);
@@ -531,13 +547,13 @@ const UserProfile = () => {
   if (!userProfile) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <Typography>Завантаження...</Typography>
+                        <Typography>Loading...</Typography>
       </Box>
     );
   }
 
-  const displayName = userProfile.displayName || userProfile.userName;
-  const avatarUrl = userProfile.avatarUrl;
+  const displayName = getUserDisplayName(userProfile);
+  const avatarUrl = getUserAvatarUrl(userProfile);
   const bannerUrl = userProfile.bannerUrl;
 
   return (
@@ -640,12 +656,12 @@ const UserProfile = () => {
                                >
                                  🚫
                                </Box>
-                             ) : avatarUrl ? (
-                               <Avatar
-                                 src={avatarUrl}
-                                 alt="avatar"
-                                 sx={{ width: 140, height: 140, borderRadius: "50%" }}
-                               />
+                                                           ) : hasUserAvatar(userProfile) ? (
+                                <Avatar
+                                  src={getUserAvatarUrl(userProfile)}
+                                  alt="avatar"
+                                  sx={{ width: 140, height: 140, borderRadius: "50%" }}
+                                />
                              ) : (
                                <Box 
                                  sx={{ 
@@ -673,9 +689,9 @@ const UserProfile = () => {
               }}
             >
                              <Box sx={{ ml: 24, flex: 1 }}>
-                 <Box sx={{ fontSize: 20, fontWeight: 700 }}>
-                   {isBlocked ? 'Заблокований користувач' : userProfile.userName}
-                 </Box>
+                                   <Box sx={{ fontSize: 20, fontWeight: 700 }}>
+                    {isBlocked ? 'Заблокований користувач' : displayName}
+                  </Box>
                  {!isBlocked && (
                    <Box sx={{ color: "#6b7280", fontSize: 14, mt: 0.5, maxWidth: "400px" }}>
                      {userProfile.bio || "Looking for inspiration..."}
@@ -700,26 +716,26 @@ const UserProfile = () => {
                     variant="outlined"
                     size="medium"
                     onClick={handleFollow}
-                    sx={{
-                      textTransform: "none",
-                      borderRadius: 10,
-                      px: 2.5,
-                      py: 1,
-                      bgcolor: isFollowing ? "#fff" : "#D7E0F4",
-                      color: "#111827",
-                      fontWeight: 500,
-                      width: "164px",
-                      border: isFollowing ? "1px solid #D7E0F4" : "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.2,
-                      fontSize: "1rem",
-                      "&:hover": {
-                        bgcolor: isFollowing ? "#f5f5f5" : "#C5D0E8",
-                      }
-                    }}
+                                         sx={{
+                       textTransform: "none",
+                       borderRadius: 10,
+                       px: 2.5,
+                       py: 1,
+                       bgcolor: isFollowing ? "#D7E0F4" : "#6F91D9",
+                       color: isFollowing ? "#111827" : "#FFFFFF",
+                       fontWeight: 500,
+                       width: "164px",
+                       border: isFollowing ? "1px solid #D7E0F4" : "none",
+                       display: "flex",
+                       alignItems: "center",
+                       gap: 1.2,
+                       fontSize: "1rem",
+                       "&:hover": {
+                         bgcolor: isFollowing ? "#C5D0E8" : "#5A7BC7",
+                       }
+                     }}
                   >
-                    {isFollowing ? 'Відписатися' : 'Підписатися'}
+                                            {isFollowing ? 'Followed' : 'Follow'}
                   </Button>
                 ) : !isBlocked && (
                   <Button
@@ -995,7 +1011,11 @@ const UserProfile = () => {
 
                    </Box>
                  ) : (
-                   <MasonryGrid pins={normalizedPins} limitedMenu />
+                   <MasonryGrid 
+                     pins={normalizedPins} 
+                     limitedMenu 
+                     disableUnsave={currentUser?.id !== userProfile?.id}
+                   />
                  )}
                </>
              )}
@@ -1088,25 +1108,25 @@ const UserProfile = () => {
 
 
               <Box sx={{ width: '100%' }}>
-               <Typography
-                 sx={{
-                   fontWeight: 700,
-                   fontSize: '16px',
-                   color: '#111827',
-                   mb: 1,
-                 }}
-               >
-                 {userProfile.displayName || userProfile.userName}
-               </Typography>
-               <Typography
-                 sx={{
-                   fontSize: '14px',
-                   color: '#6b7280',
-                   mb: 2,
-                 }}
-               >
-                 @{userProfile.userName}
-               </Typography>
+                               <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '16px',
+                    color: '#111827',
+                    mb: 1,
+                  }}
+                >
+                  {getUserDisplayName(userProfile)}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    mb: 2,
+                  }}
+                >
+                  @{getUserUsername(userProfile)}
+                </Typography>
                                 <Typography
                    sx={{
                      fontSize: '14px',
@@ -1358,39 +1378,39 @@ const UserProfile = () => {
                            }}
                          >
                                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Box
-                           sx={{
-                             width: 40,
-                             height: 40,
-                             borderRadius: '50%',
-                             backgroundColor: user.avatarUrl ? 'transparent' : '#EAEFF9',
-                             display: 'flex',
-                             alignItems: 'center',
-                             justifyContent: 'center',
-                             color: 'white',
-                             fontWeight: 600,
-                             overflow: 'hidden',
-                           }}
-                         >
-                           {user.avatarUrl ? (
-                             <img 
-                               src={user.avatarUrl} 
-                               alt={user.userName}
-                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                             />
-                           ) : (
-                             <span style={{ color: '#6b7280' }}>
-                               {user.userName ? user.userName.charAt(0).toUpperCase() : 'U'}
-                             </span>
-                           )}
-                         </Box>
+                                                   <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              backgroundColor: hasUserAvatar(user) ? 'transparent' : '#EAEFF9',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {hasUserAvatar(user) ? (
+                              <img 
+                                src={getUserAvatarUrl(user)} 
+                                alt={getUserDisplayName(user)}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <span style={{ color: '#6b7280' }}>
+                                {getUserAvatarInitial(user)}
+                              </span>
+                            )}
+                          </Box>
                          <Box>
-                           <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
-                             {user.displayName || user.userName}
-                           </Typography>
-                           <Typography sx={{ fontSize: '12px', color: '#6b7280' }}>
-                             @{user.userName}
-                           </Typography>
+                                                       <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
+                              {getUserDisplayName(user)}
+                            </Typography>
+                            <Typography sx={{ fontSize: '12px', color: '#6b7280' }}>
+                              @{getUserUsername(user)}
+                            </Typography>
                          </Box>
                        </Box>
                        <Button
@@ -1861,7 +1881,7 @@ const UserProfile = () => {
                                },
                              }}
                            >
-                             Скасувати
+                             Cancel
                            </Button>
                            <Button
                              type="submit"

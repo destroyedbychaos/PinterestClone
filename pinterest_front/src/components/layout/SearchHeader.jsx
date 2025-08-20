@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import "./DiscoverHeader.css";
 import { useDispatch } from "react-redux";
-import { logout } from "../../../store/slices/AuthSlice";
 import { useNavigate } from "react-router-dom";
-import CenterFocusWeakIcon from '@mui/icons-material/CenterFocusWeak';
+import { logout } from "../../../store/slices/AuthSlice";
 
 const SearchHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch, title }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -110,7 +109,11 @@ const SearchHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, search
                 </div>
                 <div className="profile-dropdown-menu__accounts">Your accounts</div>
                 <button className="profile-dropdown-menu__btn" onClick={() => { setShowMenu(false); navigate('/register'); }}>Add account</button>
-                <button className="profile-dropdown-menu__btn profile-dropdown-menu__btn--logout" onClick={() => { dispatch(logout()); setShowMenu(false); window.location.reload(); }}>Log out</button>
+                                 <button className="profile-dropdown-menu__btn profile-dropdown-menu__btn--logout" onClick={() => { 
+                   dispatch(logout()); 
+                   setShowMenu(false); 
+                   window.location.reload(); 
+                 }}>Log out</button>
               </div>
             )}
           </div>

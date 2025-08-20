@@ -35,7 +35,7 @@ const RegisterForm = () => {
             localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {
-            console.error('Помилка реєстрації:', err);
+            console.error('Registration error:', err);
         }
     };
 

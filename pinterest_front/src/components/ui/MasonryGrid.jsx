@@ -2,7 +2,7 @@ import React from "react";
 import PinCard from "./PinCard";
 import "./MasonryGrid.css";
 
-const MasonryGrid = ({ pins, onPinHidden, limitedMenu, hideSaveButton }) => {
+const MasonryGrid = ({ pins, onPinHidden, limitedMenu, hideSaveButton, disableUnsave }) => {
   const heights = [267, 412];
   return (
     <div className="masonry-grid">
@@ -19,6 +19,7 @@ const MasonryGrid = ({ pins, onPinHidden, limitedMenu, hideSaveButton }) => {
           onPinHidden={onPinHidden}
           limitedMenu={limitedMenu}
           hideSaveButton={hideSaveButton}
+          disableUnsave={disableUnsave}
         />
       ))}
     </div>

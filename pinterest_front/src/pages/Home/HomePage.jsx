@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import OnboardingModal from '../../components/OnboardingModal';
@@ -8,12 +8,13 @@ import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 const API_BASE = '/api';
 
 const HomePage = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { user } = useSelector((state) => state.auth);
+  const user = useCurrentUser();
   const [tags, setTags] = useState([]);
   const [activeTag, setActiveTag] = useState('');
   const [pins, setPins] = useState([]);
@@ -36,6 +37,8 @@ const HomePage = () => {
       localStorage.removeItem('isNewUser');
     }
   }, []);
+
+
 
   useEffect(() => {
     setLoading(true);
@@ -172,14 +175,14 @@ const HomePage = () => {
                   e.target.style.borderColor = '#ddd';
                 }}
               >
-                ✕ Очистити результати пошуку
+                ✕ Clear search results
               </button>
             </div>
           )}
 
           {(loading || imageSearchLoading) ? (
             <div style={{ textAlign: 'center', marginTop: 40 }}>
-              {imageSearchLoading ? 'Пошук схожих зображень...' : 'Завантаження...'}
+                              {imageSearchLoading ? 'Searching for similar images...' : 'Loading...'}
             </div>
           ) : (
             <MasonryGrid

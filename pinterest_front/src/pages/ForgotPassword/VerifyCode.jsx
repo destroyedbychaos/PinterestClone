@@ -98,7 +98,7 @@ const VerifyCode = () => {
                   })
       
     } catch (err) {
-      setError('Помилка з\'єднання. Перевірте ваше інтернет-з\'єднання.')
+      setError('Connection error. Please check your internet connection.')
     } finally {
       setLoading(false)
     }
@@ -129,7 +129,7 @@ const VerifyCode = () => {
     
       
     } catch (err) {
-      setError('Помилка з\'єднання. Перевірте ваше інтернет-з\'єднання.')
+      setError('Connection error. Please check your internet connection.')
     } finally {
       setResendLoading(false)
     }
