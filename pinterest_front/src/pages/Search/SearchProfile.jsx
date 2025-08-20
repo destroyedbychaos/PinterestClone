@@ -291,10 +291,8 @@ const SearchProfile = () => {
                         sx={{ width: 56, height: 56 }} 
                       />
                                              <Box>
-                                                 <Typography sx={{ fontWeight: 600, fontSize: 18 }}>{profile.userName}</Typography>
-                        <Typography sx={{ color: "gray", fontSize: 14, mt: 0.5 }} noWrap>
-                          {profile.bio || "Looking for inspiration..."}
-                        </Typography>
+                        <Typography sx={{ fontWeight: 600, fontSize: 18 }}>{profile.displayName}</Typography>
+                        <Typography sx={{ color: "gray", fontSize: 15 }}>@{profile.userName}</Typography>
                        </Box>
                     </Box>
 
