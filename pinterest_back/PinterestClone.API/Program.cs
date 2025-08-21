@@ -38,6 +38,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using PinterestClone.BLL.MappingProfiles;
 using PinterestClone.BLL.Services.UserService;
+using PinterestClone.BLL.Services.FileBlobService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,6 +154,7 @@ builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IFileService, FileService>();
 
 //automapper
  
