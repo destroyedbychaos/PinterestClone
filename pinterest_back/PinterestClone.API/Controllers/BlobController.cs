@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Emgu.CV;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.FileBlobService;
 
 namespace PinterestClone.API.Controllers
@@ -25,7 +27,17 @@ namespace PinterestClone.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(IFormFile file)
         {
-            var result = await _fileService.UploadAsync(file);
+            if (file == null)
+            {
+                return BadRequest("Invalid request.");
+            }
+
+            BlobResponseDto result = await _fileService.UploadAsync(file);
+
+            if (result.Error == true)
+            {
+                return BadRequest(result.Status);
+            }
 
             return Ok(result);
         }
@@ -34,7 +46,17 @@ namespace PinterestClone.API.Controllers
         [Route("filename")]
         public async Task<IActionResult> Download(string filename)
         {
-            var result = await _fileService.DownloadAsync(filename);
+            if (filename == null)
+            {
+                return BadRequest("Invalid request.");
+            }
+
+            BlobDto result = await _fileService.DownloadAsync(filename);
+
+            if (result == null)
+            {
+                return BadRequest("Error downloading file. File does not exist.");
+            }
 
             return File(result.Content, result.ContentType, result.Name);
         }
@@ -43,9 +65,19 @@ namespace PinterestClone.API.Controllers
         [Route("filename")]
         public async Task<IActionResult> Delete(string filename)
         {
-            var result = _fileService.DeleteAsync(filename);
+            if (filename == null)
+            {
+                return BadRequest("Invalid request.");
+            }
 
-            return Ok(result);
+            BlobResponseDto result = await _fileService.DeleteAsync(filename);
+
+            if (result.Error == true)
+            {
+                return BadRequest(result.Status);
+            }
+
+            return Ok(result.Status);
         }
     }
 }

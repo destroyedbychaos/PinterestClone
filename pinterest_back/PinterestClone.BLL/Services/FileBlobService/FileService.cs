@@ -1,29 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
-using Azure;
-using Azure.Storage;
 using Azure.Storage.Blobs;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using PinterestClone.BLL.DTOs;
 
 namespace PinterestClone.BLL.Services.FileBlobService
 {
     public class FileService : IFileService
     {
-        private readonly string _storageAccount = "pinterstclone2025";
-        private readonly string _key = "KeyHere";
         private readonly BlobContainerClient _filesContainer;
 
-        public FileService()
+        public FileService(IConfiguration configuration)
         {
-            var credential = new StorageSharedKeyCredential(_storageAccount, _key);
-            var blobUrl = $"https://{_storageAccount}.blob.core.windows.net";
-            var blobServiceClient = new BlobServiceClient(new Uri(blobUrl), credential);
+            string connectionString = configuration.GetConnectionString("AzureStorage");
+            var blobServiceClient = new BlobServiceClient(connectionString);
             _filesContainer = blobServiceClient.GetBlobContainerClient("files");
+
+            _filesContainer.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.None);
         }
 
         public async Task<List<BlobDto?>> GetAllBlobsAsync()
@@ -52,9 +48,19 @@ namespace PinterestClone.BLL.Services.FileBlobService
             BlobResponseDto response = new BlobResponseDto();
             BlobClient client = _filesContainer.GetBlobClient(blob.FileName);
 
+            if (await client.ExistsAsync())
+            {
+                response.Status = $"File {blob.FileName} already exists.";
+                response.Error = true;
+                response.Blob.Uri = client.Uri.AbsoluteUri;
+                response.Blob.Name = client.Name;
+
+                return response;
+            }
+
             await using (Stream? data = blob.OpenReadStream())
             {
-                await client.UploadAsync(data);
+                await client.UploadAsync(data, overwrite: true);
             }
 
             response.Status = $"File {blob.FileName} uploaded successfully.";
@@ -72,14 +78,9 @@ namespace PinterestClone.BLL.Services.FileBlobService
             if (await file.ExistsAsync())
             {
                 var data = await file.OpenReadAsync();
-                Stream blobContent = data;
-
                 var content = await file.DownloadContentAsync();
 
-                string name = blobFilename;
-                string contentType = content.Value.Details.ContentType;
-
-                return new BlobDto { Content = blobContent, Name = name, ContentType = contentType };
+                return new BlobDto { Content = data, Name = blobFilename, ContentType = content.Value.Details.ContentType };
             }
 
             return null;
@@ -89,9 +90,14 @@ namespace PinterestClone.BLL.Services.FileBlobService
         {
             BlobClient file = _filesContainer.GetBlobClient(blobFilename);
 
-            await file.DeleteAsync();
+            if (await file.ExistsAsync())
+            {
+                await file.DeleteIfExistsAsync();
 
-            return new BlobResponseDto { Error = false, Status = $"File {blobFilename} has been successfully deleted." };
+                return new BlobResponseDto { Error = false, Status = $"File {blobFilename} has been successfully deleted." };
+            }
+
+            return new BlobResponseDto { Error = true, Status = $"File {blobFilename} does not exist." };
         }
     }
 }
