@@ -13,6 +13,8 @@ const settingsApi = {
           'Content-Type': 'application/json'
         }
       });
+      console.log('Raw response from getCurrentSettings:', response.data);
+      console.log('Gender from API response:', response.data.gender);
       return response.data;
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -24,12 +26,14 @@ const settingsApi = {
     try {
       const token = localStorage.getItem('token');
       console.log('Sending settings data:', settingsData);
+      console.log('Gender in settingsData:', settingsData.gender);
       const response = await axios.put(`${API_BASE_URL}/profile/settings`, settingsData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+      console.log('Response from updateSettings:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error updating settings:', error);

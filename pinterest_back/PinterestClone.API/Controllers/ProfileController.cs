@@ -101,6 +101,9 @@ namespace PinterestClone.API.Controllers
                     return Unauthorized("User not found");
 
                 Console.WriteLine($"User BirthDate from database: {user.BirthDate}");
+                Console.WriteLine($"User Gender from database: {user.Gender}");
+                Console.WriteLine($"User Gender type: {user.Gender?.GetType()}");
+                Console.WriteLine($"User Gender is null: {user.Gender == null}");
                 
                 var userPasswords = new Dictionary<string, string>();
                 
@@ -116,8 +119,12 @@ namespace PinterestClone.API.Controllers
                     country = user.Country,
                     language = user.Language,
                     isProfilePublic = user.IsProfilePublic,
+                    isSearchPrivate = user.IsSearchPrivate,
                     password = "•••••••••" 
                 };
+
+                Console.WriteLine($"Returning settings object: {System.Text.Json.JsonSerializer.Serialize(settings)}");
+                Console.WriteLine($"Returning gender: {settings.gender}");
 
                 return Ok(settings);
             }
@@ -133,11 +140,16 @@ namespace PinterestClone.API.Controllers
         {
             try
             {
+                Console.WriteLine($"UpdateSettings called with model: {System.Text.Json.JsonSerializer.Serialize(model)}");
+                Console.WriteLine($"Model Gender: {model.Gender}");
+                
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                     return Unauthorized("User not found");
+                
+                Console.WriteLine($"Current user Gender before update: {user.Gender}");
 
                 if (!string.IsNullOrWhiteSpace(model.Email) && model.Email != user.Email)
                 {
@@ -173,17 +185,26 @@ namespace PinterestClone.API.Controllers
                     user.BirthDate = model.BirthDate.Value;
                 }
                 if (model.Gender is not null)
+                {
+                    Console.WriteLine($"Updating Gender from '{user.Gender}' to '{model.Gender}'");
                     user.Gender = model.Gender;
+                    Console.WriteLine($"User Gender after update: {user.Gender}");
+                }
                 if (model.Country is not null)
                     user.Country = model.Country;
                 if (model.Language is not null)
                     user.Language = model.Language;
                 if (model.IsProfilePublic is not null)
                     user.IsProfilePublic = model.IsProfilePublic.Value;
+                if (model.IsSearchPrivate is not null)
+                    user.IsSearchPrivate = model.IsSearchPrivate.Value;
 
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                     return BadRequest(updateResult.Errors);
+
+                Console.WriteLine($"User Gender after database update: {user.Gender}");
+                Console.WriteLine($"Update result succeeded: {updateResult.Succeeded}");
 
                 return Ok(new { message = "Settings updated successfully." });
             }

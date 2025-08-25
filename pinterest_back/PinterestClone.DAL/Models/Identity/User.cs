@@ -23,6 +23,7 @@ namespace PinterestClone.DAL.Models.Identity
         public string? Language { get; set; }
 
         public bool IsProfilePublic { get; set; } = true;
+        public bool IsSearchPrivate { get; set; } = false;
 
         public new string? PhoneNumber { get; set; }
         public bool IsPhoneNumberVerified { get; set; } = false;

@@ -31,5 +31,6 @@ namespace PinterestClone.DAL.ViewModels
         public string? Language { get; set; }
 
         public bool? IsProfilePublic { get; set; }
+        public bool? IsSearchPrivate { get; set; }
     }
 }

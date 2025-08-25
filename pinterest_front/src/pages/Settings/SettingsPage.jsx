@@ -60,7 +60,23 @@ const SettingsPage = () => {
     gender: 'Female',
     country: 'Ukraine (Україна)',
     language: 'English (UK)',
-    isProfilePublic: true
+    isProfilePublic: true,
+    isSearchPrivate: false
+  });
+  
+  const [originalData, setOriginalData] = useState({
+    email: '',
+    phoneNumber: '',
+    password: '•••••••••',
+    displayName: '',
+    userName: '',
+    bio: '',
+    birthDate: '',
+    gender: 'Female',
+    country: 'Ukraine (Україна)',
+    language: 'English (UK)',
+    isProfilePublic: true,
+    isSearchPrivate: false
   });
 
 
@@ -96,12 +112,32 @@ const SettingsPage = () => {
           console.log('Formatted birthDate:', formattedBirthDate);
         }
         
-        setFormData(prev => ({
-          ...prev,
-          ...settings,
+        console.log('Received settings from server:', settings);
+        console.log('gender from server:', settings.gender);
+        console.log('isProfilePublic from server:', settings.isProfilePublic);
+        console.log('isSearchPrivate from server:', settings.isSearchPrivate);
+        
+        const newData = {
+          email: settings.email || '',
+          phoneNumber: settings.phoneNumber || '',
+          displayName: settings.displayName || '',
+          userName: settings.userName || '',
+          bio: settings.bio || '',
           birthDate: formattedBirthDate,
+          gender: settings.gender !== undefined && settings.gender !== null ? settings.gender : 'Female',
+          country: settings.country !== undefined && settings.country !== null ? settings.country : 'Ukraine (Україна)',
+          language: settings.language !== undefined && settings.language !== null ? settings.language : 'English (UK)',
+          isProfilePublic: settings.isProfilePublic !== undefined ? settings.isProfilePublic : true,
+          isSearchPrivate: settings.isSearchPrivate !== undefined ? settings.isSearchPrivate : false,
           password: settings.password || '•••••••••' 
-        }));
+        };
+        
+        console.log('Setting formData from server settings:', newData);
+        console.log('Gender in new formData:', newData.gender);
+        console.log('Setting originalData to:', newData);
+        
+        setFormData(newData);
+        setOriginalData(newData);
       } catch (error) {
         console.error('Error fetching settings:', error);
    
@@ -112,20 +148,31 @@ const SettingsPage = () => {
             formattedBirthDate = date.toISOString().split('T')[0];
           }
           
-          setFormData(prev => ({
-            ...prev,
+          console.log('Using fallback user data:', user);
+          console.log('gender from user:', user.gender);
+          console.log('isProfilePublic from user:', user.isProfilePublic);
+          console.log('isSearchPrivate from user:', user.isSearchPrivate);
+          
+          const newData = {
             email: user.email || '',
             phoneNumber: user.phoneNumber || '',
             displayName: user.displayName || '',
             userName: user.userName || '',
             bio: user.bio || '',
             birthDate: formattedBirthDate,
-            gender: user.gender || 'Female',
-            country: user.country || 'Ukraine (Україна)',
-            language: user.language || 'English (UK)',
+            gender: user.gender !== undefined && user.gender !== null ? user.gender : 'Female',
+            country: user.country !== undefined && user.country !== null ? user.country : 'Ukraine (Україна)',
+            language: user.language !== undefined && user.language !== null ? user.language : 'English (UK)',
             isProfilePublic: user.isProfilePublic !== undefined ? user.isProfilePublic : true,
+            isSearchPrivate: user.isSearchPrivate !== undefined ? user.isSearchPrivate : false,
             password: 'TestPassword123!'
-          }));
+          };
+          console.log('Setting formData from fallback user data:', newData);
+          console.log('Gender in fallback formData:', newData.gender);
+          console.log('Setting originalData to (fallback):', newData);
+          
+          setFormData(newData);
+          setOriginalData(newData);
         }
       }
     };
@@ -208,24 +255,40 @@ const SettingsPage = () => {
  
   const handleInputChange = (field, value) => {
     console.log(`Field ${field} changed to:`, value);
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    console.log(`Previous formData:`, formData);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      console.log(`New formData after ${field} change:`, newData);
+      return newData;
+    });
 
     clearTimeout(window.saveTimeout);
     window.saveTimeout = setTimeout(async () => {
       try {
         setIsSaving(true);
+        
+        // Use the current value that was just changed
+        const currentFormData = {
+          ...formData,
+          [field]: value
+        };
+        
+        console.log('Current formData with updated field:', currentFormData);
+        console.log('Updated field value:', currentFormData[field]);
+        
         const settingsData = {
-          email: formData.email || null,
-          phoneNumber: formData.phoneNumber || null,
-          bio: formData.bio || null,
-          birthDate: formData.birthDate ? new Date(formData.birthDate).toISOString() : null,
-          gender: formData.gender || null,
-          country: formData.country || null,
-          language: formData.language || null,
-          isProfilePublic: formData.isProfilePublic !== undefined ? formData.isProfilePublic : true
+          email: currentFormData.email || null,
+          phoneNumber: currentFormData.phoneNumber || null,
+          bio: currentFormData.bio || null,
+          birthDate: currentFormData.birthDate ? new Date(currentFormData.birthDate).toISOString() : null,
+          gender: currentFormData.gender !== undefined && currentFormData.gender !== '' ? currentFormData.gender : null,
+          country: currentFormData.country !== undefined && currentFormData.country !== '' ? currentFormData.country : null,
+          language: currentFormData.language !== undefined && currentFormData.language !== '' ? currentFormData.language : null,
+          isProfilePublic: currentFormData.isProfilePublic !== undefined ? currentFormData.isProfilePublic : true,
+          isSearchPrivate: currentFormData.isSearchPrivate !== undefined ? currentFormData.isSearchPrivate : false
         };
         
         console.log('Original birthDate:', formData.birthDate);
@@ -234,21 +297,36 @@ const SettingsPage = () => {
         const changedData = {};
         Object.keys(settingsData).forEach(key => {
           const currentValue = settingsData[key];
-          const userValue = user[key];
+          const originalValue = originalData[key];
           
-          console.log(`Comparing ${key}:`, { currentValue, userValue });
+          console.log(`Comparing ${key}:`, { currentValue, originalValue });
           
-          if (currentValue !== userValue && 
-              !(currentValue === '' && (userValue === null || userValue === undefined || userValue === '')) &&
-              !(userValue === '' && (currentValue === null || currentValue === undefined))) {
+          if (currentValue !== originalValue && 
+              !(currentValue === '' && (originalValue === null || originalValue === undefined || originalValue === '')) &&
+              !(originalValue === '' && (currentValue === null || currentValue === undefined))) {
             changedData[key] = currentValue;
             console.log(`Field ${key} marked as changed`);
           }
         });
+        
+        console.log('Final settingsData:', settingsData);
+        console.log('Gender in settingsData:', settingsData.gender);
+        console.log('Original data:', originalData);
+        console.log('Changed data:', changedData);
 
         if (Object.keys(changedData).length > 0) {
           await settingsApi.updateSettings(changedData);
           console.log('Settings auto-saved:', changedData);
+          
+          // Update originalData with the new values
+          setOriginalData(prev => {
+            const newOriginalData = {
+              ...prev,
+              ...changedData
+            };
+            console.log('Updated originalData:', newOriginalData);
+            return newOriginalData;
+          });
           
           dispatch(updateUser(changedData));
         }
@@ -328,6 +406,44 @@ const SettingsPage = () => {
     navigate('/login');
   };
 
+  const handleToggleChange = (field, value) => {
+    console.log(`Toggle ${field} changed to:`, value);
+    console.log('Current formData before change:', formData);
+    
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      console.log('New formData after change:', newData);
+      return newData;
+    });
+
+    clearTimeout(window.saveTimeout);
+    window.saveTimeout = setTimeout(async () => {
+      try {
+        setIsSaving(true);
+        const settingsData = {
+          [field]: value
+        };
+        
+        console.log('Saving toggle settings to server:', settingsData);
+        const response = await settingsApi.updateSettings(settingsData);
+        console.log('Server response:', response);
+        console.log('Toggle auto-saved successfully:', settingsData);
+        
+        dispatch(updateUser(settingsData));
+      } catch (error) {
+        console.error('Error auto-saving toggle:', error);
+        if (error.response) {
+          console.error('Server error response:', error.response.data);
+        }
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1000);
+  };
+
   return (
     <Box className="settings-container" sx={{ position: 'relative' }}>
       <SideMenu />
@@ -396,14 +512,7 @@ const SettingsPage = () => {
           Settings
         </Typography>
 
-        <Box className="settings-section-header">
-          <Typography className="settings-section-title">
-            Account management
-          </Typography>
-          <Typography className="settings-section-subtitle">
-            Make changes to your personal information.
-          </Typography>
-        </Box>
+
 
         <Box className="settings-tabs-container">
           {tabs.map((tab) => (
@@ -525,6 +634,7 @@ const SettingsPage = () => {
                         onChange={(e) => handleInputChange('gender', e.target.value)}
                         row
                       >
+                        {console.log('RadioGroup gender value:', formData.gender || 'Female')}
                         <FormControlLabel value="Female" control={<Radio />} label="Female" />
                         <FormControlLabel value="Male" control={<Radio />} label="Male" />
                         <FormControlLabel value="Other" control={<Radio />} label="Other" />
@@ -623,6 +733,193 @@ const SettingsPage = () => {
                   </Box>
                 </CardContent>
               </Card>
+            </Box>
+          ) : activeTab === 'Profile visibility' ? (
+            <Box className="settings-cards-container">
+              <Box sx={{ 
+                flexDirection: 'column', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center', 
+                gap: 3, 
+                display: 'inline-flex',
+                mb: 6
+              }}>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  color: '#000D17', 
+                  fontSize: 38, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '700', 
+                  wordWrap: 'break-word'
+                }}>
+                  Profile visibility
+                </Box>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  color: '#52697C', 
+                  fontSize: 21, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '400', 
+                  wordWrap: 'break-word'
+                }}>
+                  Control who can see your profile both on and outside of Aestify.
+                </Box>
+              </Box>
+              
+              <Box sx={{ 
+                justifyContent: 'flex-start', 
+                alignItems: 'flex-start', 
+                gap: 3, 
+                display: 'inline-flex'
+              }}>
+                <Box sx={{ 
+                  width: 557, 
+                  alignSelf: 'stretch', 
+                  padding: 5, 
+                  borderRadius: 5, 
+                  outline: '1px #B4C6EB solid', 
+                  outlineOffset: '-1px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 5, 
+                  display: 'inline-flex'
+                }}>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    display: 'inline-flex'
+                  }}>
+                    <Box sx={{ 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Private profile
+                    </Box>
+                    <Box 
+                      onClick={() => handleToggleChange('isProfilePublic', !formData.isProfilePublic)}
+                      sx={{ 
+                        width: 64, 
+                        height: 32, 
+                        paddingLeft: 0.5, 
+                        paddingRight: 0.5, 
+                        background: formData.isProfilePublic ? '#D7E0F4' : '#6F91D9', 
+                        borderRadius: 100, 
+                        justifyContent: formData.isProfilePublic ? 'flex-start' : 'flex-end', 
+                        alignItems: 'center', 
+                        display: 'flex',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Box sx={{ 
+                        width: 24, 
+                        height: 24, 
+                        background: 'white', 
+                        boxShadow: '1px 2px 2.299999952316284px rgba(1, 35, 63, 0.25)', 
+                        borderRadius: 9999 
+                      }} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    gap: 2, 
+                    display: 'flex'
+                  }}>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      color: '#000D17', 
+                      fontSize: 21, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '400', 
+                      wordWrap: 'break-word'
+                    }}>
+                      If you set your profile to private, only people you approve will be able to view your profile, Aests, boards, followers, and following lists.
+                    </Box>
+                  </Box>
+                </Box>
+                
+                <Box sx={{ 
+                  width: 557, 
+                  alignSelf: 'stretch', 
+                  padding: 5, 
+                  borderRadius: 5, 
+                  outline: '1px #B4C6EB solid', 
+                  outlineOffset: '-1px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 5, 
+                  display: 'inline-flex'
+                }}>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    display: 'inline-flex'
+                  }}>
+                    <Box sx={{ 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Search privacy
+                    </Box>
+                    <Box 
+                      onClick={() => handleToggleChange('isSearchPrivate', !formData.isSearchPrivate)}
+                      sx={{ 
+                        width: 64, 
+                        height: 32, 
+                        paddingLeft: 0.5, 
+                        paddingRight: 0.5, 
+                        background: formData.isSearchPrivate ? '#6F91D9' : '#D7E0F4', 
+                        borderRadius: 100, 
+                        justifyContent: formData.isSearchPrivate ? 'flex-end' : 'flex-start', 
+                        alignItems: 'center', 
+                        display: 'flex',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Box sx={{ 
+                        width: 24, 
+                        height: 24, 
+                        background: 'white', 
+                        boxShadow: '1px 2px 2.299999952316284px rgba(1, 35, 63, 0.25)', 
+                        borderRadius: 9999 
+                      }} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    gap: 2, 
+                    display: 'flex'
+                  }}>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      color: '#000D17', 
+                      fontSize: 21, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '400', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Keep your profile and boards hidden from search engines (e.g. Google).
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
             </Box>
           ) : (
             <Box className="settings-coming-soon">
