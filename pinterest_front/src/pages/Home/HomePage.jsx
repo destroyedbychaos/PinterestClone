@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -9,12 +9,15 @@ import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import settingsApi from '../../services/settingsApi';
+import { updateUser } from '../../../store/slices/AuthSlice';
 
 const API_BASE = '/api';
 
 const HomePage = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const user = useCurrentUser();
+  const dispatch = useDispatch();
   const [tags, setTags] = useState([]);
   const [activeTag, setActiveTag] = useState('');
   const [pins, setPins] = useState([]);
@@ -209,7 +212,31 @@ const HomePage = () => {
       <OnboardingModal
         open={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={async (userData) => {
+          try {
+
+            const settingsData = {
+              displayName: userData.name,
+              userName: userData.username,
+              gender: userData.gender === 'female' ? 'Female' : userData.gender === 'male' ? 'Male' : 'Other',
+              country: userData.country === 'ukraine' ? 'Ukraine (Україна)' : 
+                      userData.country === 'usa' ? 'United States' : 
+                      userData.country === 'uk' ? 'United Kingdom' : 'Ukraine (Україна)',
+              language: userData.language === 'english' ? 'English (UK)' : 
+                       userData.language === 'ukrainian' ? 'Ukrainian' : 'English (UK)'
+            };
+            
+            await settingsApi.updateSettings(settingsData);
+            
+            dispatch(updateUser(settingsData));
+            
+            console.log('Onboarding data saved:', userData);
+          } catch (error) {
+            console.error('Error saving onboarding data:', error);
+          }
+          
+          setShowOnboarding(false);
+        }}
       />
 
       <SearchModal
