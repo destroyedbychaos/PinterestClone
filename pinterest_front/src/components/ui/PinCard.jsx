@@ -7,7 +7,7 @@ import NotificationToast from "./NotificationToast";
 import SaveToProfileModal from "./SaveToProfileModal";
 import { savePin as persistSavePin, unsavePin as persistUnsavePin, isPinSaved } from "../../utils/savedPinsStorage";
 
-const PinCard = ({ image, title, description, author, tags, height, pinId, onPinHidden, limitedMenu = false, hideSaveButton = false, disableUnsave = false }) => {
+const PinCard = ({ image, title, description, author, tags, height, pinId, onPinHidden, limitedMenu = false, hideSaveButton = false, disableUnsave = false, onPinClick }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showReportModal, setShowReportModal] = useState(false);
@@ -236,6 +236,20 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
     setShowReportModal(true);
   };
 
+  const handlePinClick = () => {
+    if (onPinClick) {
+      onPinClick({
+        id: pinId,
+        imageUrl: image,
+        title,
+        description,
+        author,
+        tags,
+        likes: 245 
+      });
+    }
+  };
+
   const handleReportSubmit = async (pinId, reportMessage) => {
     try {
       const token = localStorage.getItem('token');
@@ -315,6 +329,8 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
         src={image}
         alt={title}
         className="img"
+        onClick={handlePinClick}
+        style={{ cursor: 'pointer' }}
         onError={e => { e.target.style.background = '#eee'; e.target.src = ''; }}
       />
       
@@ -476,6 +492,7 @@ PinCard.propTypes = {
   limitedMenu: PropTypes.bool,
   hideSaveButton: PropTypes.bool,
   disableUnsave: PropTypes.bool,
+  onPinClick: PropTypes.func,
 };
 
 export default PinCard;

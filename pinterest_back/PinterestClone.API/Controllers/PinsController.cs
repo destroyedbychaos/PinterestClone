@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.ImageService;
@@ -405,6 +406,77 @@ namespace PinterestClone.API.Controllers
                 Console.WriteLine($"Error in SearchByImage: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return BadRequest($"Error searching by image: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/likes")]
+        public async Task<ActionResult<object>> GetPinLikes(string pinId)
+        {
+            try
+            {
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+                var userId = GetCurrentUserId();
+                var isLiked = false;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    isLiked = await _db.Likes.AnyAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+                }
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin likes: {ex.Message}");
+            }
+        }
+
+        [HttpPost("{pinId}/like")]
+        [Authorize]
+        public async Task<ActionResult<object>> TogglePinLike(string pinId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var existingLike = await _db.Likes.FirstOrDefaultAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+
+                if (existingLike != null)
+                {
+                    _db.Likes.Remove(existingLike);
+                }
+                else
+                {
+                    var like = new PinterestClone.DAL.Models.Like
+                    {
+                        Id = Guid.NewGuid(),
+                        PinId = Guid.Parse(pinId),
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.Likes.Add(like);
+                }
+
+                await _db.SaveChangesAsync();
+
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+                var isLiked = existingLike == null; 
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error toggling pin like: {ex.Message}");
             }
         }
     }
