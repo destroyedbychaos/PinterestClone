@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5228/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5228/api';
 
 const createAxiosInstance = () => {
   const token = localStorage.getItem('token');

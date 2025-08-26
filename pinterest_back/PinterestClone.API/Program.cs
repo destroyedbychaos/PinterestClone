@@ -21,6 +21,7 @@ using PinterestClone.BLL.Services.PasswordResetService;
 using PinterestClone.BLL.Services.HiddenPinService;
 using PinterestClone.BLL.Services.ImageAnalysisService;
 using PinterestClone.BLL.Services.ImageSearchService;
+using PinterestClone.BLL.Services.PinViewHistoryService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.BoardRepository;
@@ -32,6 +33,7 @@ using PinterestClone.DAL.Repositories.ProfileReportRepository;
 using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
+using PinterestClone.DAL.Repositories.PinViewHistoryRepository;
 using System.Text;
 using System;
 using System.Reflection;
@@ -156,6 +158,8 @@ builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPinViewHistoryRepository, PinViewHistoryRepository>();
+builder.Services.AddScoped<IPinViewHistoryService, PinViewHistoryService>();
 
 //automapper
  
@@ -165,6 +169,7 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
     cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
     cfg.AddMaps(typeof(UserMappingProfile).Assembly);
+    cfg.AddMaps(typeof(PinViewHistoryMappingProfile).Assembly);
 });
 
 var app = builder.Build();

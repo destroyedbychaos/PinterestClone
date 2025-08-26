@@ -6,6 +6,7 @@ import ReportModal from "./ReportModal";
 import NotificationToast from "./NotificationToast";
 import SaveToProfileModal from "./SaveToProfileModal";
 import { savePin as persistSavePin, unsavePin as persistUnsavePin, isPinSaved } from "../../utils/savedPinsStorage";
+import historyApiService from "../../services/historyApi";
 
 const PinCard = ({ image, title, description, author, tags, height, pinId, onPinHidden, limitedMenu = false, hideSaveButton = false, disableUnsave = false, onPinClick }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -237,8 +238,9 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
   };
 
   const handlePinClick = () => {
+    console.log('🖱️ PinCard клік - pinId:', pinId);
     if (onPinClick) {
-      onPinClick({
+      const pinData = {
         id: pinId,
         imageUrl: image,
         title,
@@ -246,7 +248,9 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
         author,
         tags,
         likes: 245 
-      });
+      };
+      console.log('📤 Передаю дані піна:', pinData);
+      onPinClick(pinData);
     }
   };
 
