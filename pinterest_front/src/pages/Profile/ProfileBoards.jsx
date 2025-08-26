@@ -21,7 +21,7 @@ const defaultAvatarSvg = (
   </svg>
 );
 
-const API_BASE = "/api";
+const API_BASE = "http://localhost:7050/api";
 
 const ProfileBoards = () => {
   const authState = useSelector((state) => state.auth);
@@ -61,7 +61,7 @@ const ProfileBoards = () => {
   const refreshProfile = async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/Profile/me`, {
+      const res = await fetch(`${API_BASE}/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
