@@ -108,6 +108,7 @@ const HomePage = () => {
   const handleSignup = () => navigate('/register');
 
   const handlePinClick = (pin) => {
+    console.log('🖱️ Клік на пін:', pin);
     setSelectedPin(pin);
     setShowPinViewModal(true);
   };
@@ -227,6 +228,7 @@ const HomePage = () => {
         pin={selectedPin}
         isOpen={showPinViewModal}
         onClose={handlePinViewClose}
+        source="home"
         onLike={(pinId, isLiked) => {
           console.log('Pin liked:', pinId, isLiked);
         }}

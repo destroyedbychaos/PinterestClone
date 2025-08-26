@@ -20,6 +20,7 @@ import UserProfile from "../pages/Profile/UserProfile.jsx";
 import SettingsPage from "../pages/Settings/SettingsPage.jsx";
 import AccountDeactivation from "../pages/Settings/AccountDeactivation.jsx";
 import AccountDeletion from "../pages/Settings/AccountDeletion.jsx";
+import HistoryPage from "../pages/History/HistoryPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 
 
@@ -101,6 +102,14 @@ const BasicRoute = () => {
                 </ProtectedRoute>
             }>
                 <Route index element={<AccountDeletion/>} />
+            </Route>
+            
+            <Route path="/history" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
+                <Route index element={<HistoryPage/>} />
             </Route>
         </Routes>
     );

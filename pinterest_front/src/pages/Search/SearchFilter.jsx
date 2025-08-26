@@ -227,6 +227,7 @@ const SearchFilter = () => {
         pin={selectedPin}
         isOpen={showPinViewModal}
         onClose={handlePinViewClose}
+        source="search"
         onLike={(pinId, isLiked) => {
           console.log('Pin liked:', pinId, isLiked);
         }}

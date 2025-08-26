@@ -27,6 +27,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<HiddenPin> HiddenPins { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
+        public DbSet<PinViewHistory> PinViewHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -229,6 +230,27 @@ namespace PinterestClone.DAL.Data
             builder.Entity<UserBlock>()
                 .HasIndex(ub => new { ub.BlockerId, ub.BlockedUserId })
                 .IsUnique();
+
+            builder.Entity<PinViewHistory>()
+                .HasOne(pvh => pvh.Pin)
+                .WithMany()
+                .HasForeignKey(pvh => pvh.PinId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinViewHistory>()
+                .HasOne(pvh => pvh.User)
+                .WithMany()
+                .HasForeignKey(pvh => pvh.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PinViewHistory>()
+                .HasIndex(pvh => new { pvh.UserId, pvh.ViewedAt });
+
+            builder.Entity<PinViewHistory>()
+                .HasIndex(pvh => pvh.PinId);
+
+            builder.Entity<PinViewHistory>()
+                .HasIndex(pvh => pvh.ViewedAt);
         }
     }
 } 

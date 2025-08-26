@@ -6,9 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import SideMenu from './layout/SideMenu';
 import SearchHeader from './layout/SearchHeader';
 import { commentsApi, pinsApi } from '../services/commentsApi';
+import historyApiService from '../services/historyApi';
 import './PinViewModal.css';
 
-const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave }) => {
+const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source = 'home' }) => {
   const [comment, setComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
@@ -20,11 +21,43 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('🔍 PinViewModal useEffect - pin:', pin);
     if (pin?.id) {
+      console.log('✅ Pin має ID:', pin.id);
       fetchComments();
       fetchPinLikes();
+
+      addPinToHistory();
+    } else {
+      console.log('❌ Pin не має ID або pin не передано');
     }
   }, [pin?.id]);
+
+  const addPinToHistory = async () => {
+    if (pin?.id && source !== 'history') {
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('⚠️ Користувач не авторизований, історія не зберігається');
+        return;
+      }
+      
+      try {
+        console.log('🔄 Додаю пін в історію:', pin.id, 'source:', source);
+        const result = await historyApiService.addPinView(pin.id, source, null, true);
+        
+        if (result.message === "Pin already in history, skipping") {
+          console.log('⏭️ Пін вже є в історії, пропускаємо');
+        } else {
+          console.log('✅ Пін додано в історію:', result);
+        }
+      } catch (error) {
+        console.error('❌ Помилка додавання піна в історію:', error);
+      }
+    } else {
+      console.log('⏭️ Пін не додається в історію (source === history або немає pin.id)');
+    }
+  };
 
   const fetchComments = async () => {
     try {
