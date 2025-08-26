@@ -13,6 +13,7 @@ export const theme = createTheme({
             primary: '#000D17',
         },
         blue: {
+            900: '#28344E',
             500: '#01233F',
             200: '#B4C6EB',
             50: '#D7E0F4',
@@ -20,5 +21,6 @@ export const theme = createTheme({
         dark: {
             200: '#7B8D9B',
             300: '#52697C',
+            500:'#01233F',
         }
     }})
