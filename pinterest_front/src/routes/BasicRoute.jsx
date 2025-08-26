@@ -17,7 +17,7 @@ import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 import SearchFilter from "../pages/Search/SearchFilter.jsx";
 import SearchProfile from "../pages/Search/SearchProfile.jsx";
 import UserProfile from "../pages/Profile/UserProfile.jsx";
-import Notifications from "../pages/Notifications/Notifications.jsx";
+import CreateAest from "../pages/CreateAest/CreateAest.jsx";
 
 
 
@@ -73,8 +73,10 @@ const BasicRoute = () => {
             <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
             </Route>
-            <Route path="/notifications" element={<Layout />}>
-                <Route index element={<Notifications/>} />
+
+
+            <Route path="/create-aest" element={<Layout />}>
+                <Route index element={<CreateAest/>} />
             </Route>
 
             <Route path="/user/:username" element={<LayoutWithoutFooter />}>

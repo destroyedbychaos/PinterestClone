@@ -14,7 +14,7 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
         const path = location.pathname;
         if (path === '/') {
             setActiveIcon('home');
-        } else if (path === '/add') {
+        } else if (path === '/create-aest') {
             setActiveIcon('add');
         } else if (path === '/notifications') {
             setActiveIcon('notifications');
@@ -135,7 +135,7 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                                     />
                                 </Link>
                                 <Link 
-                                    to="/add"
+                                    to="/create-aest"
                                     className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
                                     style={{
                                         backgroundColor: activeIcon === 'add' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'

@@ -32,6 +32,12 @@ import {
     SelectedVibesGrid,
     SelectedVibeCard
 } from '../components/ui/StyledComponents/OnBoardComponents.jsx';
+import { 
+    useUpdateProfileMutation,
+  } from "../../store/ProfileApi/ProfileApi.js";
+
+import { useDispatch, useSelector } from "react-redux";
+import { setProfile } from "../../store/slices/profileSlice";
 
 
 const OnboardingModal = ({ open = true, onClose = () => {}, onComplete = () => {} }) => {
@@ -44,33 +50,44 @@ const OnboardingModal = ({ open = true, onClose = () => {}, onComplete = () => {
     const [language, setLanguage] = useState('english');
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [selectedVibes, setSelectedVibes] = useState([]);
-
+    const [updateProfile] = useUpdateProfileMutation();
+    const dispatch = useDispatch();
     const handleContinue = () => {
-        if (step === 1) {
-            setStep(2);
-        } else if (step === 2) {
-            setStep(3);
-        } else if (step === 3) {
-            setStep(4);
-        } else if (step === 4) {
-            setStep(5);
-        } else if (step === 5) {
-            setStep(6);
-        } else if (step === 6) {
-            setStep(7);
-        } else if (step === 7) {
-            onComplete({ 
-                name, 
-                username, 
-                gender, 
-                country, 
-                language, 
-                interests: selectedInterests,
-                vibes: selectedVibes 
-            });
-            onClose();
+        if (step === 6) {
+          handleFinish();
+        } else {
+          setStep(step + 1);
         }
-    };
+      };
+      
+
+      const handleFinish = async () => {
+      
+        const mainPayload = {
+          displayName: name,
+          userName: username,
+          gender,
+          country,
+          language,
+          interests: selectedInterests,
+          vibes: selectedVibes,
+        };
+      
+      
+        try {
+          const result = await updateProfile(mainPayload).unwrap();
+          console.log("Profile update success:", result);
+      
+          dispatch(setProfile(result));
+      
+          setStep(7);
+        } catch (err) {
+          console.error("Main profile update failed:", err);
+          alert(`Update failed: ${err.data?.message || err.message || 'Unknown error'}`);
+        }
+      };
+      
+
 
     const handleInterestToggle = (interestId) => {
         setSelectedInterests(prev => {
@@ -96,7 +113,7 @@ const OnboardingModal = ({ open = true, onClose = () => {}, onComplete = () => {
         }
     };
 
-    const isStep2Valid = name.trim() && username.trim();
+    const isStep2Valid = name.trim().length >= 3 && username.trim().length >= 3;
     const isStep3Valid = gender;
     const isStep4Valid = country && language;
     const isStep5Valid = selectedInterests.length > 0;

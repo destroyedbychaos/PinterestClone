@@ -348,17 +348,48 @@ namespace PinterestClone.API.Controllers
         }
 
         [HttpGet("recommendations")]
+        [Authorize]
         public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
         {
             try
             {
-                var recommendedPins = await _pinService.GetRecommendedPinsAsync();
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
                 return Ok(recommendedPins);
             }
             catch (Exception ex)
             {
                 return BadRequest($"Error loading recommendations: {ex.Message}");
             }
+        }
+
+        [HttpGet("recommendations/{userId}")]
+        [AllowAnonymous] // ����� �������� [Authorize], ���� ����� ����� ��� ����������
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendationsForUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest("UserId is required");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations for user {userId}: {ex.Message}");
+            }
+        }
+
+
+        [HttpGet("search-suggestions")]
+        public async Task<IActionResult> GetSearchSuggestions([FromQuery] string q)
+        {
+            var suggestions = await _pinService.GetSearchSuggestionsAsync(q);
+            return Ok(suggestions);
         }
 
         [HttpPost("search-by-image")]

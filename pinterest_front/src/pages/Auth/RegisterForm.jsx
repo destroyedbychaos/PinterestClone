@@ -29,7 +29,7 @@ const RegisterForm = () => {
 
             dispatch(setCredentials({
                 user: { email: email },
-                accessToken: response.accessToken
+                accessToken: response.payload.accessToken
             }));
 
             localStorage.setItem('userPassword', password);
