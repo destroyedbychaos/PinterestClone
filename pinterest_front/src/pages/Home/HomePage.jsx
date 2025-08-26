@@ -9,6 +9,7 @@ import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
+import PinViewModal from '../../components/PinViewModal';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import settingsApi from '../../services/settingsApi';
 import { updateUser } from '../../../store/slices/AuthSlice';
@@ -30,6 +31,8 @@ const HomePage = () => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
+  const [showPinViewModal, setShowPinViewModal] = useState(false);
+  const [selectedPin, setSelectedPin] = useState(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -114,6 +117,16 @@ const HomePage = () => {
     const handleSignup = () => {
         navigate('/register');
     };
+
+  const handlePinClick = (pin) => {
+    setSelectedPin(pin);
+    setShowPinViewModal(true);
+  };
+
+  const handlePinViewClose = () => {
+    setShowPinViewModal(false);
+    setSelectedPin(null);
+  };
 
   const handlePinHidden = (pinId) => {
     setHiddenPinIds((prev) => [...prev, pinId]);
@@ -209,10 +222,27 @@ const HomePage = () => {
                 };
               })}
               onPinHidden={handlePinHidden}
+              onPinClick={handlePinClick}
             />
           )}
         </Box>
       </Box>
+
+      <PinViewModal
+        pin={selectedPin}
+        isOpen={showPinViewModal}
+        onClose={handlePinViewClose}
+        onLike={(pinId, isLiked) => {
+          console.log('Pin liked:', pinId, isLiked);
+        }}
+        onComment={(pinId, comment) => {
+          console.log('Comment added:', pinId, comment);
+
+        }}
+        onSave={(pinId) => {
+          console.log('Pin saved:', pinId);
+        }}
+      />
 
       <OnboardingModal
         open={showOnboarding}

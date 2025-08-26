@@ -1,0 +1,528 @@
+.pin-view-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  display: flex;
+  z-index: 9999;
+}
+
+.pin-view-modal-content {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: white;
+  overflow: hidden;
+  display: flex;
+}
+
+.pin-view-main-content {
+  flex: 1;
+  position: relative;
+  background: white;
+  overflow: hidden;
+  margin-left: 144px;
+}
+
+.pin-view-content-container {
+  position: absolute;
+  top: 120px; 
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  padding: 0 40px 40px 40px;
+}
+
+.pin-view-main {
+  display: flex;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.pin-view-image-container {
+  width: 848px;
+  padding: 24px;
+  background: white;
+  border-radius: 40px;
+  outline: 1px #B4C6EB solid;
+  outline-offset: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-view-image-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+.pin-view-image {
+  width: 379.49px;
+  height: 642px;
+  border-radius: 40px;
+  object-fit: cover;
+}
+
+.fullscreen-button {
+  position: absolute !important;
+  left: 299px;
+  top: 560px;
+  height: 58px !important;
+  padding: 16px !important;
+  background: rgba(228, 234, 248, 0.60) !important;
+  border-radius: 100px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: auto !important;
+}
+
+.fullscreen-button:hover {
+  background: rgba(228, 234, 248, 0.80) !important;
+}
+
+.pin-view-info {
+  width: 848px;
+  height: 690px;
+  padding: 24px 40px;
+  border-radius: 40px;
+  outline: 1px #B4C6EB solid;
+  outline-offset: -1px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pin-info-header {
+  width: 100%;
+  max-width: 768px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pin-title {
+  color: var(--Dark-900, #000D17) !important;
+  font-family: Geologica, sans-serif !important;
+  font-size: 38px !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  line-height: normal !important;
+  word-wrap: break-word !important;
+}
+
+.pin-description {
+  color: var(--Dark-900, #000D17) !important;
+  font-family: Geologica, sans-serif !important;
+  font-size: 21px !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  line-height: normal !important;
+  word-wrap: break-word !important;
+}
+
+.pin-tags {
+  color: #52697C;
+  font-size: 16px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.pin-actions {
+  width: 100%;
+  max-width: 768px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pin-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.like-button {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: transparent !important;
+  color: #01233F !important;
+  text-transform: none !important;
+  padding: 0 !important;
+  min-width: auto !important;
+}
+
+.like-button:hover {
+  background: transparent !important;
+}
+
+.liked-icon {
+  color: #E62C2F !important;
+}
+
+.like-count {
+  color: #01233F;
+  font-size: 21px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.share-button {
+  width: 32px !important;
+  height: 32px !important;
+  color: #01233F !important;
+}
+
+.more-button {
+  width: 38px !important;
+  height: 38px !important;
+  padding: 10px !important;
+  color: #01233F !important;
+}
+
+.save-button {
+  height: 48px !important;
+  max-width: 240px !important;
+  padding: 8px 24px !important;
+  background: #6F91D9 !important;
+  border-radius: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-transform: none !important;
+  min-width: auto !important;
+}
+
+.save-button:hover {
+  background: #5A7BC7 !important;
+}
+
+.save-text {
+  color: white;
+  font-size: 21px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.save-arrow {
+  width: 24px;
+  height: 24px;
+  position: relative;
+}
+
+.save-arrow::after {
+  content: '';
+  position: absolute;
+  width: 7.75px;
+  height: 13.98px;
+  left: 8.50px;
+  top: 5.02px;
+  background: white;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.pin-divider {
+  width: 100%;
+  max-width: 768px;
+  height: 0;
+  outline: 1px #D7E0F4 solid;
+  outline-offset: -0.50px;
+}
+
+.comments-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.comment-reply-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-left: 64px;
+}
+
+.comment-avatar {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 9999px;
+}
+
+.comment-reply-item .comment-avatar {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.comment-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.comment-author {
+  flex: 1;
+  color: #000D17;
+  font-size: 21px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 600;
+  word-wrap: break-word;
+}
+
+.comment-reply-item .comment-author {
+  font-size: 16px;
+}
+
+.comment-date {
+  color: #52697C;
+  font-size: 16px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.comment-text-container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.comment-text {
+  flex: 1;
+  color: #000D17;
+  font-size: 21px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.comment-reply-item .comment-text {
+  font-size: 16px;
+}
+
+.comment-more {
+  width: 33px !important;
+  padding: 10px !important;
+  border-radius: 40px !important;
+  color: #52697C !important;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.comment-like {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: transparent !important;
+  color: #52697C !important;
+  text-transform: none !important;
+  padding: 0 !important;
+  min-width: auto !important;
+}
+
+.comment-like:hover {
+  background: transparent !important;
+}
+
+.comment-liked-icon {
+  color: #E62C2F !important;
+}
+
+.comment-like-count {
+  color: #52697C;
+  font-size: 16px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.comment-liked-icon + .comment-like-count {
+  color: #E62C2F;
+}
+
+.comment-reply {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: transparent !important;
+  color: #52697C !important;
+  text-transform: none !important;
+  padding: 0 !important;
+  min-width: auto !important;
+}
+
+.comment-reply:hover {
+  background: transparent !important;
+}
+
+.reply-text {
+  color: #52697C;
+  font-size: 16px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  word-wrap: break-word;
+}
+
+.comment-input-section {
+  width: 100%;
+  max-width: 768px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.comment-input {
+  flex: 1;
+  max-width: 768px;
+}
+
+.comment-input .MuiOutlinedInput-root {
+  background: rgba(215, 224, 244, 0.50);
+  border-radius: 100px;
+  padding: 16px 24px;
+}
+
+.comment-input .MuiOutlinedInput-input {
+  color: #7B8D9B;
+  font-size: 21px;
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+}
+
+.comment-input .MuiOutlinedInput-input::placeholder {
+  color: #7B8D9B;
+  opacity: 1;
+}
+
+.send-button {
+  height: 58px !important;
+  padding: 16px !important;
+  background: #E4EAF8 !important;
+  border-radius: 100px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 16px !important;
+  color: #000D17 !important;
+  min-width: auto !important;
+}
+
+.send-button:hover {
+  background: #D1D8E8 !important;
+}
+
+.related-pins-gallery {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.gallery-column {
+  width: 267px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gallery-image {
+  width: 267px;
+  height: auto;
+  border-radius: 40px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.gallery-image:hover {
+  transform: scale(1.02);
+}
+
+@media (max-width: 1800px) {
+  .pin-view-main {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .pin-view-image-container,
+  .pin-view-info {
+    width: 100%;
+    max-width: 848px;
+  }
+  
+  .related-pins-gallery {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1200px) {
+  .related-pins-gallery {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .pin-view-main-content {
+    margin-left: 120px;
+  }
+  
+  .related-pins-gallery {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .gallery-column {
+    width: 200px;
+  }
+  
+  .gallery-image {
+    width: 200px;
+  }
+}
