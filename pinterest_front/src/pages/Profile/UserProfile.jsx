@@ -92,6 +92,29 @@ const UserProfile = () => {
     }
   }, [userProfile, activeTab, isProfileAccessible]);
 
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (username && isProfileAccessible) {
+        loadUserProfile();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && username && isProfileAccessible) {
+        loadUserProfile();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [username, isProfileAccessible]);
+
   
   useEffect(() => {
     const onProfileUpdate = () => {
@@ -111,6 +134,7 @@ const UserProfile = () => {
       
       if (response.ok) {
         const data = await response.json();
+        
         setUserProfile(data);
         setIsFollowing(data.isFollowing || false);
         setFollowersCount(data.followersCount || 0);
@@ -216,9 +240,13 @@ const UserProfile = () => {
       if (response.ok) {
         setIsFollowing(!isFollowing);
         setFollowersCount(prev => isFollowing ? prev - 1 : prev + 1);
+        
         toast.success(isFollowing ? 'Відписано від користувача' : 'Підписано на користувача');
         
-
+        setTimeout(() => {
+          loadUserProfile();
+        }, 100);
+        
         window.dispatchEvent(new CustomEvent('profileUpdated'));
       } else {
         toast.error('Error subscribing');
@@ -706,6 +734,7 @@ const UserProfile = () => {
                      <Box component="span" sx={{ fontWeight: 600 }}>
                        {followingCount} following
                      </Box>
+
                    </Box>
                  )}
                </Box>
