@@ -26,6 +26,7 @@ historyApi.interceptors.request.use(
   }
 );
 
+
 const historyApiService = {
   addPinView: async (pinId, source = 'unknown', viewDuration = null, isCompleteView = false) => {
     try {

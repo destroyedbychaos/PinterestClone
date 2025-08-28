@@ -23,6 +23,9 @@ namespace PinterestClone.BLL.Services.PinService
         Task<PinListDto?> SearchPinsAsync(string searchTerm, bool searchInTitle = true, bool searchInDescription = true, bool exactMatch = false, int pageNumber = 1, int pageSize = 20);
         Task<PinListDto?> SearchPinsByImageAsync(string imageHash, int pageNumber = 1, int pageSize = 20);
         Task<PinListDto?> FindSimilarImagesAsync(IFormFile imageFile, string? searchArea = null, string? selectionCoords = null);
+        Task<PinListDto?> GetSimilarPinsByTagsAsync(string pinId, int pageNumber = 1, int pageSize = 20);
+        Task<PinListDto?> GetSimilarPinsByImageAsync(string pinId, int pageNumber = 1, int pageSize = 20);
+        Task<PinListDto?> GetPinRecommendationsAsync(string pinId, int pageNumber = 1, int pageSize = 20);
 
     }
 }

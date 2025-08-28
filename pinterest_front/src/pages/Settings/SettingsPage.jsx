@@ -23,10 +23,39 @@ import {
 import { KeyboardArrowDown, Visibility, VisibilityOff, CalendarToday } from '@mui/icons-material';
 import SideMenu from '../../components/layout/SideMenu';
 import settingsApi from '../../services/settingsApi';
+import followingApi from '../../services/followingApi';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { logout, updateUser } from '../../../store/slices/AuthSlice';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { interestCategories } from '../../components/data/interestCategories.js';
+
+
+const getUserAvatar = (user) => {
+  console.log('getUserAvatar called with user:', user);
+  
+  if (!user) {
+    console.log('User is null/undefined, using default');
+    return '/assets/images/noImgUser.png';
+  }
+  
+  if (user?.avatarUrl) {
+    console.log('Using avatarUrl:', user.avatarUrl);
+    return user.avatarUrl;
+  }
+  
+
+  console.log('Using local default avatar');
+  return '/assets/images/noImgUser.png';
+};
+import {
+  StyledDialog,
+  InterestCard,
+  ImageContainer,
+  CardImage,
+  ContinueButton
+} from '../../components/ui/StyledComponents/OnBoardComponents.jsx';
+
 import './SettingsPage.css';
 import '../../components/layout/DiscoverHeader.css';
 
@@ -49,9 +78,30 @@ const SettingsPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showInterestsModal, setShowInterestsModal] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState([]);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [followingUsers, setFollowingUsers] = useState([]);
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+
+  const [boardToggles, setBoardToggles] = useState({
+    'Architecture': false,
+    'Beautiful photoshoots': true,
+    'Mobile wallpapers': true,
+    'Recipes': true,
+    'Beautiful flowers': true,
+    'Japan': true,
+    'Sunsets': true,
+    'Nature': true,
+    'Travel': false,
+    'Food': true,
+    'Art': true,
+    'Design': true
+  });
+
   const [formData, setFormData] = useState({
     email: '',
-    phoneNumber: '',
     password: '•••••••••',
     displayName: '',
     userName: '',
@@ -66,7 +116,6 @@ const SettingsPage = () => {
   
   const [originalData, setOriginalData] = useState({
     email: '',
-    phoneNumber: '',
     password: '•••••••••',
     displayName: '',
     userName: '',
@@ -78,6 +127,70 @@ const SettingsPage = () => {
     isProfilePublic: true,
     isSearchPrivate: false
   });
+
+ 
+  const handleBoardToggle = (boardName) => {
+    setBoardToggles(prev => ({
+      ...prev,
+      [boardName]: !prev[boardName]
+    }));
+  };
+
+
+  const loadFollowingUsers = async () => {
+    try {
+      setIsLoadingFollowing(true);
+      console.log('Current user:', user);
+      console.log('User username:', user?.userName);
+      
+      if (!user?.userName) {
+        console.error('User not found or username is missing');
+        setFollowingUsers([]);
+        return;
+      }
+      
+      console.log('Loading following users for username:', user.userName);
+      const followingData = await followingApi.getMyFollowing(user.userName);
+      console.log('Following data received:', followingData);
+      
+
+      if (Array.isArray(followingData)) {
+        console.log('Following users structure:', followingData.map(u => ({
+          id: u.id,
+          userName: u.userName,
+          displayName: u.displayName,
+          email: u.email,
+          avatarUrl: u.avatarUrl
+        })));
+      }
+      
+      setFollowingUsers(followingData);
+    } catch (error) {
+      console.error('Error loading following users:', error);
+
+      setFollowingUsers([]);
+    } finally {
+      setIsLoadingFollowing(false);
+    }
+  };
+
+  const handleUnfollow = async (userId) => {
+    try {
+      await followingApi.unfollowUser(userId);
+
+      await loadFollowingUsers();
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+    }
+  };
+
+  const handleUserClick = (user) => {
+    if (user?.userName) {
+      navigate(`/user/${user.userName}`);
+      setShowFollowingModal(false);
+    }
+  };
+
 
 
   const savePasswordToStorage = (password) => {
@@ -119,7 +232,7 @@ const SettingsPage = () => {
         
         const newData = {
           email: settings.email || '',
-          phoneNumber: settings.phoneNumber || '',
+
           displayName: settings.displayName || '',
           userName: settings.userName || '',
           bio: settings.bio || '',
@@ -138,6 +251,8 @@ const SettingsPage = () => {
         
         setFormData(newData);
         setOriginalData(newData);
+        
+
       } catch (error) {
         console.error('Error fetching settings:', error);
    
@@ -155,7 +270,7 @@ const SettingsPage = () => {
           
           const newData = {
             email: user.email || '',
-            phoneNumber: user.phoneNumber || '',
+  
             displayName: user.displayName || '',
             userName: user.userName || '',
             bio: user.bio || '',
@@ -173,6 +288,8 @@ const SettingsPage = () => {
           
           setFormData(newData);
           setOriginalData(newData);
+          
+
         }
       }
     };
@@ -232,7 +349,7 @@ const SettingsPage = () => {
     try {
       const settingsData = {
         email: formData.email || null,
-        phoneNumber: formData.phoneNumber || null,
+
         bio: formData.bio || null,
         birthDate: formData.birthDate ? new Date(formData.birthDate).toISOString() : null,
         gender: formData.gender || null,
@@ -256,6 +373,9 @@ const SettingsPage = () => {
   const handleInputChange = (field, value) => {
     console.log(`Field ${field} changed to:`, value);
     console.log(`Previous formData:`, formData);
+    
+
+    
     setFormData(prev => {
       const newData = {
         ...prev,
@@ -269,8 +389,7 @@ const SettingsPage = () => {
     window.saveTimeout = setTimeout(async () => {
       try {
         setIsSaving(true);
-        
-        // Use the current value that was just changed
+
         const currentFormData = {
           ...formData,
           [field]: value
@@ -281,7 +400,7 @@ const SettingsPage = () => {
         
         const settingsData = {
           email: currentFormData.email || null,
-          phoneNumber: currentFormData.phoneNumber || null,
+
           bio: currentFormData.bio || null,
           birthDate: currentFormData.birthDate ? new Date(currentFormData.birthDate).toISOString() : null,
           gender: currentFormData.gender !== undefined && currentFormData.gender !== '' ? currentFormData.gender : null,
@@ -318,7 +437,7 @@ const SettingsPage = () => {
           await settingsApi.updateSettings(changedData);
           console.log('Settings auto-saved:', changedData);
           
-          // Update originalData with the new values
+
           setOriginalData(prev => {
             const newOriginalData = {
               ...prev,
@@ -341,6 +460,8 @@ const SettingsPage = () => {
   const handleChangePassword = () => {
     setShowChangePasswordModal(true);
   };
+
+
 
   const handleChangePasswordSubmit = async () => {
     try {
@@ -458,8 +579,7 @@ const SettingsPage = () => {
             position: "absolute", 
             top: "20px", 
             right: "40px", 
-            cursor: "pointer",
-            zIndex: 1001
+            cursor: "pointer"
           }}
         >
           {user?.avatarUrl ? (
@@ -552,18 +672,7 @@ const SettingsPage = () => {
                       />
                     </Box>
 
-                    <Box className="settings-field-group">
-                      <Typography className="settings-field-label">
-                        Phone number
-                      </Typography>
-                      <TextField
-                        className="settings-input"
-                        value={formData.phoneNumber || ''}
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                        placeholder="Enter your phone number"
-                        fullWidth
-                      />
-                    </Box>
+
 
                     <Box className="settings-field-group">
                       <Typography className="settings-field-label">
@@ -916,6 +1025,809 @@ const SettingsPage = () => {
                       wordWrap: 'break-word'
                     }}>
                       Keep your profile and boards hidden from search engines (e.g. Google).
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          ) : activeTab === 'Set up your home feed' ? (
+            <Box className="settings-cards-container">
+              <Box sx={{ 
+                flexDirection: 'column', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center', 
+                gap: 3, 
+                display: 'inline-flex',
+                mb: 6
+              }}>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  color: '#000D17', 
+                  fontSize: 38, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '700', 
+                  wordWrap: 'break-word'
+                }}>
+                  Set up your home feed
+                </Box>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  color: '#52697C', 
+                  fontSize: 21, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '400', 
+                  wordWrap: 'break-word'
+                }}>
+                  Make Aestify feel more like you. Update the info we use to suggest ideas. <br/>Don't worry — no one else will see it.
+                </Box>
+              </Box>
+              
+              <Box sx={{ 
+                justifyContent: 'flex-start', 
+                alignItems: 'flex-start', 
+                gap: 3, 
+                display: 'inline-flex',
+                mb: 6
+              }}>
+                <Box sx={{ 
+                  width: 557, 
+                  alignSelf: 'stretch', 
+                  padding: 5, 
+                  borderRadius: 5, 
+                  outline: '1px #B4C6EB solid', 
+                  outlineOffset: '-1px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 5, 
+                  display: 'inline-flex'
+                }}>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    color: '#000D17', 
+                    fontSize: 28, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '600', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Interests
+                  </Box>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    color: '#000D17', 
+                    fontSize: 21, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '400', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Add interests to discover more related ideas. Remove them to stop seeing ideas you don't care about.
+                  </Box>
+                  <Button 
+                    onClick={() => setShowInterestsModal(true)}
+                    sx={{ 
+                      alignSelf: 'stretch', 
+                      paddingLeft: 3, 
+                      paddingRight: 3, 
+                      paddingTop: 2, 
+                      paddingBottom: 2, 
+                      background: '#D7E0F4', 
+                      borderRadius: '100px', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      gap: 2, 
+                      display: 'inline-flex',
+                      textTransform: 'none',
+                      color: '#000D17',
+                      fontSize: 21,
+                      fontFamily: 'Geologica',
+                      fontWeight: '400',
+                      '&:hover': {
+                        background: '#CBD7F1'
+                      }
+                    }}
+                  >
+                    Change interests
+                  </Button>
+                </Box>
+                
+                <Box sx={{ 
+                  width: 557, 
+                  height: 519, 
+                  paddingTop: 5, 
+                  paddingBottom: 5, 
+                  paddingLeft: 5, 
+                  paddingRight: 5, 
+                  borderRadius: 5, 
+                  outline: '1px #B4C6EB solid', 
+                  outlineOffset: '-1px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 5, 
+                  display: 'inline-flex',
+                  overflow: 'hidden'
+                }}>
+                  <Box sx={{ 
+                    width: '100%', 
+                    maxWidth: 477, 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    display: 'inline-flex'
+                  }}>
+                    <Box sx={{ 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Boards
+                    </Box>
+                    <Box sx={{ 
+                      width: 32, 
+                      height: 32, 
+                      position: 'relative'
+                    }}>
+                      <Box sx={{ 
+                        width: 24, 
+                        height: 24, 
+                        left: 4, 
+                        top: 4, 
+                        position: 'absolute', 
+                        background: '#01233F' 
+                      }} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ 
+                    width: '100%', 
+                    maxWidth: 477, 
+                    color: '#000D17', 
+                    fontSize: 21, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '400', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Turn off a board to stop seeing related ideas. Your board itself won't be affected.
+                  </Box>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    flex: '1 1 0', 
+                    display: 'flex',
+                    gap: 2.5,
+                    overflow: 'hidden'
+                  }}>
+                    <Box sx={{ 
+                      flex: 1,
+                      height: 320,
+                      overflowY: 'auto',
+                      overflowX: 'hidden',
+                      '&::-webkit-scrollbar': {
+                        width: '17px'
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: '#F1F1F1',
+                        borderRadius: '8px'
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#C1C1C1',
+                        borderRadius: '8px',
+                        '&:hover': {
+                          background: '#A0A0A0'
+                        }
+                      },
+                      '&::-webkit-scrollbar-button': {
+                        display: 'none'
+                      }
+                    }}>
+                      <Box sx={{ 
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        paddingRight: 2
+                      }}>
+                        {/* Board items */}
+                        {[
+                          { name: 'Architecture', count: '1 Aest', isPrivate: true },
+                          { name: 'Beautiful photoshoots', count: '5 Aests', isPrivate: true },
+                          { name: 'Mobile wallpapers', count: '3,5k Aests', isPrivate: false },
+                          { name: 'Recipes', count: '495 Aests', isPrivate: false },
+                          { name: 'Beautiful flowers', count: '1,5k Aests', isPrivate: false },
+                          { name: 'Japan', count: '345 Aests', isPrivate: false },
+                          { name: 'Sunsets', count: '1,2k Aests', isPrivate: false },
+                          { name: 'Nature', count: '2,1k Aests', isPrivate: false },
+                          { name: 'Travel', count: '890 Aests', isPrivate: false },
+                          { name: 'Food', count: '1,7k Aests', isPrivate: false },
+                          { name: 'Art', count: '456 Aests', isPrivate: false },
+                          { name: 'Design', count: '3,2k Aests', isPrivate: false }
+                        ].map((board, index) => (
+                          <Box key={index} sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            minHeight: 80
+                          }}>
+                            <Box sx={{ 
+                              flex: 1,
+                              height: 80, 
+                              paddingLeft: 1, 
+                              paddingRight: 1, 
+                              background: 'white', 
+                              borderRadius: 2.5, 
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 3
+                            }}>
+                              <Box sx={{ 
+                                width: 64, 
+                                height: 64, 
+                                borderRadius: 2.5,
+                                background: '#f0f0f0',
+                                flexShrink: 0
+                              }} />
+                              <Box sx={{ 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                gap: 1,
+                                minWidth: 0
+                              }}>
+                                <Box sx={{ 
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1
+                                }}>
+                                  {board.isPrivate && (
+                                    <Box sx={{ 
+                                      width: 16, 
+                                      height: 16, 
+                                      position: 'relative',
+                                      flexShrink: 0
+                                    }}>
+                                      <Box sx={{ 
+                                        width: 12, 
+                                        height: 14, 
+                                        left: 2, 
+                                        top: 0.67, 
+                                        position: 'absolute', 
+                                        background: '#01233F' 
+                                      }} />
+                                    </Box>
+                                  )}
+                                  <Box sx={{ 
+                                    color: '#000D17', 
+                                    fontSize: 21, 
+                                    fontFamily: 'Geologica', 
+                                    fontWeight: '600', 
+                                    wordWrap: 'break-word',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {board.name}
+                                  </Box>
+                                </Box>
+                                <Box sx={{ 
+                                  color: '#52697C', 
+                                  fontSize: 16, 
+                                  fontFamily: 'Geologica', 
+                                  fontWeight: '400', 
+                                  wordWrap: 'break-word'
+                                }}>
+                                  {board.count}
+                                </Box>
+                              </Box>
+                            </Box>
+                            <Box 
+                              onClick={() => handleBoardToggle(board.name)}
+                              sx={{ 
+                                width: 64, 
+                                height: 32, 
+                                paddingLeft: 0.5, 
+                                paddingRight: 0.5, 
+                                background: boardToggles[board.name] ? '#6F91D9' : '#D7E0F4', 
+                                borderRadius: 100, 
+                                justifyContent: boardToggles[board.name] ? 'flex-end' : 'flex-start', 
+                                alignItems: 'center', 
+                                display: 'flex',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                flexShrink: 0,
+                                '&:hover': {
+                                  background: boardToggles[board.name] ? '#5A7BC7' : '#C7D0E4'
+                                }
+                              }}
+                            >
+                              <Box sx={{ 
+                                width: 24, 
+                                height: 24, 
+                                background: 'white', 
+                                boxShadow: '1px 2px 2.299999952316284px rgba(1, 35, 63, 0.25)', 
+                                borderRadius: 9999 
+                              }} />
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+                
+                <Box sx={{ 
+                  width: 557, 
+                  alignSelf: 'stretch', 
+                  padding: 5, 
+                  borderRadius: 5, 
+                  outline: '1px #B4C6EB solid', 
+                  outlineOffset: '-1px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 5, 
+                  display: 'inline-flex'
+                }}>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    color: '#000D17', 
+                    fontSize: 28, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '600', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Following
+                  </Box>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    color: '#000D17', 
+                    fontSize: 21, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '400', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Stop seeing Pins from a person or brand by unfollowing. They won't be notified.
+                  </Box>
+                  <Button 
+                    onClick={() => {
+                      console.log('Button clicked, current user:', user);
+                      if (!user?.userName) {
+                        console.error('User not found or username is missing');
+                        return;
+                      }
+                      console.log('Opening following modal for user:', user.userName);
+                      setShowFollowingModal(true);
+                      loadFollowingUsers();
+                    }}
+                    sx={{ 
+                      alignSelf: 'stretch', 
+                      paddingLeft: 3, 
+                      paddingRight: 3, 
+                      paddingTop: 2, 
+                      paddingBottom: 2, 
+                      background: '#D7E0F4', 
+                      borderRadius: '100px', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      gap: 2, 
+                      display: 'inline-flex',
+                      textTransform: 'none',
+                      color: '#000D17',
+                      fontSize: 21,
+                      fontFamily: 'Geologica',
+                      fontWeight: '400',
+                      '&:hover': {
+                        background: '#CBD7F1'
+                      }
+                    }}
+                  >
+                    Change following list
+                  </Button>
+                </Box>
+              </Box>
+              
+              <Box sx={{ 
+                width: 1720, 
+                flexDirection: 'column', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center', 
+                gap: 6, 
+                display: 'inline-flex'
+              }}>
+                <Box sx={{ 
+                  alignSelf: 'stretch', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'center', 
+                  gap: 5, 
+                  display: 'flex'
+                }}>
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    textAlign: 'center', 
+                    color: '#000D17', 
+                    fontSize: 28, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '600', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Activity
+                  </Box>
+                  <Box sx={{ 
+                    width: 476, 
+                    textAlign: 'center', 
+                    color: '#000D17', 
+                    fontSize: 21, 
+                    fontFamily: 'Geologica', 
+                    fontWeight: '400', 
+                    wordWrap: 'break-word'
+                  }}>
+                    Hide ideas related to Aests you've recently saved or viewed up close.
+                  </Box>
+                </Box>
+                
+                <Box sx={{ 
+                  alignSelf: 'stretch', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-start', 
+                  gap: 6, 
+                  display: 'flex'
+                }}>
+
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    gap: 5, 
+                    display: 'flex'
+                  }}>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Today
+                    </Box>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start', 
+                      display: 'inline-flex'
+                    }}>
+
+                      {[
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 267, selected: true },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 558, selected: true },
+                        { width: 267, height: 412, selected: false },
+                        { width: 267, height: 558, selected: true }
+                      ].map((item, index) => (
+                        <Box key={index} sx={{ 
+                          width: 267, 
+                          height: item.height, 
+                          position: 'relative'
+                        }}>
+                          <Box sx={{ 
+                            width: 267, 
+                            height: item.height, 
+                            left: 0, 
+                            top: 0, 
+                            position: 'absolute', 
+                            borderRadius: 5,
+                            background: '#f0f0f0'
+                          }} />
+                          {item.selected ? (
+                            <Box sx={{ 
+                              width: 48, 
+                              height: 48, 
+                              padding: 2, 
+                              left: 203, 
+                              top: 16, 
+                              position: 'absolute', 
+                              background: '#6F91D9', 
+                              borderRadius: 5, 
+                              justifyContent: 'center', 
+                              alignItems: 'center', 
+                              gap: 1.25, 
+                              display: 'inline-flex'
+                            }}>
+                              <Box sx={{ 
+                                width: 24, 
+                                height: 24, 
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  width: 18.51, 
+                                  height: 13, 
+                                  left: 2.74, 
+                                  top: 5.50, 
+                                  position: 'absolute', 
+                                  background: 'white' 
+                                }} />
+                              </Box>
+                            </Box>
+                          ) : (
+                            <>
+                              <Box sx={{ 
+                                width: 267, 
+                                height: item.height, 
+                                left: 0, 
+                                top: 0, 
+                                position: 'absolute', 
+                                background: 'rgba(0, 13, 23, 0.50)', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 48, 
+                                height: 48, 
+                                padding: 2, 
+                                left: 203, 
+                                top: 16, 
+                                position: 'absolute', 
+                                background: 'white', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 184, 
+                                left: 41, 
+                                top: item.height === 412 ? 180 : 114, 
+                                position: 'absolute', 
+                                textAlign: 'center', 
+                                color: 'white', 
+                                fontSize: 21, 
+                                fontFamily: 'Geologica', 
+                                fontWeight: '400', 
+                                wordWrap: 'break-word'
+                              }}>
+                                This Aest won't get suggestions
+                              </Box>
+                            </>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ 
+                    alignSelf: 'stretch', 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    gap: 5, 
+                    display: 'flex'
+                  }}>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      Yesterday
+                    </Box>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start', 
+                      display: 'inline-flex'
+                    }}>
+
+                      {[
+                        { width: 267, height: 267, selected: true },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 558, selected: true },
+                        { width: 267, height: 267, selected: true },
+                        { width: 267, height: 267, selected: false },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 267, selected: true },
+                        { width: 267, height: 558, selected: false },
+                        { width: 267, height: 412, selected: true }
+                      ].map((item, index) => (
+                        <Box key={index} sx={{ 
+                          width: 267, 
+                          height: item.height, 
+                          position: 'relative'
+                        }}>
+                          <Box sx={{ 
+                            width: 267, 
+                            height: item.height, 
+                            left: 0, 
+                            top: 0, 
+                            position: 'absolute', 
+                            borderRadius: 5,
+                            background: '#f0f0f0'
+                          }} />
+                          {item.selected ? (
+                            <Box sx={{ 
+                              width: 48, 
+                              height: 48, 
+                              padding: 2, 
+                              left: 203, 
+                              top: 16, 
+                              position: 'absolute', 
+                              background: '#6F91D9', 
+                              borderRadius: 5, 
+                              justifyContent: 'center', 
+                              alignItems: 'center', 
+                              gap: 1.25, 
+                              display: 'inline-flex'
+                            }}>
+                              <Box sx={{ 
+                                width: 24, 
+                                height: 24, 
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  width: 18.51, 
+                                  height: 13, 
+                                  left: 2.74, 
+                                  top: 5.50, 
+                                  position: 'absolute', 
+                                  background: 'white' 
+                                }} />
+                              </Box>
+                            </Box>
+                          ) : (
+                            <>
+                              <Box sx={{ 
+                                width: 267, 
+                                height: item.height, 
+                                left: 0, 
+                                top: 0, 
+                                position: 'absolute', 
+                                background: 'rgba(0, 13, 23, 0.50)', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 48, 
+                                height: 48, 
+                                padding: 2, 
+                                left: 203, 
+                                top: 16, 
+                                position: 'absolute', 
+                                background: 'white', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 184, 
+                                left: 41, 
+                                top: item.height === 267 ? 114 : item.height === 558 ? 259 : 180, 
+                                position: 'absolute', 
+                                textAlign: 'center', 
+                                color: 'white', 
+                                fontSize: 21, 
+                                fontFamily: 'Geologica', 
+                                fontWeight: '400', 
+                                wordWrap: 'break-word'
+                              }}>
+                                This Aest won't get suggestions
+                              </Box>
+                            </>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                  
+                  <Box sx={{ 
+                    width: 848, 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    gap: 5, 
+                    display: 'flex'
+                  }}>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      color: '#000D17', 
+                      fontSize: 28, 
+                      fontFamily: 'Geologica', 
+                      fontWeight: '600', 
+                      wordWrap: 'break-word'
+                    }}>
+                      August, 19
+                    </Box>
+                    <Box sx={{ 
+                      alignSelf: 'stretch', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start', 
+                      display: 'inline-flex'
+                    }}>
+
+                      {[
+                        { width: 267, height: 558, selected: true },
+                        { width: 267, height: 412, selected: true },
+                        { width: 267, height: 267, selected: false }
+                      ].map((item, index) => (
+                        <Box key={index} sx={{ 
+                          width: 267, 
+                          height: item.height, 
+                          position: 'relative'
+                        }}>
+                          <Box sx={{ 
+                            width: 267, 
+                            height: item.height, 
+                            left: 0, 
+                            top: 0, 
+                            position: 'absolute', 
+                            borderRadius: 5,
+                            background: '#f0f0f0'
+                          }} />
+                          {item.selected ? (
+                            <Box sx={{ 
+                              width: 48, 
+                              height: 48, 
+                              padding: 2, 
+                              left: 203, 
+                              top: 16, 
+                              position: 'absolute', 
+                              background: '#6F91D9', 
+                              borderRadius: 5, 
+                              justifyContent: 'center', 
+                              alignItems: 'center', 
+                              gap: 1.25, 
+                              display: 'inline-flex'
+                            }}>
+                              <Box sx={{ 
+                                width: 24, 
+                                height: 24, 
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  width: 18.51, 
+                                  height: 13, 
+                                  left: 2.74, 
+                                  top: 5.50, 
+                                  position: 'absolute', 
+                                  background: 'white' 
+                                }} />
+                              </Box>
+                            </Box>
+                          ) : (
+                            <>
+                              <Box sx={{ 
+                                width: 267, 
+                                height: item.height, 
+                                left: 0, 
+                                top: 0, 
+                                position: 'absolute', 
+                                background: 'rgba(0, 13, 23, 0.50)', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 48, 
+                                height: 48, 
+                                padding: 2, 
+                                left: 203, 
+                                top: 16, 
+                                position: 'absolute', 
+                                background: 'white', 
+                                borderRadius: 5 
+                              }} />
+                              <Box sx={{ 
+                                width: 184, 
+                                left: 41, 
+                                top: item.height === 267 ? 114 : 259, 
+                                position: 'absolute', 
+                                textAlign: 'center', 
+                                color: 'white', 
+                                fontSize: 21, 
+                                fontFamily: 'Geologica', 
+                                fontWeight: '400', 
+                                wordWrap: 'break-word'
+                              }}>
+                                This Aest won't get suggestions
+                              </Box>
+                            </>
+                          )}
+                        </Box>
+                      ))}
                     </Box>
                   </Box>
                 </Box>
@@ -1290,6 +2202,497 @@ const SettingsPage = () => {
           OK
         </Button>
       </Dialog>
+
+      <StyledDialog 
+        open={showInterestsModal} 
+        onClose={() => setShowInterestsModal(false)}
+        dialogwidth="1200px"
+      >
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px',
+          width: '100%',
+          height: '600px',
+          justifyContent: 'center'
+        }}>
+          <Box sx={{
+            display: 'flex',
+            width: '100%',
+            maxWidth: '1200px',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <Box sx={{ width: 40 }} />
+            
+            <Typography 
+              sx={{ 
+                color: '#000D17',
+                fontFamily: 'Geologica',
+                fontSize: '21px',
+                fontStyle: 'normal',
+                fontWeight: '400',
+                lineHeight: 'normal'
+              }}
+            >
+              Change interests
+            </Typography>
+            
+            <Box 
+              sx={{ 
+                width: '40px', 
+                height: '40px', 
+                position: 'relative',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }} 
+              onClick={() => setShowInterestsModal(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M9.53329 9.53367C9.76767 9.29959 10.0854 9.16811 10.4166 9.16811C10.7479 9.16811 11.0656 9.29959 11.3 9.53367L20 18.2337L28.7 9.53367C28.8527 9.36913 29.0471 9.24885 29.2625 9.18549C29.4779 9.12213 29.7064 9.11805 29.924 9.17367C30.1415 9.2293 30.34 9.34256 30.4986 9.50154C30.6572 9.66052 30.7699 9.85932 30.825 10.077C30.8805 10.2943 30.8765 10.5225 30.8134 10.7378C30.7504 10.953 30.6306 11.1473 30.4666 11.3003L21.7666 20.0003L30.4666 28.7003C30.6312 28.8531 30.7515 29.0475 30.8148 29.2629C30.8782 29.4783 30.8822 29.7068 30.8266 29.9244C30.771 30.1419 30.6577 30.3404 30.4988 30.499C30.3398 30.6575 30.141 30.7703 29.9233 30.8253C29.706 30.8809 29.4778 30.8769 29.2625 30.8138C29.0473 30.7508 28.853 30.631 28.7 30.467L20 21.767L11.3 30.467C11.063 30.6881 10.7495 30.8085 10.4256 30.8029C10.1016 30.7973 9.79242 30.6661 9.56329 30.437C9.33417 30.2079 9.20298 29.8987 9.19738 29.5747C9.19179 29.2507 9.31222 28.9373 9.53329 28.7003L18.2333 20.0003L9.53329 11.3003C9.29921 11.066 9.16772 10.7483 9.16772 10.417C9.16772 10.0858 9.29921 9.76805 9.53329 9.53367Z" fill="#000D17"/>
+              </svg>
+            </Box>
+          </Box>
+
+          <Typography 
+            sx={{ 
+              alignSelf: 'stretch',
+              color: '#000D17',
+              textAlign: 'center',
+              fontFamily: 'Geologica',
+              fontSize: '51px',
+              fontStyle: 'normal',
+              fontWeight: '700',
+              lineHeight: 'normal'
+            }}
+          >
+            Customize your feed
+          </Typography>
+
+          <Typography 
+            sx={{ 
+              alignSelf: 'stretch',
+              color: '#000D17',
+              textAlign: 'center',
+              fontFamily: 'Geologica',
+              fontSize: '21px',
+              fontStyle: 'normal',
+              fontWeight: '400',
+              lineHeight: 'normal'
+            }}
+          >
+            Select at least one of your interest.
+          </Typography>
+
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '20px',
+            justifyContent: 'center',
+            width: '100%',
+            maxWidth: '1200px',
+            maxHeight: '400px',
+            overflowY: 'auto',
+            py: 2,
+            px: 4,
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(0,0,0,0.1)',
+              borderRadius: '10px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'gray',
+              borderRadius: '10px',
+            }
+          }}>
+            {interestCategories.map((interest) => (
+              <InterestCard 
+                key={interest.id}
+                onClick={() => {
+                  const newSelected = [...selectedInterests];
+                  if (newSelected.includes(interest.id)) {
+                    const filtered = newSelected.filter(id => id !== interest.id);
+                    setSelectedInterests(filtered);
+                  } else {
+                    if (newSelected.length < 3) {
+                      setSelectedInterests([...newSelected, interest.id]);
+                    }
+                  }
+                }}
+              >
+                <ImageContainer selected={selectedInterests.includes(interest.id)}>
+                  <CardImage 
+                    src={interest.image} 
+                    alt={interest.title}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.style.background = '#6F91D9';
+                    }}
+                  />
+                </ImageContainer>
+                <Typography 
+                  sx={{ 
+                    color: '#000D17',
+                    textAlign: 'center',
+                    fontFamily: 'Geologica',
+                    fontSize: '16px',
+                    fontStyle: 'normal',
+                    fontWeight: '500',
+                    lineHeight: 'normal'
+                  }}
+                >
+                  {interest.title}
+                </Typography>
+              </InterestCard>
+            ))}
+          </Box>
+
+          <ContinueButton
+            onClick={() => {
+              if (selectedInterests.length > 0) {
+
+                console.log('Selected interests:', selectedInterests);
+                setShowInterestsModal(false);
+              }
+            }}
+            disabled={selectedInterests.length === 0}
+          >
+            Confirm
+          </ContinueButton>
+        </Box>
+      </StyledDialog>
+
+      <Dialog 
+        open={showFollowingModal} 
+        onClose={() => setShowFollowingModal(false)}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            width: '848px',
+            height: '792px',
+            maxHeight: '792px',
+            padding: '40px',
+            background: 'white',
+            boxShadow: '-1px 10px 16px 1px rgba(1, 35, 63, 0.25)',
+            borderRadius: '40px',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            gap: '40px',
+            display: 'inline-flex',
+            margin: '20px'
+          }
+        }}
+      >
+        <Box sx={{ 
+          width: '100%', 
+          maxWidth: 768, 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          display: 'inline-flex'
+        }}>
+                    <Typography sx={{ 
+            color: '#011D35', 
+            fontSize: 28, 
+            fontFamily: 'Geologica', 
+            fontWeight: '600', 
+            wordWrap: 'break-word'
+          }}>
+            Following
+          </Typography>
+          <Box 
+            sx={{ 
+              width: '40px', 
+              height: '40px', 
+              position: 'relative',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }} 
+            onClick={() => setShowFollowingModal(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path d="M9.53329 9.53367C9.76767 9.29959 10.0854 9.16811 10.4166 9.16811C10.7479 9.16811 11.0656 9.29959 11.3 9.53367L20 18.2337L28.7 9.53367C28.8527 9.36913 29.0471 9.24885 29.2625 9.18549C29.4779 9.12213 29.7064 9.11805 29.924 9.17367C30.1415 9.2293 30.34 9.34256 30.4986 9.50154C30.6572 9.66052 30.7699 9.85932 30.825 10.077C30.8805 10.2943 30.8765 10.5225 30.8134 10.7378C30.7504 10.953 30.6306 11.1473 30.4666 11.3003L21.7666 20.0003L30.4666 28.7003C30.6312 28.8531 30.7515 29.0475 30.8148 29.2629C30.8782 29.4783 30.8822 29.7068 30.8266 29.9244C30.771 30.1419 30.6577 30.3404 30.4988 30.499C30.3398 30.6575 30.141 30.7703 29.9233 30.8253C29.706 30.8809 29.4778 30.8769 29.2625 30.8138C29.0473 30.7508 28.853 30.631 28.7 30.467L20 21.767L11.3 30.467C11.063 30.6881 10.7495 30.8085 10.4256 30.8029C10.1016 30.7973 9.79242 30.6661 9.56329 30.437C9.33417 30.2079 9.20298 29.8987 9.19738 29.5747C9.19179 29.2507 9.31222 28.9373 9.53329 28.7003L18.2333 20.0003L9.53329 11.3003C9.29921 11.066 9.16772 10.7483 9.16772 10.417C9.16772 10.0858 9.29921 9.76805 9.53329 9.53367Z" fill="#000D17"/>
+            </svg>
+          </Box>
+        </Box>
+
+        <Box sx={{ 
+          width: '100%', 
+          height: 64, 
+          maxWidth: 768, 
+          paddingLeft: 3, 
+          paddingRight: 3, 
+          paddingTop: 2, 
+          paddingBottom: 2, 
+          background: '#EAEFF9', 
+          borderRadius: '100px', 
+          justifyContent: 'flex-start', 
+          alignItems: 'center', 
+          gap: 2, 
+          display: 'inline-flex'
+        }}>
+          <Box sx={{ 
+            width: 24, 
+            height: 24, 
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8.5 3C11.5376 3 14 5.46243 14 8.5C14 9.74832 13.5841 10.8998 12.8834 11.8226L17.0303 15.9697C17.3232 16.2626 17.3232 16.7374 17.0303 17.0303C16.7374 17.3232 16.2626 17.3232 15.9697 17.0303L11.8226 12.8834C10.8998 13.5841 9.74832 14 8.5 14C5.46243 14 3 11.5376 3 8.5C3 5.46243 5.46243 3 8.5 3ZM8.5 4.5C6.29086 4.5 4.5 6.29086 4.5 8.5C4.5 10.7091 6.29086 12.5 8.5 12.5C10.7091 12.5 12.5 10.7091 12.5 8.5C12.5 6.29086 10.7091 4.5 8.5 4.5Z" fill="#52697C"/>
+            </svg>
+          </Box>
+          <TextField
+            placeholder="Search people"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                background: 'transparent',
+                border: 'none',
+                '& fieldset': {
+                  border: 'none',
+                },
+                '&:hover fieldset': {
+                  border: 'none',
+                },
+                '&.Mui-focused fieldset': {
+                  border: 'none',
+                },
+              },
+              '& .MuiInputBase-input': {
+                color: '#7B8D9B',
+                fontSize: '21px',
+                fontFamily: 'Geologica',
+                fontWeight: '400',
+                '&::placeholder': {
+                  color: '#7B8D9B',
+                  opacity: 1,
+                },
+              },
+            }}
+          />
+        </Box>
+
+        <Box sx={{ 
+          alignSelf: 'stretch', 
+          flex: '1 1 0', 
+          justifyContent: 'flex-start', 
+          alignItems: 'flex-start', 
+          gap: 2.5, 
+          display: 'inline-flex',
+          overflow: 'hidden'
+        }}>
+          <Box sx={{ 
+            flex: '1 1 0', 
+            alignSelf: 'stretch', 
+            overflow: 'hidden', 
+            flexDirection: 'column', 
+            justifyContent: 'flex-start', 
+            alignItems: 'flex-start', 
+            gap: 3, 
+            display: 'inline-flex',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(0,0,0,0.1)',
+              borderRadius: '10px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'gray',
+              borderRadius: '10px',
+            }
+          }}>
+            {!user?.userName ? (
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: 200 
+              }}>
+                <Typography sx={{ 
+                  color: '#52697C', 
+                  fontSize: 16, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '400' 
+                }}>
+                  User not found. Please refresh the page.
+                </Typography>
+              </Box>
+            ) : isLoadingFollowing ? (
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: 200 
+              }}>
+                <Typography sx={{ 
+                  color: '#52697C', 
+                  fontSize: 16, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '400' 
+                }}>
+                  Loading following users...
+                </Typography>
+              </Box>
+            ) : followingUsers.length === 0 ? (
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: 200 
+              }}>
+                <Typography sx={{ 
+                  color: '#52697C', 
+                  fontSize: 16, 
+                  fontFamily: 'Geologica', 
+                  fontWeight: '400' 
+                }}>
+                  You are not following anyone yet.
+                </Typography>
+              </Box>
+            ) : (
+                               followingUsers
+                   .filter(user => 
+                     (user.displayName || user.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                     (user.userName || '').toLowerCase().includes(searchQuery.toLowerCase())
+                   )
+                   .map((user) => {
+                     console.log('Rendering user in list:', user);
+                     return (
+                  <Box key={user.id} sx={{ 
+                    alignSelf: 'stretch', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'center', 
+                    gap: 3, 
+                    display: 'inline-flex'
+                  }}>
+                                      <Box 
+                    onClick={() => handleUserClick(user)}
+                    title={`Click to view ${user.displayName || user.userName}'s profile`}
+                    sx={{ 
+                      flex: '1 1 0', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      gap: 3, 
+                      display: 'flex',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8
+                      },
+                      transition: 'opacity 0.2s ease'
+                    }}
+                  >
+                    <Avatar 
+                      src={(() => {
+                        console.log('About to call getUserAvatar with user:', user);
+                        const avatarUrl = getUserAvatar(user);
+                        console.log('getUserAvatar returned:', avatarUrl);
+                        return avatarUrl;
+                      })()}
+                      onError={(e) => {
+                        console.log('Avatar load error for user:', user);
+                        console.log('Avatar URL that failed:', e.target.src);
+
+                        e.target.src = '/assets/images/noImgUser.png';
+                      }}
+                      onLoad={(e) => {
+                        console.log('Avatar loaded successfully for user:', user);
+                        console.log('Avatar URL that loaded:', e.target.src);
+                        console.log('Avatar element:', e.target);
+                        console.log('Avatar natural width:', e.target.naturalWidth);
+                        console.log('Avatar natural height:', e.target.naturalHeight);
+
+                        e.target.style.opacity = '1';
+                      }}
+                      sx={{ 
+                        width: 56, 
+                        height: 56, 
+                        borderRadius: '9999px',
+                        border: '2px solid #EAEFF9',
+                        opacity: 1,
+                        transition: 'opacity 0.3s ease'
+                      }}
+                    />
+                    <Box sx={{ 
+                      flex: '1 1 0', 
+                      flexDirection: 'column', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'flex-start', 
+                      gap: 1, 
+                      display: 'inline-flex'
+                    }}>
+                      <Typography sx={{ 
+                        alignSelf: 'stretch', 
+                        color: '#000D17', 
+                        fontSize: 21, 
+                        fontFamily: 'Geologica', 
+                        fontWeight: '600', 
+                        wordWrap: 'break-word'
+                      }}>
+                        {user.displayName || user.userName}
+                      </Typography>
+                      <Typography sx={{ 
+                        alignSelf: 'stretch', 
+                        color: '#52697C', 
+                        fontSize: 16, 
+                        fontFamily: 'Geologica', 
+                        fontWeight: '400', 
+                        wordWrap: 'break-word'
+                      }}>
+                        @{user.userName}
+                      </Typography>
+                    </Box>
+                  </Box>
+                    <Button 
+                      onClick={() => handleUnfollow(user.id)}
+                      sx={{ 
+                        width: 160, 
+                        height: 48, 
+                        paddingLeft: 3, 
+                        paddingRight: 3, 
+                        paddingTop: 2, 
+                        paddingBottom: 2, 
+                        background: '#D7E0F4', 
+                        borderRadius: '100px', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        display: 'flex',
+                        textTransform: 'none',
+                        color: '#000D17',
+                        fontSize: 16,
+                        fontFamily: 'Geologica',
+                        fontWeight: '400',
+                        '&:hover': {
+                          background: '#C7D0E4',
+                          transform: 'scale(1.02)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Unfollow
+                    </Button>
+                     </Box>
+                   );
+                   })
+               )}
+          </Box>
+        </Box>
+      </Dialog>
+
+
     </Box>
   );
 };
