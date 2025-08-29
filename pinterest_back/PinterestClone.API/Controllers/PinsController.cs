@@ -34,16 +34,14 @@ namespace PinterestClone.API.Controllers
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User not authenticated");
-                
+
                 if (createPinDto.ImageFile == null)
-                {
-                    return BadRequest("Потрібно вказати файл зображення");
-                }
+                    return BadRequest("Image file is required");
 
-                var (_, fileName, _, _) = await _imageService.SaveImageAsync(createPinDto.ImageFile);
-                createPinDto.ImageUrl = _imageService.GetImageUrl(fileName);
+                var pin = await _pinService.CreatePinAsync(createPinDto, userId, createPinDto.ImageFile);
+                if (pin == null)
+                    return BadRequest("Failed to create pin");
 
-                var pin = await _pinService.CreatePinAsync(createPinDto, userId);
                 return Ok(pin);
             }
             catch (ArgumentException ex)
@@ -55,8 +53,6 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error creating pin: {ex.Message}");
             }
         }
-
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<PinResponseDto>> GetPin(string id)
@@ -92,9 +88,9 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        [HttpGet("user/{username}")]
+        [HttpGet("user/{userId}")]
         public async Task<ActionResult<PinListDto>> GetUserPins(
-            string username,
+            string userId,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
             [FromQuery] string? sortBy = "createdAt",
@@ -105,7 +101,7 @@ namespace PinterestClone.API.Controllers
                 if (pageSize > 100) pageSize = 100;
                 if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetUserPinsAsync(username, pageNumber, pageSize, sortBy, isAscending);
+                var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize, sortBy, isAscending);
                 
                 return Ok(pins);
             }
@@ -288,16 +284,14 @@ namespace PinterestClone.API.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeletePin(string id)
         {
-            var pin = await _db.Pins.FindAsync(Guid.Parse(id));
-            if (pin == null)
-                return NotFound();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-            if (!string.IsNullOrEmpty(pin.ImageUrl))
-            {
-                await _imageService.DeleteImageAsync(pin.ImageUrl);
-            }
-            _db.Pins.Remove(pin);
-            await _db.SaveChangesAsync();
+            var deleted = await _pinService.DeletePinAsync(id, userId);
+            if (!deleted)
+                return NotFound("Pin not found or you don't have permission to delete it");
+
             return NoContent();
         }
 

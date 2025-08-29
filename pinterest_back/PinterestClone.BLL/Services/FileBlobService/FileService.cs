@@ -15,7 +15,7 @@ namespace PinterestClone.BLL.Services.FileBlobService
 
         public FileService(IConfiguration configuration)
         {
-            string connectionString = configuration.GetConnectionString("AzureStorage");
+            string connectionString = configuration.GetConnectionString("AzureStorage")!;
             var blobServiceClient = new BlobServiceClient(connectionString);
             _filesContainer = blobServiceClient.GetBlobContainerClient("files");
 

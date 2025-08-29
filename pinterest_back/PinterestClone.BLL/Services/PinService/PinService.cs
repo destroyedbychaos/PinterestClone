@@ -11,6 +11,7 @@ using PinterestClone.BLL.Services.ImageAnalysisService;
 using PinterestClone.BLL.Services.ImageSearchService;
 using AutoMapper;
 using PinterestClone.DAL.Repositories.UserRepository;
+using PinterestClone.BLL.Services.FileBlobService;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -20,18 +21,20 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IImageAnalysisService _imageAnalysisService;
         private readonly IImageSearchService _imageSearchService;
         private readonly IMapper _mapper;
+        private readonly IFileService _fileService;
         private readonly IUserRepository _userRepository;
 
-        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository)
+        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository, IFileService fileService)
         {
             _pinRepository = pinRepository;
             _imageAnalysisService = imageAnalysisService;
             _imageSearchService = imageSearchService;
             _mapper = mapper;
             _userRepository = userRepository;
+            _fileService = fileService;
         }
 
-        public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
+        public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId, IFormFile? imageFile)
         {
             string? normalizedTags = null;
             if (!string.IsNullOrWhiteSpace(createPinDto.Tags))
@@ -42,9 +45,20 @@ namespace PinterestClone.BLL.Services.PinService
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                 );
             }
+
             var pin = _mapper.Map<Pin>(createPinDto);
             pin.UserId = userId;
             pin.User = await _userRepository.GetByIdAsync(userId);
+            pin.Tags = normalizedTags;
+
+            if (imageFile != null)
+            {
+                var uploadResult = await _fileService.UploadAsync(imageFile);
+                if (!uploadResult.Error)
+                {
+                    pin.ImageUrl = uploadResult.Blob.Uri;
+                }
+            }
 
             var result = await _pinRepository.CreatePinAsync(pin, userId);
             if (result == null)
@@ -185,7 +199,7 @@ namespace PinterestClone.BLL.Services.PinService
             if (pin == null || pin.UserId != userId)
                 return null;
 
-            pin = _mapper.Map<Pin>(updatePinDto);
+            _mapper.Map(updatePinDto, pin);
 
             await _pinRepository.UpdatePinAsync(pinId, pin, userId);
             return await GetPinByIdAsync(pinId);
@@ -196,6 +210,12 @@ namespace PinterestClone.BLL.Services.PinService
             var pin = await _pinRepository.GetPinByIdAsync(pinId);
             if (pin == null || pin.UserId != userId)
                 return false;
+
+            if (!string.IsNullOrWhiteSpace(pin.ImageUrl))
+            {
+                var blobName = new Uri(pin.ImageUrl).Segments.Last();
+                await _fileService.DeleteAsync(blobName);
+            }
 
             return await _pinRepository.DeletePinAsync(pin);
         }
