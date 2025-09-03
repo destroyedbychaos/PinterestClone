@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
-using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.Services.ImageService;
+using PinterestClone.BLL.Services.PinService;
+using PinterestClone.DAL.Models;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 
 namespace PinterestClone.API.Controllers
 {
@@ -433,11 +434,15 @@ namespace PinterestClone.API.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User not authenticated");
 
-                var existingLike = await _db.Likes.FirstOrDefaultAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+                var existingLike = await _db.Likes
+                    .FirstOrDefaultAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+
+                bool isLiked;
 
                 if (existingLike != null)
                 {
                     _db.Likes.Remove(existingLike);
+                    isLiked = false;
                 }
                 else
                 {
@@ -449,12 +454,33 @@ namespace PinterestClone.API.Controllers
                         CreatedAt = DateTime.UtcNow
                     };
                     _db.Likes.Add(like);
+                    isLiked = true;
+
+                    var pin = await _db.Pins.Include(p => p.User)
+                                            .FirstOrDefaultAsync(p => p.Id.ToString() == pinId);
+
+                    if (pin != null && pin.UserId != userId) 
+                    {
+                        var sender = await _db.Users.FindAsync(userId);
+
+                        var notification = new Notification
+                        {
+                            UserId = pin.UserId, 
+                            Message = $"{sender?.UserName ?? "Someone"} liked your Aest",
+                            Title = "New Like ❤️",
+                            Type = NotificationType.System,  
+                            Status = NotificationStatus.Pending,
+                            CreatedAt = DateTime.UtcNow,
+                            PinId = pin.Id
+                        };
+
+                        _db.Notifications.Add(notification);
+                    }
                 }
 
                 await _db.SaveChangesAsync();
 
                 var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
-                var isLiked = existingLike == null; 
 
                 return Ok(new
                 {
@@ -467,5 +493,6 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error toggling pin like: {ex.Message}");
             }
         }
+
     }
 } 
