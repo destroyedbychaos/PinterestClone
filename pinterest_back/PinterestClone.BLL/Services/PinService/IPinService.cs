@@ -5,7 +5,7 @@ namespace PinterestClone.BLL.Services.PinService
 {
     public interface IPinService
     {
-        Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId);
+        Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId, IFormFile? imageFile);
         Task<PinResponseDto?> GetPinByIdAsync(string pinId);
         Task<PinListDto?> GetPinsAsync(int pageNumber = 1, int pageSize = 20, string? searchTerm = null, string? tags = null, string? sortBy = "createdAt", bool isAscending = false);
         Task<PinListDto?> GetUserPinsAsync(string userId, int pageNumber = 1, int pageSize = 20, string? sortBy = "createdAt", bool isAscending = false);

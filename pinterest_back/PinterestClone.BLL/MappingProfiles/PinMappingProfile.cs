@@ -34,6 +34,15 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.Parse(src.Id)))
                 .ForMember(dest => dest.User, opt => opt.Ignore());
 
+            CreateMap<CreatePinDto, Pin>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.BoardPins, opt => opt.Ignore())
+                .ForMember(dest => dest.Likes, opt => opt.Ignore())
+                .ForMember(dest => dest.Comments, opt => opt.Ignore());
+
             CreateMap<UpdatePinDto, Pin>()
                 .ForMember(dest => dest.Tags, opt => opt.MapFrom(src =>
                     string.IsNullOrWhiteSpace(src.Tags) ? null :

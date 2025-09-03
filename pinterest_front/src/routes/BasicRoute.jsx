@@ -22,6 +22,8 @@ import AccountDeactivation from "../pages/Settings/AccountDeactivation.jsx";
 import AccountDeletion from "../pages/Settings/AccountDeletion.jsx";
 import HistoryPage from "../pages/History/HistoryPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
+import Notifications from "../pages/Notifications/Notifications.jsx";
+
 
 
 const BasicRoute = () => {
@@ -76,7 +78,9 @@ const BasicRoute = () => {
             <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
             </Route>
-            
+            <Route path="/notifications" element={<Layout />}>
+                <Route index element={<Notifications/>} />
+            </Route>
 
             <Route path="/user/:username" element={<LayoutWithoutFooter />}>
                 <Route index element={<UserProfile/>} />
