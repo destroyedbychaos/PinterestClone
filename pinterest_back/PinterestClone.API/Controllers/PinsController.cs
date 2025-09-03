@@ -59,6 +59,66 @@ namespace PinterestClone.API.Controllers
 
 
 
+        [HttpGet("{pinId}/similar-by-tags")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByTags(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByTagsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by tags: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/similar-by-image")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByImage(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByImageAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by image: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/recommendations")]
+        public async Task<ActionResult<PinListDto>> GetPinRecommendations(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetPinRecommendationsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin recommendations: {ex.Message}");
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<PinResponseDto>> GetPin(string id)
         {

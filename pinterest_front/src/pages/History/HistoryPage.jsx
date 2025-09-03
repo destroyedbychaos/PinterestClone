@@ -438,7 +438,7 @@ const HistoryPage = () => {
 
   const olderGrouped = groupOlderByDate(historyData.older);
 
-     return (
+  return (
      <HistoryContainer className="history-container">
        <UserBox className="user-box" onClick={handleUserBoxClick} ref={profileRef}>
          <Avatar 

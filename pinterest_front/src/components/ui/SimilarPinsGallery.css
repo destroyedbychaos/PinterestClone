@@ -1,0 +1,177 @@
+.similar-pins-gallery {
+  width: 100%;
+  margin-top: 24px;
+}
+
+.similar-pins-title {
+  color: var(--Dark-900, #000D17) !important;
+  font-family: Geologica, sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  margin-bottom: 24px !important;
+  text-align: center;
+}
+
+.gallery-columns {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+}
+
+.gallery-column {
+  width: 267px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gallery-pin-item {
+  position: relative;
+  cursor: pointer;
+  border-radius: 40px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-pin-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-pin-image {
+  width: 100%;
+  height: auto;
+  border-radius: 40px;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.gallery-pin-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%
+  );
+  color: white;
+  padding: 16px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.gallery-pin-item:hover .gallery-pin-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.gallery-pin-title {
+  color: white !important;
+  font-family: Geologica, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+  line-height: 1.2 !important;
+}
+
+.gallery-pin-author {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-family: Geologica, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.similar-pins-loading,
+.similar-pins-error,
+.similar-pins-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.similar-pins-error {
+  color: #d32f2f;
+}
+
+.similar-pins-empty {
+  color: #666;
+}
+
+/* Responsive design */
+@media (max-width: 1800px) {
+  .gallery-columns {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .gallery-column {
+    width: 240px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .gallery-columns {
+    gap: 20px;
+  }
+  
+  .gallery-column {
+    width: 220px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .gallery-columns {
+    gap: 16px;
+  }
+  
+  .gallery-column {
+    width: 200px;
+    gap: 16px;
+  }
+  
+  .similar-pins-title {
+    font-size: 20px !important;
+    margin-bottom: 20px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-columns {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .gallery-column {
+    width: 180px;
+    gap: 12px;
+  }
+  
+  .similar-pins-title {
+    font-size: 18px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .gallery-pin-overlay {
+    padding: 12px;
+  }
+  
+  .gallery-pin-title {
+    font-size: 12px !important;
+  }
+  
+  .gallery-pin-author {
+    font-size: 10px !important;
+  }
+}
