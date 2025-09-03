@@ -115,24 +115,43 @@ const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, 
 
   const getModalPosition = () => {
     if (!buttonPosition) {
+
+      const isMobile = window.innerWidth <= 768;
+      
+      if (isMobile) {
+
+        return {
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        };
+      }
+      
+
       return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
+        top: '120px', 
+        left: '180px', 
+        transform: 'none'
       };
     }
 
-    const modalWidth = 320;
-    const modalHeight = 400;
+    const modalWidth = window.innerWidth <= 480 ? 280 : 320;
+    const modalHeight = window.innerWidth <= 480 ? 350 : 400;
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
     let top = buttonPosition.top + buttonPosition.height + 8;
     let left = buttonPosition.left - (modalWidth - buttonPosition.width) / 2;
 
-
     if (top + modalHeight > windowHeight) {
-      top = buttonPosition.top - modalHeight - 8;
+
+      if (left + modalWidth > windowWidth) {
+        left = windowWidth - modalWidth - 20;
+      }
+      if (left < 20) {
+        left = 20;
+      }
+
     }
 
     if (left + modalWidth > windowWidth) {

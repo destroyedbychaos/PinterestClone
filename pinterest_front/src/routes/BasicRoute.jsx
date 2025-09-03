@@ -5,6 +5,7 @@ import HomePage from "../pages/Home/HomePage";
 import Layout from "../components/layout/Layout";
 import LayoutWithoutSideMenu from "../components/layout/LayoutWithoutSideMenu";
 import LayoutWithoutFooter from "../components/layout/LayoutWithoutFooter";
+import LayoutSettings from "../components/layout/LayoutSettings.jsx";
 import LoginForm from "../pages/Auth/LoginForm.jsx";
 import RegisterForm from "../pages/Auth/RegisterForm.jsx";
 import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
@@ -16,6 +17,11 @@ import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 import SearchFilter from "../pages/Search/SearchFilter.jsx";
 import SearchProfile from "../pages/Search/SearchProfile.jsx";
 import UserProfile from "../pages/Profile/UserProfile.jsx";
+import SettingsPage from "../pages/Settings/SettingsPage.jsx";
+import AccountDeactivation from "../pages/Settings/AccountDeactivation.jsx";
+import AccountDeletion from "../pages/Settings/AccountDeletion.jsx";
+import HistoryPage from "../pages/History/HistoryPage.jsx";
+import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Notifications from "../pages/Notifications/Notifications.jsx";
 
 
@@ -52,10 +58,18 @@ const BasicRoute = () => {
             <Route path="/password-reset-success" element={<Layout />}>
                 <Route index element={<PasswordResetSuccess/>} />
             </Route>
-            <Route path="/profile-boards" element={<Layout />}>
+            <Route path="/profile-boards" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
                 <Route index element={<ProfileBoards/>} />
             </Route>
-            <Route path="/profile-edit" element={<Layout />}>
+            <Route path="/profile-edit" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
                 <Route index element={<ProfileEdit/>} />
             </Route>
             <Route path="/search-filter" element={<Layout />}>
@@ -70,6 +84,36 @@ const BasicRoute = () => {
 
             <Route path="/user/:username" element={<LayoutWithoutFooter />}>
                 <Route index element={<UserProfile/>} />
+            </Route>
+            
+            <Route path="/settings" element={
+                <ProtectedRoute>
+                    <LayoutSettings />
+                </ProtectedRoute>
+            }>
+                <Route index element={<SettingsPage/>} />
+            </Route>
+            <Route path="/account-deactivation" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
+                <Route index element={<AccountDeactivation/>} />
+            </Route>
+            <Route path="/account-deletion" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
+                <Route index element={<AccountDeletion/>} />
+            </Route>
+            
+            <Route path="/history" element={
+                <ProtectedRoute>
+                    <Layout />
+                </ProtectedRoute>
+            }>
+                <Route index element={<HistoryPage/>} />
             </Route>
         </Routes>
     );

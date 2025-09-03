@@ -26,6 +26,9 @@ const LoginForm = () => {
                 user: { email: email },
                 accessToken: response.payload.accessToken
             }));
+            
+            localStorage.setItem('userPassword', password);
+            
             navigate('/');
         } catch (err) {
             console.error('Login error:', err);
