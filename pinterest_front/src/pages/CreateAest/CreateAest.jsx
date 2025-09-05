@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Container, Typography, Paper, Button } from '@mui/material';
+import { Box, Container, Typography, Paper, Button, CircularProgress, Alert } from '@mui/material';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SimpleHeader from '../../components/layout/SimpleHeader';
 import { useTheme } from '@mui/material';
@@ -13,16 +13,225 @@ import DeleteModal from '../../components/ui/CreateAestComponents/DeleteModal';
 import BoardList from '../../components/ui/CreateAestComponents/BoardList';
 import UploadStep from '../../components/ui/CreateAestComponents/UploadStep';
 
+import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../../store/Boards/BoardsApi';
+import { useCreatePinMutation } from '../../../store/Pins/PinApi';
+
+// CreateBoardModal component
+const CreateBoardModal = ({ open, onClose, onConfirm, isLoading }) => {
+  const [boardName, setBoardName] = useState('');
+  const theme = useTheme();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (boardName.trim()) {
+      onConfirm(boardName.trim());
+      setBoardName('');
+    }
+  };
+
+  const handleClose = () => {
+    setBoardName('');
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <Box sx={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <Paper sx={{
+        padding: '32px',
+        borderRadius: '20px',
+        width: '400px',
+        maxWidth: '90vw'
+      }}>
+        <Typography sx={{
+          fontSize: '24px',
+          fontWeight: 600,
+          textAlign: 'center',
+          mb: 3,
+          color: theme.palette.text.primary
+        }}>
+          Create new board
+        </Typography>
+        
+        <form onSubmit={handleSubmit}>
+          <StyledTextField
+            label="Board name"
+            placeholder="Enter board name"
+            value={boardName}
+            onChange={setBoardName}
+            autoFocus={true}
+          />
+          
+          <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'center' }}>
+            <ActionButton
+              onClick={handleClose}
+              color="secondary"
+              disabled={isLoading}
+            >
+              Cancel
+            </ActionButton>
+            <ActionButton
+              onClick={() => handleSubmit({ preventDefault: () => {} })}
+              disabled={!boardName.trim() || isLoading}
+            >
+              {isLoading ? <CircularProgress size={20} /> : 'Create'}
+            </ActionButton>
+          </Box>
+        </form>
+      </Paper>
+    </Box>
+  );
+};
+
+class FileStorage {
+  constructor() {
+    this.dbName = 'CreateAestDB';
+    this.version = 1;
+    this.storeName = 'files';
+  }
+
+  async openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.version);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(this.storeName)) {
+          db.createObjectStore(this.storeName, { keyPath: 'id' });
+        }
+      };
+    });
+  }
+
+  async saveFile(id, file, preview) {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      
+      await new Promise((resolve, reject) => {
+        const request = store.put({
+          id: id,
+          file: file,
+          preview: preview,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          timestamp: Date.now()
+        });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      
+      db.close();
+    } catch (error) {
+      console.error('Error saving file to IndexedDB:', error);
+    }
+  }
+
+  async getFile(id) {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+      
+      const result = await new Promise((resolve, reject) => {
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      
+      db.close();
+      return result;
+    } catch (error) {
+      console.error('Error getting file from IndexedDB:', error);
+      return null;
+    }
+  }
+
+  async deleteFile(id) {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      
+      await new Promise((resolve, reject) => {
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      
+      db.close();
+    } catch (error) {
+      console.error('Error deleting file from IndexedDB:', error);
+    }
+  }
+
+  async getAllFiles() {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+      
+      const result = await new Promise((resolve, reject) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      
+      db.close();
+      return result;
+    } catch (error) {
+      console.error('Error getting all files from IndexedDB:', error);
+      return [];
+    }
+  }
+
+  async clearAll() {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      
+      await new Promise((resolve, reject) => {
+        const request = store.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      
+      db.close();
+    } catch (error) {
+      console.error('Error clearing IndexedDB:', error);
+    }
+  }
+}
+
 const CreateAest = () => {
     const user = useCurrentUser();
     const theme = useTheme();
-  
+    
     const [isDragOver, setIsDragOver] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [dragOverAnimation, setDragOverAnimation] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
     const [selectedBoard, setSelectedBoard] = useState(null);
     const [aestInfo, setAestInfo] = useState({
       title: '',
@@ -30,10 +239,42 @@ const CreateAest = () => {
       link: '',
       hashtags: ''
     });
+    const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   
     const fileInputRef = useRef(null);
     const addMoreInputRef = useRef(null);
     const dragCountRef = useRef(0);
+    const fileStorageRef = useRef(new FileStorage());
+
+    const {
+      data: boardsData,
+      isLoading: boardsLoading,
+      isError: boardsError,
+      error: boardsErrorDetails,
+      refetch: refetchBoards
+    } = useGetUserBoardsQuery(
+      {
+        username: user?.username || user?.email,
+      },
+      {
+        skip: !user || (!user.username && !user.email),
+        refetchOnMountOrArgChange: true
+      }
+    );
+
+    const [createBoard, { 
+      isLoading: isCreatingBoard,
+      isSuccess: isBoardCreated,
+      error: boardCreationError 
+    }] = useCreateBoardMutation();
+
+    const [createPin, { 
+      isLoading: isCreatingPin, 
+      isSuccess: isPinCreated, 
+      error: pinCreationError 
+    }] = useCreatePinMutation();
+
+    const boards = boardsData?.boards || [];
   
     const isFormValid = uploadedFiles.length > 0 && 
       uploadedFiles[selectedImageIndex]?.title?.trim() && 
@@ -41,66 +282,76 @@ const CreateAest = () => {
       uploadedFiles[selectedImageIndex]?.link?.trim() && 
       uploadedFiles[selectedImageIndex]?.hashtags?.trim();
   
-    const boards = [
-      {
-        name: "Beautiful photoshoots",
-        count: "5 Assets",
-        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
-        isPrivate: true
-      },
-      {
-        name: "Mobile wallpapers", 
-        count: "3.5k Assets",
-        image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=400&fit=crop",
-        isPrivate: false
-      },
-      {
-        name: "Recipes",
-        count: "2.5k Pins", 
-        image: "https://cdn.loveandlemons.com/wp-content/uploads/2024/07/ratatouille.jpg",
-        isPrivate: false
-      },
-      {
-        name: "Travel destinations",
-        count: "1.2k Assets",
-        image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop",
-        isPrivate: false
-      },
-      {
-        name: "Interior design",
-        count: "850 Assets", 
-        image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop",
-        isPrivate: true
-      }
-    ];
-  
     useEffect(() => {
-      const savedData = localStorage.getItem('aestData');
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        setUploadedFiles(parsedData.uploadedFiles || []);
-        setAestInfo(parsedData.aestInfo || {
-          title: '',
-          description: '',
-          link: '',
-          hashtags: ''
-        });
-        setCurrentStep(parsedData.currentStep || 0);
-        setSelectedImageIndex(parsedData.selectedImageIndex || 0);
-        setSelectedBoard(parsedData.selectedBoard || null);
-      }
+      const loadSavedData = async () => {
+        try {
+          setIsLoadingFiles(true);
+          
+          const savedData = sessionStorage.getItem('aestData');
+          if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            
+            if (parsedData.uploadedFiles && parsedData.uploadedFiles.length > 0) {
+              const restoredFiles = await Promise.all(
+                parsedData.uploadedFiles.map(async (fileInfo) => {
+                  const storedFile = await fileStorageRef.current.getFile(fileInfo.id);
+                  
+                  return {
+                    ...fileInfo,
+                    preview: storedFile ? storedFile.preview : null,
+                    file: storedFile ? storedFile.file : null,
+                    hasStoredFile: !!storedFile
+                  };
+                })
+              );
+              
+              setUploadedFiles(restoredFiles);
+              setAestInfo(parsedData.aestInfo || {
+                title: '',
+                description: '',
+                link: '',
+                hashtags: ''
+              });
+              setCurrentStep(parsedData.currentStep || 0);
+              setSelectedImageIndex(Math.min(parsedData.selectedImageIndex || 0, restoredFiles.length - 1));
+              setSelectedBoard(parsedData.selectedBoard || null);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading saved data:', error);
+        } finally {
+          setIsLoadingFiles(false);
+        }
+      };
+      
+      loadSavedData();
     }, []);
   
     useEffect(() => {
-      const dataToSave = {
-        uploadedFiles,
-        aestInfo,
-        currentStep,
-        selectedImageIndex,
-        selectedBoard
-      };
-      localStorage.setItem('aestData', JSON.stringify(dataToSave));
-    }, [uploadedFiles, aestInfo, currentStep, selectedImageIndex, selectedBoard]);
+      if (!isLoadingFiles && uploadedFiles.length > 0) {
+        try {
+          const dataToSave = {
+            uploadedFiles: uploadedFiles.map(file => ({
+              id: file.id,
+              name: file.name,
+              size: file.size,
+              title: file.title,
+              description: file.description,
+              link: file.link,
+              hashtags: file.hashtags,
+              hasStoredFile: file.hasStoredFile
+            })),
+            aestInfo,
+            currentStep,
+            selectedImageIndex,
+            selectedBoard
+          };
+          sessionStorage.setItem('aestData', JSON.stringify(dataToSave));
+        } catch (error) {
+          console.error('Error saving to sessionStorage:', error);
+        }
+      }
+    }, [uploadedFiles, aestInfo, currentStep, selectedImageIndex, selectedBoard, isLoadingFiles]);
   
     useEffect(() => {
       const handleGlobalDragEnter = (e) => {
@@ -190,27 +441,40 @@ const CreateAest = () => {
     };
   
     const handleMultipleFileUpload = async (files) => {
-      const newFiles = await Promise.all(
-        files.map(async (file) => ({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          preview: await fileToBase64(file),
-          title: '',
-          description: '',
-          link: '',
-          hashtags: ''
-        }))
-      );
-      
-      setUploadedFiles(prev => {
-        const updatedFiles = [...prev, ...newFiles];
+      try {
+        const newFiles = await Promise.all(
+          files.map(async (file) => {
+            const fileId = Date.now() + Math.random();
+            const preview = await fileToBase64(file);
+            
+            await fileStorageRef.current.saveFile(fileId, file, preview);
+            
+            return {
+              id: fileId,
+              name: file.name,
+              size: file.size,
+              preview: preview,
+              file: file,
+              title: '',
+              description: '',
+              link: '',
+              hashtags: '',
+              hasStoredFile: true
+            };
+          })
+        );
         
-        if (prev.length === 0 && newFiles.length > 0) {
-          setTimeout(() => setCurrentStep(1), 500);
-        }
-        return updatedFiles;
-      });
+        setUploadedFiles(prev => {
+          const updatedFiles = [...prev, ...newFiles];
+          
+          if (prev.length === 0 && newFiles.length > 0) {
+            setTimeout(() => setCurrentStep(1), 500);
+          }
+          return updatedFiles;
+        });
+      } catch (error) {
+        console.error('Error uploading files:', error);
+      }
     };
   
     const handleFileSelect = () => {
@@ -237,16 +501,15 @@ const CreateAest = () => {
       e.target.value = '';
     };
   
-    const handleRemoveFile = (fileId) => {
+    const handleRemoveFile = async (fileId) => {
+      await fileStorageRef.current.deleteFile(fileId);
+      
       setUploadedFiles(prev => {
         const updated = prev.filter(f => f.id !== fileId);
-        const fileToRemove = prev.find(f => f.id === fileId);
-        if (fileToRemove) {
-          URL.revokeObjectURL(fileToRemove.preview);
-        }
         
         if (updated.length === 0) {
           setCurrentStep(0);
+          sessionStorage.removeItem('aestData');
         }
         
         if (selectedImageIndex >= updated.length && updated.length > 0) {
@@ -310,25 +573,163 @@ const CreateAest = () => {
     const handleBoardSelect = (board) => {
       setSelectedBoard(board);
     };
-  
-    const handlePublish = () => {
-      const file = uploadedFiles[selectedImageIndex];
-      if (!file.title || !file.description || !file.link || !file.hashtags) {
+
+    const handleRetryLoadBoards = () => {
+      refetchBoards();
+    };
+
+    const handleCreateNewBoard = () => {
+      setShowCreateBoardModal(true);
+    };
+
+    const handleConfirmCreateBoard = async (boardName) => {
+      try {
+        const boardData = {
+          boardDto: {
+            name: boardName,
+            description: "",
+            isPrivate: false
+          }
+        };
+    
+        console.log("Creating board with data:", boardData);
+    
+        const result = await createBoard(boardData).unwrap();
+        console.log("Board created successfully:", result);
+    
+        await refetchBoards();
+    
+        const newBoard = {
+          id: result.id,
+          name: result.name,
+          count: "0 Assets",
+          image: null,
+          isPrivate: result.isPrivate || false
+        };
+        setSelectedBoard(newBoard);
+    
+        setShowCreateBoardModal(false);
+      } catch (error) {
+        console.error("Error creating board:", error);
+        console.error("Full error details:", JSON.stringify(error, null, 2));
+        alert("Failed to create board. Please try again.");
+      }
+    };
+
+    const handleCancelCreateBoard = () => {
+      setShowCreateBoardModal(false);
+    };
+
+    const handlePublish = async () => {
+      const fileInfo = uploadedFiles[selectedImageIndex];
+      
+      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
+        alert("Please fill all required fields");
         setCurrentStep(1);
-      } else if (!selectedBoard) {
-        console.log("Please select a board");
         return;
-      } else {
-        console.log("Publishing to board:", selectedBoard.name, "File:", file);
+      }
+
+      let file = fileInfo.file;
+      if (!file) {
+        const storedData = await fileStorageRef.current.getFile(fileInfo.id);
+        if (!storedData) {
+          alert("Image file is missing. Please upload the image again.");
+          return;
+        }
+        file = storedData.file;
+      }
+      
+      if (!selectedBoard) {
+        alert("Please select a board");
+        return;
+      }
+    
+      const token = localStorage.getItem('authToken') || 
+                   localStorage.getItem('token') || 
+                   sessionStorage.getItem('authToken') || 
+                   sessionStorage.getItem('token');
+      
+      if (!token) {
+        alert("Authentication required. Please log in first.");
+        return;
+      }
+    
+      try {
+        if (!file.type || !file.type.startsWith('image/')) {
+          alert("Please select a valid image file");
+          return;
+        }
+
+        const maxFileSize = 10 * 1024 * 1024;
+        if (file.size && file.size > maxFileSize) {
+          alert("File size must be less than 10MB");
+          return;
+        }
+    
+        const formData = new FormData();
+        formData.append('Title', fileInfo.title.trim());
+        formData.append('Description', fileInfo.description.trim());
+        formData.append('Link', fileInfo.link.trim());
+        formData.append('Tags', fileInfo.hashtags.trim());
+        formData.append('ImageFile', file, file.name);
+        
+        if (!selectedBoard.isProfile && selectedBoard.id) {
+          formData.append('BoardId', selectedBoard.id.toString());
+        }
+
+        console.log("Creating pin with FormData:");
+        console.log("File details:", {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        });
+
+        const result = await createPin(formData).unwrap();
+        console.log("Pin created successfully:", result);
+        
         setCurrentStep(3);
+      } catch (error) {
+        console.error("Error creating pin:", error);
+        
+        let errorMessage = "Failed to create pin. Please try again.";
+        
+        if (error.status === 401) {
+          errorMessage = "Authentication failed. Please log in again.";
+        } else if (error.status === 400) {
+          if (error.data && error.data.errors) {
+            const validationErrors = error.data.errors;
+            const errorMessages = [];
+            
+            Object.keys(validationErrors).forEach(field => {
+              const fieldErrors = validationErrors[field];
+              if (Array.isArray(fieldErrors)) {
+                fieldErrors.forEach(err => {
+                  errorMessages.push(`${field}: ${err}`);
+                });
+              }
+            });
+            
+            if (errorMessages.length > 0) {
+              errorMessage = `Validation errors:\n${errorMessages.join('\n')}`;
+            }
+          }
+        } else if (error.status === 413) {
+          errorMessage = "File is too large. Please select a smaller image.";
+        } else if (error.status === 415) {
+          errorMessage = "Unsupported file type. Please select a valid image file.";
+        } else if (error.status === 403) {
+          errorMessage = "You don't have permission to create pins.";
+        }
+        
+        alert(errorMessage);
       }
     };
   
-    const handleDone = () => {
+    const handleDone = async () => {
       if (uploadedFiles.length > 0) {
         const fileId = uploadedFiles[selectedImageIndex]?.id;
         if (fileId) {
-          handleRemoveFile(fileId);
+          await handleRemoveFile(fileId);
         }
       }
     
@@ -337,7 +738,7 @@ const CreateAest = () => {
           setSelectedBoard(null);
           setCurrentStep(0);
           setSelectedImageIndex(0);
-          localStorage.removeItem('aestData');
+          sessionStorage.removeItem('aestData');
           return prev;
         } else {
           setSelectedImageIndex(0); 
@@ -350,7 +751,31 @@ const CreateAest = () => {
     const handleView = () => {
       console.log("View aest");
     };
-  
+
+    const handleClearAll = async () => {
+      await fileStorageRef.current.clearAll();
+      sessionStorage.removeItem('aestData');
+      setUploadedFiles([]);
+      setCurrentStep(0);
+      setSelectedImageIndex(0);
+      setSelectedBoard(null);
+    };
+
+    if (isLoadingFiles) {
+      return (
+        <>
+          <SimpleHeader title="Create Aest" />
+          <Box sx={{ minHeight: '100%', backgroundColor: '#FFFFFF' }}>
+            <Container sx={{ pt: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <CircularProgress />
+                <Typography sx={{ ml: 2 }}>Loading saved files...</Typography>
+              </Box>
+            </Container>
+          </Box>
+        </>
+      );
+    }
 
     const renderUploadStep = () => (
       <UploadStep 
@@ -368,6 +793,23 @@ const CreateAest = () => {
   
     const renderAestInfoStep = () => {
       const currentFile = uploadedFiles[selectedImageIndex];
+      
+      if (!currentFile) {
+        return (
+          <Container sx={{ pt: 4, pb: '140px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+              <Paper sx={{ padding: '32px', textAlign: 'center', borderRadius: '20px' }}>
+                <Typography sx={{ fontSize: '18px', mb: 2, color: theme.palette.text.primary }}>
+                  Please upload your images to continue
+                </Typography>
+                <ActionButton onClick={() => setCurrentStep(0)}>
+                  Upload Images
+                </ActionButton>
+              </Paper>
+            </Box>
+          </Container>
+        );
+      }
       
       return (
         <Container sx={{ pt: 4, pb: '140px' }}>
@@ -417,7 +859,7 @@ const CreateAest = () => {
                     onChange={(value) => handleInputChange('hashtags', value)}
                   />
   
-                  <Box sx={{ display: 'flex', gap: 4,mt:2 }}>
+                  <Box sx={{ display: 'flex', gap: 4, mt: 2 }}>
                     <ActionButton 
                       onClick={handleDeleteImage}
                       color="secondary"
@@ -457,12 +899,12 @@ const CreateAest = () => {
   
     const renderChooseBoardStep = () => {
       const currentFile = uploadedFiles[selectedImageIndex];
-  
+
       return (
         <Container sx={{ pt: 4, pb: "140px" }}>
           <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
             <ImagePreview file={currentFile} />
-  
+
             <Box maxHeight={"650px"} sx={{ width: "690px" }}>
               <Paper sx={{
                 height: "650px", borderRadius: "40px", padding: "32px",
@@ -476,31 +918,51 @@ const CreateAest = () => {
                 }}>
                   Choose a board
                 </Typography>
-  
-                <BoardList
-                  boards={boards}
-                  selectedBoard={selectedBoard}
-                  onBoardSelect={handleBoardSelect}
-                />
-  
+
+                {boardsLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : boardsError ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: 2 }}>
+                    <Alert severity="error" sx={{ width: '100%' }}>
+                      Failed to load boards: {boardsErrorDetails?.message || 'Unknown error'}
+                    </Alert>
+                    <Button onClick={handleRetryLoadBoards} variant="outlined">
+                      Retry
+                    </Button>
+                  </Box>
+                ) : (
+                  <BoardList
+                    boards={boards}
+                    selectedBoard={selectedBoard}
+                    onBoardSelect={handleBoardSelect}
+                    boardsLoading={boardsLoading}
+                    boardsError={boardsError}
+                    onRetryLoadBoards={handleRetryLoadBoards}
+                    onCreateNewBoard={handleCreateNewBoard}
+                  />
+                )}
+
                 <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
                   <ActionButton 
                     onClick={() => setCurrentStep(1)}
                     color="secondary"
+                    disabled={isCreatingPin}
                   >
                     Back
                   </ActionButton>
                   <ActionButton 
                     onClick={handlePublish}
-                    disabled={!selectedBoard}
+                    disabled={!selectedBoard || boardsLoading || isCreatingPin}
                   >
-                    Publish
+                    {isCreatingPin ? <CircularProgress size={20} /> : "Publish"}
                   </ActionButton>
                 </Box>
               </Paper>
             </Box>
           </Box>
-  
+
           <ImageThumbnailBar
             uploadedFiles={uploadedFiles}
             selectedImageIndex={selectedImageIndex}
@@ -560,7 +1022,7 @@ const CreateAest = () => {
                       }}>
                         <Iconify 
                           color={theme.palette.dark[500]} 
-                          icon={selectedBoard?.isProfile ? "octicon:person-24" : "octicon:plus-24"} 
+                          icon={selectedBoard?.isProfile ? "octicon:person-24" : "mdi:image-off-outline"} 
                           width={24} height={24} 
                         />
                       </Box>
@@ -626,6 +1088,13 @@ const CreateAest = () => {
             open={showDeleteModal}
             onClose={handleCancelDelete}
             onConfirm={handleConfirmDelete}
+          />
+          
+          <CreateBoardModal
+            open={showCreateBoardModal}
+            onClose={handleCancelCreateBoard}
+            onConfirm={handleConfirmCreateBoard}
+            isLoading={isCreatingBoard}
           />
         </Box>
       </>
