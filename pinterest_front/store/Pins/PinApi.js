@@ -1,4 +1,4 @@
-// store/Pins/PinApi.js
+
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const pinApi = createApi({
@@ -6,18 +6,19 @@ export const pinApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_API_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = localStorage.getItem('authToken') || 
-                   localStorage.getItem('token') || 
-                   sessionStorage.getItem('authToken') || 
-                   sessionStorage.getItem('token');
-      
+      const token = getState().auth?.token || 
+                    localStorage.getItem('authToken') || 
+                    localStorage.getItem('token') || 
+                    sessionStorage.getItem('authToken') || 
+                    sessionStorage.getItem('token');
+    
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
-      
-      headers.set('Accept', 'application/json');
+    
       return headers;
-    },
+    }
+    ,
   }),
   tagTypes: ['Pin'],
   endpoints: (builder) => ({

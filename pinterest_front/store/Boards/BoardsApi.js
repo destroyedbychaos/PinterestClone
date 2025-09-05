@@ -1,5 +1,4 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import defaultBoardImage from '../../src/assets/images/5.png';
 export const boardsApi = createApi({
     reducerPath: 'boardsApi',
     baseQuery: fetchBaseQuery({

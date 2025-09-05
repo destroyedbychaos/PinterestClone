@@ -4,6 +4,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SimpleHeader from '../../components/layout/SimpleHeader';
 import { useTheme } from '@mui/material';
 import { Icon as Iconify } from '@iconify/react';
+import { savePin, isPinSaved } from '../../utils/savedPinsStorage';
 
 import ImageThumbnailBar from '../../components/ui/CreateAestComponents/ImageThumbnailBar';
 import ImagePreview from '../../components/ui/CreateAestComponents/ImagePreview';
@@ -12,214 +13,11 @@ import ActionButton from '../../components/ui/CreateAestComponents/ActionButton'
 import DeleteModal from '../../components/ui/CreateAestComponents/DeleteModal';
 import BoardList from '../../components/ui/CreateAestComponents/BoardList';
 import UploadStep from '../../components/ui/CreateAestComponents/UploadStep';
+import CreateBoardModal from '../../components/modals/CreateBoardModal';
 
 import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../../store/Boards/BoardsApi';
 import { useCreatePinMutation } from '../../../store/Pins/PinApi';
-
-// CreateBoardModal component
-const CreateBoardModal = ({ open, onClose, onConfirm, isLoading }) => {
-  const [boardName, setBoardName] = useState('');
-  const theme = useTheme();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (boardName.trim()) {
-      onConfirm(boardName.trim());
-      setBoardName('');
-    }
-  };
-
-  const handleClose = () => {
-    setBoardName('');
-    onClose();
-  };
-
-  if (!open) return null;
-
-  return (
-    <Box sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <Paper sx={{
-        padding: '32px',
-        borderRadius: '20px',
-        width: '400px',
-        maxWidth: '90vw'
-      }}>
-        <Typography sx={{
-          fontSize: '24px',
-          fontWeight: 600,
-          textAlign: 'center',
-          mb: 3,
-          color: theme.palette.text.primary
-        }}>
-          Create new board
-        </Typography>
-        
-        <form onSubmit={handleSubmit}>
-          <StyledTextField
-            label="Board name"
-            placeholder="Enter board name"
-            value={boardName}
-            onChange={setBoardName}
-            autoFocus={true}
-          />
-          
-          <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'center' }}>
-            <ActionButton
-              onClick={handleClose}
-              color="secondary"
-              disabled={isLoading}
-            >
-              Cancel
-            </ActionButton>
-            <ActionButton
-              onClick={() => handleSubmit({ preventDefault: () => {} })}
-              disabled={!boardName.trim() || isLoading}
-            >
-              {isLoading ? <CircularProgress size={20} /> : 'Create'}
-            </ActionButton>
-          </Box>
-        </form>
-      </Paper>
-    </Box>
-  );
-};
-
-class FileStorage {
-  constructor() {
-    this.dbName = 'CreateAestDB';
-    this.version = 1;
-    this.storeName = 'files';
-  }
-
-  async openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
-      
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName, { keyPath: 'id' });
-        }
-      };
-    });
-  }
-
-  async saveFile(id, file, preview) {
-    try {
-      const db = await this.openDB();
-      const transaction = db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      
-      await new Promise((resolve, reject) => {
-        const request = store.put({
-          id: id,
-          file: file,
-          preview: preview,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          timestamp: Date.now()
-        });
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      db.close();
-    } catch (error) {
-      console.error('Error saving file to IndexedDB:', error);
-    }
-  }
-
-  async getFile(id) {
-    try {
-      const db = await this.openDB();
-      const transaction = db.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      
-      const result = await new Promise((resolve, reject) => {
-        const request = store.get(id);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      
-      db.close();
-      return result;
-    } catch (error) {
-      console.error('Error getting file from IndexedDB:', error);
-      return null;
-    }
-  }
-
-  async deleteFile(id) {
-    try {
-      const db = await this.openDB();
-      const transaction = db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      
-      await new Promise((resolve, reject) => {
-        const request = store.delete(id);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      db.close();
-    } catch (error) {
-      console.error('Error deleting file from IndexedDB:', error);
-    }
-  }
-
-  async getAllFiles() {
-    try {
-      const db = await this.openDB();
-      const transaction = db.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      
-      const result = await new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      
-      db.close();
-      return result;
-    } catch (error) {
-      console.error('Error getting all files from IndexedDB:', error);
-      return [];
-    }
-  }
-
-  async clearAll() {
-    try {
-      const db = await this.openDB();
-      const transaction = db.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      
-      await new Promise((resolve, reject) => {
-        const request = store.clear();
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-      
-      db.close();
-    } catch (error) {
-      console.error('Error clearing IndexedDB:', error);
-    }
-  }
-}
+import { FileStorage, fileToBase64 } from '../../utils/fileStorage';
 
 const CreateAest = () => {
     const user = useCurrentUser();
@@ -430,15 +228,6 @@ const CreateAest = () => {
         handleMultipleFileUpload(imageFiles);
       }
     };
-
-    const fileToBase64 = (file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    };
   
     const handleMultipleFileUpload = async (files) => {
       try {
@@ -560,14 +349,12 @@ const CreateAest = () => {
   
     const handleNext = () => {
       if (isFormValid) {
-        console.log('Next clicked - form is valid');
-        console.log('All images with their texts:', uploadedFiles);
         setCurrentStep(2);
       }
     };
   
     const handleSaveFromUrl = () => {
-      console.log('Save from URL clicked');
+
     };
   
     const handleBoardSelect = (board) => {
@@ -592,10 +379,7 @@ const CreateAest = () => {
           }
         };
     
-        console.log("Creating board with data:", boardData);
-    
         const result = await createBoard(boardData).unwrap();
-        console.log("Board created successfully:", result);
     
         await refetchBoards();
     
@@ -610,8 +394,6 @@ const CreateAest = () => {
     
         setShowCreateBoardModal(false);
       } catch (error) {
-        console.error("Error creating board:", error);
-        console.error("Full error details:", JSON.stringify(error, null, 2));
         alert("Failed to create board. Please try again.");
       }
     };
@@ -628,7 +410,7 @@ const CreateAest = () => {
         setCurrentStep(1);
         return;
       }
-
+    
       let file = fileInfo.file;
       if (!file) {
         const storedData = await fileStorageRef.current.getFile(fileInfo.id);
@@ -647,7 +429,7 @@ const CreateAest = () => {
       const token = localStorage.getItem('authToken') || 
                    localStorage.getItem('token') || 
                    sessionStorage.getItem('authToken') || 
-                   sessionStorage.getItem('token');
+                   sessionStorage.getToken('token');
       
       if (!token) {
         alert("Authentication required. Please log in first.");
@@ -659,7 +441,7 @@ const CreateAest = () => {
           alert("Please select a valid image file");
           return;
         }
-
+    
         const maxFileSize = 10 * 1024 * 1024;
         if (file.size && file.size > maxFileSize) {
           alert("File size must be less than 10MB");
@@ -676,21 +458,13 @@ const CreateAest = () => {
         if (!selectedBoard.isProfile && selectedBoard.id) {
           formData.append('BoardId', selectedBoard.id.toString());
         }
-
-        console.log("Creating pin with FormData:");
-        console.log("File details:", {
-          name: file.name,
-          type: file.type,
-          size: file.size
-        });
-
+    
         const result = await createPin(formData).unwrap();
-        console.log("Pin created successfully:", result);
+        
+        await handleAutoSavePin(result, fileInfo);
         
         setCurrentStep(3);
       } catch (error) {
-        console.error("Error creating pin:", error);
-        
         let errorMessage = "Failed to create pin. Please try again.";
         
         if (error.status === 401) {
@@ -724,6 +498,56 @@ const CreateAest = () => {
         alert(errorMessage);
       }
     };
+    
+    const handleAutoSavePin = async (createdPin, fileInfo) => {
+      try {
+        const pinObject = {
+          id: createdPin.id || createdPin.pinId,
+          image: createdPin.imageUrl || createdPin.image || fileInfo.preview,
+          title: createdPin.title || fileInfo.title,
+          description: createdPin.description || fileInfo.description,
+          author: user?.username || user?.email || 'Current User',
+          tags: createdPin.tags || (fileInfo.hashtags ? 
+            fileInfo.hashtags.split(',').map(tag => tag.trim()).filter(tag => tag) : 
+            [])
+        };
+    
+        savePin(pinObject);
+
+        if (!selectedBoard.isProfile && selectedBoard.id) {
+          try {
+            const token = localStorage.getItem('authToken') || 
+                         localStorage.getItem('token') || 
+                         sessionStorage.getItem('authToken') || 
+                         sessionStorage.getItem('token');
+    
+            const response = await fetch(`/api/pins/${pinObject.id}/boards/${selectedBoard.id}`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                pinId: pinObject.id,
+                boardId: selectedBoard.id
+              })
+            });
+    
+            if (!response.ok) {
+              const errorText = await response.text();
+            }
+          } catch (apiError) {
+          }
+        }
+
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+          window.dispatchEvent(new Event('savedPinsChanged'));
+        }
+    
+      } catch (error) {
+      }
+    };
+    
   
     const handleDone = async () => {
       if (uploadedFiles.length > 0) {
@@ -749,16 +573,7 @@ const CreateAest = () => {
     };
   
     const handleView = () => {
-      console.log("View aest");
-    };
 
-    const handleClearAll = async () => {
-      await fileStorageRef.current.clearAll();
-      sessionStorage.removeItem('aestData');
-      setUploadedFiles([]);
-      setCurrentStep(0);
-      setSelectedImageIndex(0);
-      setSelectedBoard(null);
     };
 
     if (isLoadingFiles) {
