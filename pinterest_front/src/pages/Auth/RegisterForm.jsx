@@ -1,7 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useRegisterMutation } from '../../../store/Auth/AuthApi.js';
-import { setCredentials } from '../../../store/slices/AuthSlice.js';
+import { usePinterestAuth } from '@/hooks/usePinterestAuth';
 import { Button, Typography, useTheme, Box } from '@mui/material';
 import { useNavigate } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
@@ -13,8 +11,7 @@ const RegisterForm = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [register, { isLoading, error }] = useRegisterMutation();
-    const dispatch = useDispatch();
+    const { register, isLoading } = usePinterestAuth();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,16 +23,7 @@ const RegisterForm = () => {
                 console.error('Паролі не збігаються');
                 return;
             }
-            const response = await register({
-                email,
-                password,
-            }).unwrap();
-
-            dispatch(setCredentials({
-                user: { email: email },
-                accessToken: response.accessToken
-            }));
-
+            await register(email, password);
             localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {

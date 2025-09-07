@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import { useNFT } from '../../hooks/useNFT';
 import { useMarketplace } from '../../hooks/useMarketplace';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { BLOCKCHAIN_CONFIG } from '../../config/blockchain';
 import { toast } from 'react-toastify';
@@ -43,7 +43,7 @@ import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 const NFTCard = ({ nft, isOwner = false, onUpdate, showActions = true, showManageActions = false }) => {
   const { addToFavorites, removeFromFavorites, deleteNFT, isLoading: nftLoading } = useNFT();
   const { listNFTForSale, delistNFT, buyNFT, isLoading: marketplaceLoading } = useMarketplace();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { isConnected, formatAddress, account } = useWeb3();
 
   const [isFavorite, setIsFavorite] = useState(nft.isFavorite || false);

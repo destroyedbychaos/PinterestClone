@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useWeb3 } from '../contexts/Web3Context';
-import { useAuth } from './useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { API_CONFIG, getAuthHeaders } from '../config/api';
 import { BLOCKCHAIN_CONFIG } from '../config/blockchain';
 import { ethers } from 'ethers';
@@ -8,10 +8,9 @@ import axios from 'axios';
 
 export const usePayments = () => {
   const { provider, account, balance, updateBalance, getGasPrice, estimateGas } = useWeb3();
-  const { token } = useAuth();
+  const { token } = useNFTAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Оцінка газу для операції
   const getGasEstimate = async (operationType, params = {}) => {
     setIsLoading(true);
     
@@ -39,7 +38,6 @@ export const usePayments = () => {
     }
   };
 
-  // Підтвердження транзакції
   const confirmTransaction = async (transactionHash) => {
     setIsLoading(true);
     
@@ -63,7 +61,6 @@ export const usePayments = () => {
     }
   };
 
-  // Отримання балансу MATIC
   const getMaticBalance = async (walletAddress = null) => {
     try {
       const targetAddress = walletAddress || account;
@@ -88,7 +85,6 @@ export const usePayments = () => {
     }
   };
 
-  // Переказ MATIC
   const transferMatic = async (toAddress, amount) => {
     if (!provider || !account) {
       throw new Error('Гаманець не підключений');
@@ -97,12 +93,11 @@ export const usePayments = () => {
     setIsLoading(true);
     
     try {
-      // Валідація адреси
+
       if (!ethers.isAddress(toAddress)) {
         throw new Error('Неправильна адреса отримувача');
       }
 
-      // Валідація суми
       if (!amount || amount <= 0) {
         throw new Error('Неправильна сума для переказу');
       }
@@ -114,7 +109,7 @@ export const usePayments = () => {
         throw new Error('Недостатньо коштів для переказу');
       }
 
-      // Оцінка gas
+
       const gasEstimate = await estimateGas({
         to: toAddress,
         value: amountWei
@@ -127,7 +122,7 @@ export const usePayments = () => {
         throw new Error('Недостатньо коштів для покриття комісії мережі');
       }
 
-      // Виконання транзакції через API
+
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENTS_TRANSFER}`,
         {
@@ -139,7 +134,7 @@ export const usePayments = () => {
       );
 
       if (response.data.isSuccess) {
-        // Оновлення балансу після успішної транзакції
+
         setTimeout(() => updateBalance(), 3000);
         return response.data.data;
       } else {
@@ -153,7 +148,7 @@ export const usePayments = () => {
     }
   };
 
-  // Отримання інформації про транзакцію
+
   const getTransactionInfo = async (transactionHash) => {
     try {
       const response = await axios.get(
@@ -172,7 +167,7 @@ export const usePayments = () => {
     }
   };
 
-  // Очікування підтвердження транзакції
+
   const waitForTransaction = async (transactionHash, confirmations = 2) => {
     if (!provider) {
       throw new Error('Provider не підключений');
@@ -182,7 +177,7 @@ export const usePayments = () => {
       const receipt = await provider.waitForTransaction(transactionHash, confirmations);
       
       if (receipt && receipt.status === 1) {
-        // Оновлення балансу після підтвердження
+
         setTimeout(() => updateBalance(), 1000);
         return receipt;
       } else {
@@ -194,7 +189,6 @@ export const usePayments = () => {
     }
   };
 
-  // Розрахунок комісії в USD (примерно)
   const calculateFeeInUSD = async (gasLimit, gasPrice, maticPriceUSD = 0.5) => {
     try {
       const gasCostMatic = ethers.formatEther(BigInt(gasLimit) * BigInt(gasPrice));
@@ -212,16 +206,14 @@ export const usePayments = () => {
     }
   };
 
-  // Перевірка достатності коштів для транзакції
   const checkSufficientFunds = async (requiredAmount, includeGas = true) => {
     try {
       const currentBalance = ethers.parseEther(balance);
       const requiredWei = ethers.parseEther(requiredAmount.toString());
       
       if (includeGas) {
-        // Орієнтовна оцінка gas для стандартної транзакції
         const gasPrice = await getGasPrice();
-        const estimatedGasCost = BigInt(21000) * gasPrice; // Стандартний transfer
+        const estimatedGasCost = BigInt(21000) * gasPrice;
         
         return currentBalance >= (requiredWei + estimatedGasCost);
       }
@@ -233,11 +225,10 @@ export const usePayments = () => {
     }
   };
 
-  // Форматування суми MATIC
   const formatMatic = (amount, decimals = 4) => {
     try {
       if (typeof amount === 'string' && amount.includes('0x')) {
-        // Це Wei в hex форматі
+
         return parseFloat(ethers.formatEther(amount)).toFixed(decimals);
       }
       
@@ -252,7 +243,6 @@ export const usePayments = () => {
     }
   };
 
-  // Конвертація в Wei
   const toWei = (amount) => {
     try {
       return ethers.parseEther(amount.toString());
@@ -262,7 +252,6 @@ export const usePayments = () => {
     }
   };
 
-  // Конвертація з Wei
   const fromWei = (amount) => {
     try {
       return ethers.formatEther(amount);
@@ -273,11 +262,9 @@ export const usePayments = () => {
   };
 
   return {
-    // Стан
     isLoading,
     balance,
     
-    // Основні методи
     getGasEstimate,
     confirmTransaction,
     getMaticBalance,
@@ -285,14 +272,12 @@ export const usePayments = () => {
     getTransactionInfo,
     waitForTransaction,
     
-    // Утилітарні методи
     calculateFeeInUSD,
     checkSufficientFunds,
     formatMatic,
     toWei,
     fromWei,
     
-    // Оновлення стану
     updateBalance
   };
 };

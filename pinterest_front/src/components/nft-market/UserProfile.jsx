@@ -30,7 +30,7 @@ import {
   Upload,
   Close
 } from '@mui/icons-material';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { useNFT } from '../../hooks/useNFT';
 import { usePayments } from '../../hooks/usePayments';
@@ -41,7 +41,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const UserProfile = ({ walletAddress, isOwnProfile = false }) => {
-  const { token } = useAuth();
+  const { token } = useNFTAuth();
   const { formatAddress, account } = useWeb3();
   const { getUserNFTs, getUserFavorites } = useNFT();
   const { balance } = usePayments();

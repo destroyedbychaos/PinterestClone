@@ -1,16 +1,17 @@
-// API конфігурація для NFT Marketplace
+
 export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5228/api',
   TIMEOUT: 10000,
   
-  // Endpoints
+
   ENDPOINTS: {
-    // Auth
+    AUTH_LOGIN: '/auth/login',
+    AUTH_REGISTER: '/auth/register',
     AUTH_NONCE: '/auth/nonce',
     AUTH_VERIFY: '/auth/verify',
     AUTH_ME: '/auth/me',
     
-    // Users
+  
     USER_PROFILE: (walletAddress) => `/users/${walletAddress}`,
     USER_UPDATE: (walletAddress) => `/users/${walletAddress}`,
     USER_NFTS: (walletAddress) => `/users/${walletAddress}/nfts`,
@@ -21,7 +22,7 @@ export const API_CONFIG = {
     USER_UPLOAD_AVATAR: (walletAddress) => `/users/${walletAddress}/avatar`,
     USER_UPLOAD_BANNER: (walletAddress) => `/users/${walletAddress}/banner`,
     
-    // NFTs
+
     NFTS: '/nfts',
     NFT_DETAIL: (id) => `/nfts/${id}`,
     NFT_UPDATE: (id) => `/nfts/${id}`,
@@ -29,7 +30,7 @@ export const API_CONFIG = {
     NFT_MINT: (id) => `/nfts/${id}/mint`,
     NFT_BURN: (id) => `/nfts/${id}/burn`,
     
-    // Marketplace
+  
     MARKETPLACE: '/marketplace',
     MARKETPLACE_LIST: '/marketplace/list',
     MARKETPLACE_DELIST: (nftId) => `/marketplace/list/${nftId}`,
@@ -37,7 +38,7 @@ export const API_CONFIG = {
     MARKETPLACE_BUY: (nftId) => `/marketplace/buy/${nftId}`,
     MARKETPLACE_CONFIRM: '/marketplace/confirm',
     
-    // Payments
+  
     PAYMENTS_GAS_ESTIMATE: '/payments/gas-estimate',
     PAYMENTS_CONFIRM: '/payments/confirm',
     PAYMENTS_WEBHOOK: '/payments/webhook',
@@ -47,7 +48,6 @@ export const API_CONFIG = {
   }
 };
 
-// HTTP заголовки
 export const getAuthHeaders = (token) => ({
   'Content-Type': 'application/json',
   'Authorization': token ? `Bearer ${token}` : ''
@@ -55,10 +55,9 @@ export const getAuthHeaders = (token) => ({
 
 export const getMultipartHeaders = (token) => ({
   'Authorization': token ? `Bearer ${token}` : ''
-  // Content-Type автоматично встановлюється браузером для multipart/form-data
+
 });
 
-// Обробка помилок API
 export const API_ERRORS = {
   UNAUTHORIZED: 'Необхідна авторизація',
   FORBIDDEN: 'Доступ заборонено',

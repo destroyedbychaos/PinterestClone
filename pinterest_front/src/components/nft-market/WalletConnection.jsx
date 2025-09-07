@@ -20,7 +20,7 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import { useWeb3 } from '../../contexts/Web3Context';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { BLOCKCHAIN_CONFIG } from '../../config/blockchain';
 import { toast } from 'react-toastify';
 
@@ -44,7 +44,7 @@ const WalletConnection = ({ onConnect, showBalance = true, variant = 'contained'
     login, 
     logout, 
     isLoading: authLoading 
-  } = useAuth();
+  } = useNFTAuth();
 
   const [showDetails, setShowDetails] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);

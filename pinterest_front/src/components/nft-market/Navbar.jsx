@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button.jsx";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { toast } from "react-toastify";
 import "./home-transition.css";
 
@@ -10,7 +10,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { account, isConnected, connect, disconnect, balance, isConnecting } = useWeb3();
-  const { isAuthenticated, login, logout, user, isLoading } = useAuth();
+  const { isAuthenticated, login, logout, user, isLoading } = useNFTAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 

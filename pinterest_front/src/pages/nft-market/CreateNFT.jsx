@@ -4,7 +4,7 @@ import { Button } from "../../components/nft-market/ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/nft-market/ui/card.jsx";
 import { Input } from "../../components/nft-market/ui/input.jsx";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useNFT } from "../../hooks/useNFT.js";
 import CelebrationEffect from "../../components/nft-market/CelebrationEffect.jsx";
 import { toast } from "react-toastify";
@@ -13,7 +13,7 @@ import { getFullImageUrl, handleImageError } from "../../utils/imageUtils.js";
 const CreateNFT = () => {
   const navigate = useNavigate();
   const { account, isConnected } = useWeb3();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { createNFT, mintNFT, isLoading } = useNFT();
   
   const [selectedFile, setSelectedFile] = useState(null);

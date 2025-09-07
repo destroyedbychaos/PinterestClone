@@ -145,122 +145,6 @@
   }
 }
 
-@keyframes particle-explosion {
-  0% {
-    transform: scale(0) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5) rotate(180deg);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(2) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-@keyframes wave-effect {
-  0% {
-    transform: translateX(-100%) scale(1);
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translateX(100%) scale(1.5);
-    opacity: 0;
-  }
-}
-
-
-@keyframes lightning-flash {
-  0% {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1);
-  }
-}
-
-@keyframes sparkle-twinkle {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.5);
-  }
-}
-
-@keyframes magnetic-pulse {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.1);
-  }
-}
-
-@keyframes energy-burst {
-  0% {
-    transform: scale(0) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5) rotate(180deg);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(2.5) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-@keyframes neon-flicker {
-  0%, 100% {
-    opacity: 1;
-    filter: brightness(1);
-  }
-  25% {
-    opacity: 0.8;
-    filter: brightness(1.2);
-  }
-  50% {
-    opacity: 1;
-    filter: brightness(0.8);
-  }
-  75% {
-    opacity: 0.9;
-    filter: brightness(1.1);
-  }
-}
-
-@keyframes cosmic-drift {
-  0% {
-    transform: translateX(-100px) translateY(-100px) rotate(0deg);
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100px) translateY(100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-
 .animate-slide-in {
   animation: slideInFromBottom 1s ease-out;
 }
@@ -293,39 +177,6 @@
 .animate-logo-glow-intense {
   animation: logo-glow-intense 2s ease-in-out infinite;
 }
-
-.animate-particle-explosion {
-  animation: particle-explosion 1s ease-out forwards;
-}
-
-.animate-wave-effect {
-  animation: wave-effect 3s ease-out infinite;
-}
-
-.animate-lightning-flash {
-  animation: lightning-flash 0.5s ease-out;
-}
-
-.animate-sparkle-twinkle {
-  animation: sparkle-twinkle 1s ease-in-out infinite;
-}
-
-.animate-magnetic-pulse {
-  animation: magnetic-pulse 3s ease-in-out infinite;
-}
-
-.animate-energy-burst {
-  animation: energy-burst 1.5s ease-out forwards;
-}
-
-.animate-neon-flicker {
-  animation: neon-flicker 2s ease-in-out infinite;
-}
-
-.animate-cosmic-drift {
-  animation: cosmic-drift 4s ease-out infinite;
-}
-
 
 @keyframes minimal-pulse {
   0%, 100% { opacity: 0.6; }
@@ -496,4 +347,4 @@
   transition: none !important;
   opacity: 1 !important;
   transform: scale(1) !important;
-} 
+}

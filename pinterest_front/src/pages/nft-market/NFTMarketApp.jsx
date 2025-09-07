@@ -14,34 +14,31 @@ import "../../pages/nft-market/nft-market.css";
 import "../../pages/nft-market/transition-animations.css";
 
 const NFTMarketApp = () => {
-  const [showFirstAnimation, setShowFirstAnimation] = useState(false);
-  const [showSecondAnimation, setShowSecondAnimation] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
 
   useEffect(() => {
     const hasVisited = sessionStorage.getItem('visitedNFTMarket');
+    const isFromPinterest = sessionStorage.getItem('nft_from_pinterest') === 'true';
     
-    if (hasVisited === 'true') {
-
-      setShowSecondAnimation(true);
+    if (isFromPinterest) {
+      if (hasVisited === 'true') {
+        setIsFirstVisit(false);
+        setShowAnimation(true);
+      } else {
+        setIsFirstVisit(true);
+        setShowAnimation(true);
+        sessionStorage.setItem('visitedNFTMarket', 'true');
+      }
+      sessionStorage.removeItem('nft_from_pinterest');
     } else {
-
-      setShowFirstAnimation(true);
-      sessionStorage.setItem('visitedNFTMarket', 'true');
+      setIsFirstVisit(false);
+      setShowAnimation(true);
     }
   }, []);
 
-  const handleFirstAnimationComplete = () => {
-    setShowFirstAnimation(false);
-    setTimeout(() => {
-      const contentElement = document.querySelector('.nft-market-content');
-      if (contentElement) {
-        contentElement.classList.add('show-immediately');
-      }
-    }, 10);
-  };
-
-  const handleSecondAnimationComplete = () => {
-    setShowSecondAnimation(false);
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
     setTimeout(() => {
       const contentElement = document.querySelector('.nft-market-content');
       if (contentElement) {
@@ -53,17 +50,17 @@ const NFTMarketApp = () => {
   return (
     <div className="min-h-screen bg-gray-900 nft-market">
 
-      {showFirstAnimation && (
-        <EnhancedLogoAnimation onComplete={handleFirstAnimationComplete} />
+      {showAnimation && (
+        <>
+          {isFirstVisit ? (
+            <EnhancedLogoAnimation onComplete={handleAnimationComplete} />
+          ) : (
+            <MinimalTransitionAnimation onComplete={handleAnimationComplete} />
+          )}
+        </>
       )}
-      
 
-      {showSecondAnimation && (
-        <MinimalTransitionAnimation onComplete={handleSecondAnimationComplete} />
-      )}
-      
-
-      <div className={`nft-market-content transition-all duration-100 ease-out ${(showFirstAnimation || showSecondAnimation) ? 'opacity-0 scale-99' : 'opacity-100 scale-100'}`}>
+      <div className={`nft-market-content transition-all duration-100 ease-out ${showAnimation ? 'opacity-0 scale-99' : 'opacity-100 scale-100'}`}>
         <Navbar />
         <Routes>
           <Route path="" element={<Index />} />

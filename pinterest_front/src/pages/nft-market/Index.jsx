@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../../components/nft-market/ui/button.jsx";
 import { Link } from "react-router-dom";
 import { useNFT } from "../../hooks/useNFT.js";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
 import MarketplaceNFTCard from "../../components/nft-market/MarketplaceNFTCard.jsx";
 import NFTIntroAnimation from "../../components/nft-market/NFTIntroAnimation.jsx";
@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 
 const Index = () => {
   const { getAllNFTs, isLoading } = useNFT();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { account } = useWeb3();
   const { showIntro, isLoading: introLoading, completeIntro } = useIntroAnimation();
   const [nfts, setNfts] = useState([]);

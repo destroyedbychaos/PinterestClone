@@ -1,7 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useLoginMutation } from '../../../store/Auth/AuthApi.js';
-import { setCredentials } from '../../../store/slices/AuthSlice.js';
+import { usePinterestAuth } from '@/hooks/usePinterestAuth';
 import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
 import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
@@ -12,8 +10,7 @@ const LoginForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [login, { isLoading, error }] = useLoginMutation();
-    const dispatch = useDispatch();
+    const { login, isLoading } = usePinterestAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
@@ -21,11 +18,7 @@ const LoginForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await login({ email, password }).unwrap();
-            dispatch(setCredentials({
-                user: { email: email },
-                accessToken: response.payload.accessToken
-            }));
+            await login(email, password);
             navigate('/');
         } catch (err) {
             console.error('Помилка логіну:', err);

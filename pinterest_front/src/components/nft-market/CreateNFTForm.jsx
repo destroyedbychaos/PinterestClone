@@ -20,13 +20,13 @@ import {
 } from '@mui/material';
 import { CloudUpload, Create, Publish } from '@mui/icons-material';
 import { useNFT } from '../../hooks/useNFT';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { toast } from 'react-toastify';
 
 const CreateNFTForm = ({ onSuccess, onCancel }) => {
   const { createNFT, mintNFT, isLoading } = useNFT();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { isConnected, account } = useWeb3();
 
   const [activeStep, setActiveStep] = useState(0);

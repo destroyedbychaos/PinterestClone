@@ -3,7 +3,7 @@ import { memo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Badge } from "@mui/material";
 import { Search, Notifications, BookmarkBorder, ExpandMore } from "@mui/icons-material";
-import { logout } from "../../../store/slices/AuthSlice.js";
+import { logout } from "../../../store/slices/PinterestAuthSlice.js";
 
 const adminPages = [
     { title: "Boards", path: "/boards" },
@@ -15,10 +15,10 @@ const adminPages = [
 const Header = memo(() => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, isAuthenticated, origin } = useSelector((state) => state.auth);
+    const { user, isAuthenticated } = useSelector((state) => state.pinterestAuth);
     
     const isAdmin = user?.role === 'Admin';
-    const isLoggedIn = isAuthenticated && (origin === null || origin === 'site');
+    const isLoggedIn = isAuthenticated;
 
     const [adminMenuOpen, setAdminMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -41,14 +41,10 @@ const Header = memo(() => {
     const handleNFTMarketClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('NFT Market button clicked!', e);
-        console.log('Attempting to navigate to /nft-market');
         try {
+            sessionStorage.setItem('nft_from_pinterest', 'true');
             navigate('/nft-market');
-            console.log('Navigation successful');
         } catch (error) {
-            console.error('Navigation error:', error);
-            // Fallback
             window.location.href = '/nft-market';
         }
     };

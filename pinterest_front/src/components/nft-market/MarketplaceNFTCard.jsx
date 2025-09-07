@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNFT } from '../../hooks/useNFT';
 import { useMarketplace } from '../../hooks/useMarketplace';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { toast } from 'react-toastify';
 import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 
 const MarketplaceNFTCard = ({ nft, isOwner, onUpdate, isNew = false }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { account } = useWeb3();
   const { addToFavorites, removeFromFavorites, isFavorite: checkFavorite } = useNFT();
   const { buyNFT, delistNFT, getActiveListings, getListingStatus } = useMarketplace();

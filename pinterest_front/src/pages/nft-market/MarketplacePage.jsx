@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/nft-market/ui/button.jsx';
 import { Badge } from '../../components/nft-market/ui/badge.jsx';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { useNFT } from '../../hooks/useNFT.js';
 import { useMarketplace } from '../../hooks/useMarketplace.js';
 import MarketplaceNFTCard from '../../components/nft-market/MarketplaceNFTCard.jsx';
+import EnhancedLogoAnimation from '../../components/nft-market/EnhancedLogoAnimation.jsx';
+import MinimalTransitionAnimation from '../../components/nft-market/MinimalTransitionAnimation.jsx';
 
 import { toast } from 'react-toastify';
 
 const MarketplacePage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { isConnected, connect, balance, account } = useWeb3();
   const { getAllNFTs, getUserNFTs, getUserFavorites } = useNFT();
   const { getActiveListings } = useMarketplace();
@@ -28,10 +30,34 @@ const MarketplacePage = () => {
     totalCreators: 0
   });
 
+  const [showMarketplaceAnimation, setShowMarketplaceAnimation] = useState(false);
+  const [isFirstMarketplaceVisit, setIsFirstMarketplaceVisit] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  useEffect(() => {
+    if (hasInitialized) return; 
+    
+    const hasVisitedMarketplace = sessionStorage.getItem('visitedMarketplace');
+    const hasVisitedNFTMarket = sessionStorage.getItem('visitedNFTMarket');
+    
+    setIsFirstMarketplaceVisit(false);
+    setShowMarketplaceAnimation(false);
+    sessionStorage.setItem('visitedMarketplace', 'true');
+    
+    if (hasVisitedNFTMarket !== 'true') {
+      sessionStorage.setItem('visitedNFTMarket', 'true');
+    }
+    
+    setHasInitialized(true);
+  }, [hasInitialized]);
 
   useEffect(() => {
     loadNFTs();
   }, [activeTab, account, isAuthenticated]);
+
+  const handleMarketplaceAnimationComplete = () => {
+    setShowMarketplaceAnimation(false);
+  };
 
   const loadNFTs = async () => {
     setLoading(true);
@@ -198,8 +224,18 @@ const MarketplacePage = () => {
 
   return (
     <div className="min-h-screen">
+      {showMarketplaceAnimation && (
+        <>
+          {isFirstMarketplaceVisit ? (
+            <EnhancedLogoAnimation onComplete={handleMarketplaceAnimationComplete} />
+          ) : (
+            <MinimalTransitionAnimation onComplete={handleMarketplaceAnimationComplete} />
+          )}
+        </>
+      )}
 
-      <section className="relative py-16 overflow-hidden">
+      <div className={`transition-all duration-100 ease-out ${showMarketplaceAnimation ? 'opacity-0 scale-99' : 'opacity-100 scale-100'}`}>
+        <section className="relative py-16 overflow-hidden">
 
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-pink-900/20"></div>
       
@@ -400,6 +436,7 @@ const MarketplacePage = () => {
           </button>
         </Link>
       )}
+      </div>
     </div>
   );
 };

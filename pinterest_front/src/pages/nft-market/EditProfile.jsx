@@ -4,7 +4,7 @@ import { Button } from "../../components/nft-market/ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/nft-market/ui/card.jsx";
 import { Input } from "../../components/nft-market/ui/input.jsx";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useUser } from "../../hooks/useUser.js";
 import { getFullImageUrl, handleImageError } from "../../utils/imageUtils.js";
 import { toast } from "react-toastify";
@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 const EditProfile = () => {
   const navigate = useNavigate();
   const { account, isConnected } = useWeb3();
-  const { isAuthenticated, user, updateUserProfile } = useAuth();
+  const { isAuthenticated, user, updateUserProfile } = useNFTAuth();
   const { updateProfile, uploadAvatar, uploadBanner, isLoading } = useUser();
   
   const [formData, setFormData] = useState({

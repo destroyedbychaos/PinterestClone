@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useWeb3 } from '../contexts/Web3Context';
-import { useAuth } from './useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { API_CONFIG, getAuthHeaders, getMultipartHeaders } from '../config/api';
 import { ethers } from 'ethers';
 import axios from 'axios';
 
 export const useNFT = () => {
   const { contract, account, sendTransaction, estimateGas } = useWeb3();
-  const { token } = useAuth();
+  const { token } = useNFTAuth();
   const [isLoading, setIsLoading] = useState(false);
 
 

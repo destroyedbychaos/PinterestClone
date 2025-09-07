@@ -4,7 +4,7 @@ import { Button } from "../../components/nft-market/ui/button.jsx";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/nft-market/ui/card.jsx";
 import { Badge } from "../../components/nft-market/ui/badge.jsx";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useNFT } from "../../hooks/useNFT.js";
 import { useMarketplace } from "../../hooks/useMarketplace.js";
 import { toast } from "react-toastify";
@@ -14,7 +14,7 @@ const ViewNFT = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { account, isConnected } = useWeb3();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { getNFTById, addToFavorites, removeFromFavorites, mintNFT, deleteNFT } = useNFT();
   const { buyNFT, listNFTForSale, delistNFT, getListingStatus, isListedOnchain } = useMarketplace();
   

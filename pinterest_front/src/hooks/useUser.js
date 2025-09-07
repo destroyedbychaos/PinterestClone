@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { useAuth } from './useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { API_CONFIG, getAuthHeaders, getMultipartHeaders } from '../config/api';
 import axios from 'axios';
 
 export const useUser = () => {
-  const { token, updateUserProfile } = useAuth();
+  const { token, updateUserProfile } = useNFTAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Отримання профілю користувача
   const getUserProfile = async (walletAddress) => {
     try {
       const response = await axios.get(
@@ -25,7 +24,6 @@ export const useUser = () => {
     }
   };
 
-  // Оновлення профілю користувача
   const updateProfile = async (walletAddress, profileData) => {
     setIsLoading(true);
     
@@ -50,13 +48,13 @@ export const useUser = () => {
     }
   };
 
-  // Завантаження аватара
+
   const uploadAvatar = async (walletAddress, avatarFile) => {
     setIsLoading(true);
     
     try {
       const formData = new FormData();
-      formData.append('file', avatarFile); // Backend очікує 'file'
+      formData.append('file', avatarFile); 
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USER_UPLOAD_AVATAR(walletAddress)}`,
@@ -64,7 +62,6 @@ export const useUser = () => {
         { headers: getMultipartHeaders(token) }
       );
 
-      // Backend повертає прямо об'єкт, не в data.data
       if (response.data.avatarUrl) {
         return response.data.avatarUrl;
       } else {
@@ -81,13 +78,13 @@ export const useUser = () => {
     }
   };
 
-  // Завантаження банера
+
   const uploadBanner = async (walletAddress, bannerFile) => {
     setIsLoading(true);
     
     try {
       const formData = new FormData();
-      formData.append('file', bannerFile); // Backend очікує 'file', не 'banner'
+      formData.append('file', bannerFile); 
 
       const response = await axios.post(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USER_UPLOAD_BANNER(walletAddress)}`,
@@ -95,7 +92,6 @@ export const useUser = () => {
         { headers: getMultipartHeaders(token) }
       );
 
-      // Backend повертає прямо об'єкт, не в data.data
       if (response.data.bannerUrl) {
         return response.data.bannerUrl;
       } else {

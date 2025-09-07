@@ -11,7 +11,7 @@ const API_BASE = '/api';
 
 const HomePage = () => {
     const [showOnboarding, setShowOnboarding] = useState(false);
-    const { user, origin } = useSelector((state) => state.auth);
+    const { user, isAuthenticated } = useSelector((state) => state.pinterestAuth);
     const [tags, setTags] = useState([]);
     const [activeTag, setActiveTag] = useState('');
     const [pins, setPins] = useState([]);
@@ -74,7 +74,7 @@ const HomePage = () => {
 
     return (
         <Container maxWidth="xl" sx={{ pl: 0, pr: 0, ml: 0 }}>
-            <DiscoverHeader user={origin === 'site' || origin == null ? user : null} onSearch={setSearch} onLogin={handleLogin} onSignup={handleSignup} />
+            <DiscoverHeader user={isAuthenticated ? user : null} onSearch={setSearch} onLogin={handleLogin} onSignup={handleSignup} />
             <Box sx={{ mt: 4, ml: 0 }}>
                 {tags.length > 0 && (
                     <div className="tags-filter">

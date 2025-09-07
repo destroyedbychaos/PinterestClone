@@ -20,14 +20,14 @@ import {
 import { Search, FilterList } from '@mui/icons-material';
 import { useNFT } from '../../hooks/useNFT';
 import { useMarketplace } from '../../hooks/useMarketplace';
-import { useAuth } from '../../hooks/useAuth';
+import { useNFTAuth } from '@/hooks/useNFTAuth';
 import { useWeb3 } from '../../contexts/Web3Context';
 import MarketplaceNFTCard from './MarketplaceNFTCard';
 
 const MarketplaceGrid = ({ showMyNFTs = false, showFavorites = false }) => {
   const { getAllNFTs, getUserNFTs, getUserFavorites } = useNFT();
   const { getActiveListings } = useMarketplace();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useNFTAuth();
   const { account } = useWeb3();
 
   const [nfts, setNFTs] = useState([]);

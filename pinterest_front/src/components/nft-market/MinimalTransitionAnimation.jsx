@@ -5,7 +5,6 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
   const [lines, setLines] = useState([]);
 
   useEffect(() => {
-
     const generateLines = () => {
       const newLines = [];
       for (let i = 0; i < 8; i++) {
@@ -25,16 +24,14 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
     generateLines();
 
     const animationSequence = async () => {
-
       setStage(1);
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       setStage(2);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 600));
 
       setStage(3);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       onComplete();
     };
@@ -44,7 +41,6 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900">
-
       <div className="absolute inset-0">
         {lines.map(line => (
           <div
@@ -89,7 +85,6 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
               : 'opacity-0 scale-95'
           }`}
         >
- 
           <div 
             className={`w-40 h-40 rounded-full border border-purple-500 transition-all duration-500 ease-out ${
               stage >= 2 
@@ -147,10 +142,10 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
         }`}
       >
         <p className="text-xl text-gray-300 font-medium tracking-wider">
-          Welcome back
+          NFT Маркетплейс
         </p>
         <p className="text-sm text-gray-500 font-light mt-1">
-          Ready to explore?
+          Завантаження...
         </p>
       </div>
 
@@ -164,8 +159,6 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
           />
         </div>
       )}
-
-
     </div>
   );
 };

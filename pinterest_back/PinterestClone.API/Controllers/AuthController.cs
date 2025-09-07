@@ -116,6 +116,24 @@ namespace PinterestClone.API.Controllers
             var response = await _passwordResetService.ResetPasswordAsync(model);
             return GetResult(response);
         }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMeAsync()
+        {
+            var userId = User.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { success = false, message = "Unauthorized" });
+            }
+
+            var user = await _accountService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found" });
+            }
+
+            return Ok(new { success = true, payload = user });
+        }
     }
 }
 

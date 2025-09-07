@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/nft-m
 import { Badge } from "../../components/nft-market/ui/badge.jsx";
 import { Link } from "react-router-dom";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useUser } from "../../hooks/useUser.js";
 import { useNFT } from "../../hooks/useNFT.js";
 import NFTManageCard from "../../components/nft-market/NFTManageCard.jsx";
@@ -16,7 +16,7 @@ import { getFullImageUrl, handleImageError } from "../../utils/imageUtils.js";
 const Profile = () => {
   const { walletAddress } = useParams();
   const { account } = useWeb3();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useNFTAuth();
   const { getUserProfile } = useUser();
   const { getUserNFTs, getUserCreatedNFTs, getUserFavorites, getAllNFTs, addToFavorites, removeFromFavorites } = useNFT();
 

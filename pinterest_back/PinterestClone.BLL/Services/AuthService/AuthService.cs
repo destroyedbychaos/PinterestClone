@@ -90,5 +90,22 @@ namespace PinterestClone.BLL.Services.AuthService
 
             return ServiceResponse.OkResponse($"Користувач {model.Email} успішно зареєстрований", tokens.Payload);
         }
+
+        public async Task<object?> GetUserByIdAsync(string userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new
+            {
+                id = user.Id,
+                email = user.Email,
+                displayName = user.DisplayName,
+                userName = user.UserName
+            };
+        }
     }
 }

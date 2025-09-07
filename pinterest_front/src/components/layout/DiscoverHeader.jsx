@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import "./DiscoverHeader.css";
 import { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { logout } from "../../../store/slices/AuthSlice";
+import { logout } from "../../../store/slices/PinterestAuthSlice";
 import { useNavigate } from "react-router-dom";
 
 const DiscoverHeader = ({ user, onSearch, onLogin, onSignup }) => {
