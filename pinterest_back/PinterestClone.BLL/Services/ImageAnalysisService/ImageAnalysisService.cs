@@ -1,11 +1,33 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace PinterestClone.BLL.Services.ImageAnalysisService
 {
+    /// <summary>
+    /// Сервіс відповідальний за аналіз картинок.
+    /// -----------------------------------------
+    /// Методи:
+    ///     -- Створити хеш картинки
+    ///     -- Отримати картинку з хешу
+    ///     -- Отримати подібну картинку за кешом
+    ///     -- Отримати кольори з картинки
+    ///     -- Отримати основні картинки
+    ///     -- Проаналізувати контент картинки
+    ///     -- Отримати середню яскравість картинки
+    ///     -- Отримати назву кольору
+    ///     -- Порахувати стандартне відхилення (внутрішній метод)
+    ///     -- Порахувати колірну відмінність
+    ///     </summary>
     public class ImageAnalysisService : IImageAnalysisService
     {
+        public ImageAnalysisService() { }
+
+        /// <summary>
+        /// Генерує хеш для заданого зображення.
+        /// </summary>
+        /// <param name="imageFile">Файл зображення (<see cref="IFormFile"/>).</param>
+        /// <returns>Бінарний хеш зображення як <c>string</c>.</returns>
         public async Task<string> GenerateImageHashAsync(IFormFile imageFile)
         {
             try
@@ -54,6 +76,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             }
         }
 
+        /// <summary>
+        /// Виділяє теги із зображення (колір, формат, яскравість, співвідношення сторін тощо).
+        /// </summary>
+        /// <param name="imageFile">Файл зображення.</param>
+        /// <returns>Список тегів, що описують картинку.</returns>
         public async Task<List<string>> ExtractImageTagsAsync(IFormFile imageFile)
         {
             Console.WriteLine($"ImageAnalysisService: ExtractImageTagsAsync called with file: {imageFile?.FileName}");
@@ -101,6 +128,12 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             }
         }
 
+        /// <summary>
+        /// Обчислює подібність між двома зображеннями за їхніми хешами.
+        /// </summary>
+        /// <param name="hash1">Хеш першого зображення.</param>
+        /// <param name="hash2">Хеш другого зображення.</param>
+        /// <returns>Число від 0.0 до 1.0, де 1.0 означає повну ідентичність.</returns>
         public async Task<double> CalculateImageSimilarityAsync(string hash1, string hash2)
         {
             if (string.IsNullOrEmpty(hash1) || string.IsNullOrEmpty(hash2) || hash1.Length != hash2.Length)
@@ -116,6 +149,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             return 1.0 - ((double)differences / hash1.Length);
         }
 
+        /// <summary>
+        /// Визначає найбільш вживані кольори на картинці.
+        /// </summary>
+        /// <param name="imageFile">Файл зображення.</param>
+        /// <returns>Список назв кольорів.</returns>
         public async Task<List<string>> GetImageColorsAsync(IFormFile imageFile)
         {
             Console.WriteLine($"ImageAnalysisService: GetImageColorsAsync called with file: {imageFile?.FileName}");
@@ -156,12 +194,22 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             }
         }
 
+        /// <summary>
+        /// Отримує домінуючий колір зображення.
+        /// </summary>
+        /// <param name="imageFile">Файл зображення.</param>
+        /// <returns>Назва основного кольору.</returns>
         public async Task<string> GetImageDominantColorAsync(IFormFile imageFile)
         {
             var colors = await GetImageColorsAsync(imageFile);
             return colors.FirstOrDefault() ?? "unknown";
         }
 
+        /// <summary>
+        /// Аналізує вміст картинки (розмір, співвідношення сторін, формат, яскравість, домінуючі кольори тощо).
+        /// </summary>
+        /// <param name="imageFile">Файл зображення.</param>
+        /// <returns>Словник з ключовими характеристиками зображення.</returns>
         public async Task<Dictionary<string, object>> AnalyzeImageContentAsync(IFormFile imageFile)
         {
             Console.WriteLine($"ImageAnalysisService: AnalyzeImageContentAsync called with file: {imageFile?.FileName}");
@@ -227,6 +275,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             }
         }
 
+        /// <summary>
+        /// Розраховує середню яскравість зображення.
+        /// </summary>
+        /// <param name="image">Об’єкт <see cref="Image"/>.</param>
+        /// <returns>Середнє значення яскравості (0–255).</returns>
         private int CalculateAverageBrightness(Image image)
         {
             using var bitmap = new Bitmap(image);
@@ -246,6 +299,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             return pixelCount > 0 ? (int)(totalBrightness / pixelCount) : 0;
         }
 
+        /// <summary>
+        /// Визначає назву кольору за його відтінком, насиченістю та яскравістю.
+        /// </summary>
+        /// <param name="color">Колір <see cref="Color"/>.</param>
+        /// <returns>Назва кольору у вигляді рядка.</returns>
         private string GetColorName(Color color)
         {
             var hue = color.GetHue();
@@ -267,6 +325,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             return "unknown";
         }
 
+        /// <summary>
+        /// Розраховує стандартне відхилення для заданих значень. Внутрішній метод для використання у сервісі.
+        /// </summary>
+        /// <param name="values">Список цілих значень.</param>
+        /// <returns>Стандартне відхилення.</returns>
         private double CalculateStandardDeviation(List<int> values)
         {
             if (!values.Any()) return 0;
@@ -276,6 +339,11 @@ namespace PinterestClone.BLL.Services.ImageAnalysisService
             return Math.Sqrt(variance);
         }
 
+        /// <summary>
+        /// Розраховує відхилення кольорової гами у зображенні.
+        /// </summary>
+        /// <param name="colorCounts">Словник із кількістю повторень кольорів.</param>
+        /// <returns>Значення колірної варіації.</returns>
         private double CalculateColorVariance(Dictionary<Color, int> colorCounts)
         {
             if (!colorCounts.Any()) return 0;

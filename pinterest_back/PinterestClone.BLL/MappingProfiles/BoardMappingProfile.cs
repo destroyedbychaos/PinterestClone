@@ -10,6 +10,12 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
+    /// <summary>
+    /// Мапер для об'єктів пов'язаних з дошками.
+    /// ----------------------------------------
+    /// Board -> BoardResponseDto -> Board
+    /// Board -> BoardSimpleDto -> Board
+    /// </summary>
     public class BoardMappingProfile : Profile
     {
         public BoardMappingProfile()

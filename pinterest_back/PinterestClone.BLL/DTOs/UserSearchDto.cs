@@ -6,13 +6,39 @@ using System.Threading.Tasks;
 
 namespace PinterestClone.BLL.DTOs
 {
+    /// <summary>
+    /// Data Transfer Object для пошуку користувача.
+    /// </summary>
     public class UserSearchDto
     {
-        public string Id { get; set; }     
+        /// <summary>
+        /// ID користувача.
+        /// </summary>
+        public string Id { get; set; }    
+        
+        /// <summary>
+        /// Нікнейм користувача.
+        /// </summary>
         public string UserName { get; set; }
+
+        /// <summary>
+        /// Публічне ім'я користувача.
+        /// </summary>
         public string? DisplayName { get; set; }
+
+        /// <summary>
+        /// Посилання на аватар користувача.
+        /// </summary>
         public string? AvatarUrl { get; set; }
+
+        /// <summary>
+        /// Опис профілю користувача.
+        /// </summary>
         public string? Bio { get; set; }
+
+        /// <summary>
+        /// Чи підписаний певний користувач на них.
+        /// </summary>
         public bool IsFollowing { get; set; }
     }
 }

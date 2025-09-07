@@ -1,4 +1,4 @@
-using PinterestClone.BLL.DTOs;
+﻿using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using PinterestClone.DAL.Repositories.PinRepository;
@@ -6,6 +6,13 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.HiddenPinService
 {
+    /// <summary>
+    /// Сервіс відповідальний за приховання пінів користувачем.
+    /// -------------------------------------------------------
+    /// Методи:
+    ///     -- Приховати пін для конкретного користувача
+    ///     -- Отримати список усіх прихованих пінів користувача
+    /// </summary>
     public class HiddenPinService : IHiddenPinService
     {
         private readonly IHiddenPinRepository _hiddenPinRepository;
@@ -22,6 +29,16 @@ namespace PinterestClone.BLL.Services.HiddenPinService
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Приховує вказаний пін для користувача.
+        /// </summary>
+        /// <param name="pinId">Ідентифікатор піна (GUID у вигляді рядка).</param>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// Об’єкт <see cref="ServiceResponse"/> зі статусом виконання:
+        ///     -- Успіх, якщо пін було приховано;
+        ///     -- Помилка, якщо пін вже прихований, пін або користувач не знайдені, або передано некоректний ідентифікатор.
+        /// </returns>
         public async Task<ServiceResponse> HidePinAsync(string pinId, string userId)
         {
             try
@@ -69,6 +86,14 @@ namespace PinterestClone.BLL.Services.HiddenPinService
             }
         }
 
+        /// <summary>
+        /// Отримує список усіх прихованих пінів для користувача.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// Об’єкт <see cref="ServiceResponse"/>, що містить список ідентифікаторів прихованих пінів 
+        /// або повідомлення про помилку, якщо користувача не знайдено.
+        /// </returns>
         public async Task<ServiceResponse> GetHiddenPinIdsAsync(string userId)
         {
             try

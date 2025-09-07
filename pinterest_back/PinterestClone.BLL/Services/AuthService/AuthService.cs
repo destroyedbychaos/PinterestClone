@@ -11,6 +11,13 @@ using PinterestClone.BLL.Services.NotificationService;
 
 namespace PinterestClone.BLL.Services.AuthService
 {
+    /// <summary>
+    /// Сервіс відповідальний за аутентифікацію користувачів.
+    /// -----------------------------------------------------
+    /// Методи:
+    ///     -- Вхід в акаунт користувача
+    ///     -- Регістрація нового користувача
+    /// </summary>
     public class AuthService : IAuthService
     {
         private readonly UserManager<User> _userManager;
@@ -30,6 +37,17 @@ namespace PinterestClone.BLL.Services.AuthService
             _notificationService = notificationService;
         }
 
+        /// <summary>
+        /// Виконує вхід користувача в акаунт.
+        /// </summary>
+        /// <param name="model">Модель з email та паролем користувача.</param>
+        /// <returns>
+        /// Повертає <see cref="ServiceResponse"/>:
+        /// <list type="bullet">
+        ///   <item>Помилку, якщо користувача не знайдено або пароль невірний.</item>
+        ///   <item>Успішний результат з JWT токенами у разі вдалого входу.</item>
+        /// </list>
+        /// </returns>
         public async Task<ServiceResponse> LoginAsync(LoginVM model)
         {
             var user = await _userRepository.GetByEmailAsync(model.Email);
@@ -58,6 +76,17 @@ namespace PinterestClone.BLL.Services.AuthService
             return ServiceResponse.OkResponse("Успіший вхід", tokens.Payload);
         }
 
+        /// <summary>
+        /// Реєструє нового користувача в системі.
+        /// </summary>
+        /// <param name="model">Модель з email, паролем та додатковими даними користувача.</param>
+        /// <returns>
+        /// Повертає <see cref="ServiceResponse"/>:
+        /// <list type="bullet">
+        ///   <item>Помилку, якщо email вже використовується або створення користувача не вдалося.</item>
+        ///   <item>Успішний результат з JWT токенами у разі успішної реєстрації.</item>
+        /// </list>
+        /// </returns>
         public async Task<ServiceResponse> RegisterAsync(RegisterVM model)
         {
             if (!await _userRepository.IsUniqueEmailAsync(model.Email))

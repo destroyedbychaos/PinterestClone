@@ -9,6 +9,12 @@ using PinterestClone.DAL.Models.Identity;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
+    /// <summary>
+    /// Мапер для об'єктів пов'язаних з користувачами.
+    /// ----------------------------------------------
+    /// User -> UserProfileDto
+    /// User -> UserSearchDto
+    /// </summary>
     public class UserMappingProfile : Profile
     {
         public UserMappingProfile() 
@@ -28,6 +34,8 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.Claims, opt => opt.Ignore())
                 .ForMember(dest => dest.Logins, opt => opt.Ignore())
                 .ForMember(dest => dest.Tokens, opt => opt.Ignore());
+
+            CreateMap<User, UserSearchDto>();
         }
     }
 }

@@ -21,6 +21,16 @@ namespace PinterestClone.BLL.Services.PhoneService
             _logger = logger;
         }
 
+        /// <summary>
+        /// Додає номер телефону користувача та надсилає код підтвердження через SMS.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <param name="dto">Об’єкт <see cref="AddPhoneNumberDto"/> з номером телефону.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо код успішно надіслано;
+        ///     -- Помилка, якщо користувача не знайдено або номер вже використовується.
+        /// </returns>
         public async Task<ServiceResponse> AddPhoneNumberAsync(string userId, AddPhoneNumberDto dto)
         {
             try
@@ -91,6 +101,16 @@ namespace PinterestClone.BLL.Services.PhoneService
             }
         }
 
+        /// <summary>
+        /// Підтверджує номер телефону користувача за наданим кодом підтвердження.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <param name="dto">Об’єкт <see cref="VerifyPhoneDto"/> з номером телефону та кодом підтвердження.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом перевірки:
+        ///     -- Успіх, якщо номер підтверджено;
+        ///     -- Помилка, якщо код недійсний або перевищено кількість спроб.
+        /// </returns>
         public async Task<ServiceResponse> VerifyPhoneNumberAsync(string userId, VerifyPhoneDto dto)
         {
             try
@@ -152,6 +172,16 @@ namespace PinterestClone.BLL.Services.PhoneService
             }
         }
 
+        /// <summary>
+        /// Повторно надсилає код підтвердження на номер телефону користувача.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <param name="phoneNumber">Номер телефону для повторної відправки коду.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо код успішно надіслано;
+        ///     -- Помилка, якщо код можна відправити повторно тільки через хвилину або виникла інша помилка.
+        /// </returns>
         public async Task<ServiceResponse> ResendVerificationCodeAsync(string userId, string phoneNumber)
         {
             try
@@ -178,6 +208,14 @@ namespace PinterestClone.BLL.Services.PhoneService
             }
         }
 
+        /// <summary>
+        /// Отримує інформацію про номер телефону користувача та стан його підтвердження.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з об’єктом <see cref="PhoneInfoDto"/>:
+        ///     -- Номер телефону, стан підтвердження, увімкнені SMS повідомлення та дата підтвердження.
+        /// </returns>
         public async Task<ServiceResponse> GetPhoneInfoAsync(string userId)
         {
             try
@@ -205,6 +243,15 @@ namespace PinterestClone.BLL.Services.PhoneService
             }
         }
 
+        /// <summary>
+        /// Видаляє номер телефону користувача та скидає всі підтвердження.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо номер видалено;
+        ///     -- Помилка, якщо користувача не знайдено або сталася помилка при видаленні.
+        /// </returns>
         public async Task<ServiceResponse> RemovePhoneNumberAsync(string userId)
         {
             try
@@ -239,6 +286,16 @@ namespace PinterestClone.BLL.Services.PhoneService
             }
         }
 
+        /// <summary>
+        /// Оновлює налаштування SMS повідомлень користувача (увімкнення/вимкнення).
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <param name="enableSms">true для увімкнення, false для вимкнення.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо налаштування оновлено;
+        ///     -- Помилка, якщо користувача не знайдено або виникла інша помилка.
+        /// </returns>
         public async Task<ServiceResponse> UpdateNotificationSettingsAsync(string userId, bool enableSms)
         {
             try

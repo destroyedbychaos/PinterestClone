@@ -4,15 +4,33 @@ using Microsoft.Extensions.Configuration;
 
 namespace PinterestClone.BLL.Services.EmailService
 {
+    /// <summary>
+    /// Сервіс відповідальний за дії з електронними листами.
+    /// ----------------------------------------------------
+    /// Методи:
+    ///     -- Надіслати емейл користувачу
+    ///     -- Надіслати емейл про скаргу на аест
+    ///     -- Надіслати емейл про скаргу на профіль
+    /// </summary>
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _configuration;
-
         public EmailService(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Надсилає електронний лист на вказану адресу.
+        /// </summary>
+        /// <param name="to">Адреса отримувача.</param>
+        /// <param name="subject">Тема листа.</param>
+        /// <param name="body">Тіло листа (HTML або текст).</param>
+        /// <returns>
+        /// <c>true</c>, якщо лист успішно надіслано або змодельовано; 
+        /// <c>false</c>, якщо сталася помилка.
+        /// </returns>
+        /// <exception cref="SmtpException">Виникає у випадку проблем з SMTP-сервером.</exception>
         public async Task<bool> SendEmailAsync(string to, string subject, string body)
         {
             try
@@ -58,6 +76,15 @@ namespace PinterestClone.BLL.Services.EmailService
             }
         }
 
+
+        /// <summary>
+        /// Надсилає емейл до служби підтримки про скаргу на пін.
+        /// </summary>
+        /// <param name="pinId">Ідентифікатор піна.</param>
+        /// <param name="pinTitle">Назва піна.</param>
+        /// <param name="reportedByUser">Ім’я або email користувача, який подав скаргу.</param>
+        /// <param name="reportMessage">Текст скарги.</param>
+        /// <returns><c>True</c>, якщо лист успішно надіслано; інакше <c>False</c>.</returns>
         public async Task<bool> SendPinReportEmailAsync(string pinId, string pinTitle, string reportedByUser, string reportMessage)
         {
             var supportEmail = _configuration["EmailSettings:SupportEmail"] ?? "supporrrttt138532@gmail.com";

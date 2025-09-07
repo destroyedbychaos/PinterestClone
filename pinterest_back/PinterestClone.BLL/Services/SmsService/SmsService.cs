@@ -6,6 +6,16 @@ using System.Text.Json;
 
 namespace PinterestClone.BLL.Services.SmsService
 {
+    /// <summary>
+    /// Сервіс відповідальний за взаємодію з користувачем через СМС-повідомлення.
+    /// -------------------------------------------------------------------------
+    /// Методи:
+    ///     -- Згенерувати код підтвердження
+    ///     -- Надіслати код підтвердження
+    ///     -- Надіслати сповіщення
+    ///     -- Надіслати СМС-повідомлення
+    ///     -- Надіслати повідомлення через Vonage
+    /// </summary>
     public class SmsService : ISmsService
     {
         private readonly ILogger<SmsService> _logger;
@@ -21,6 +31,10 @@ namespace PinterestClone.BLL.Services.SmsService
             _httpClient = httpClient;
         }
 
+        /// <summary>
+        /// Генерує код підтвердження СМС.
+        /// </summary>
+        /// <returns><see cref="ServiceResponse"/> з кодом підтвердження.</returns>
         public Task<ServiceResponse> GenerateVerificationCodeAsync()
         {
             try
@@ -36,6 +50,12 @@ namespace PinterestClone.BLL.Services.SmsService
             }
         }
 
+        /// <summary>
+        /// Надсилає код підтвердження на вказаний номер телефону.
+        /// </summary>
+        /// <param name="phoneNumber">Номер телефону отримувача.</param>
+        /// <param name="code">Код підтвердження.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом надсилання.</returns>
         public async Task<ServiceResponse> SendVerificationCodeAsync(string phoneNumber, string code)
         {
             try
@@ -50,6 +70,12 @@ namespace PinterestClone.BLL.Services.SmsService
             }
         }
 
+        /// <summary>
+        /// Надсилає звичайне сповіщення на вказаний номер телефону.
+        /// </summary>
+        /// <param name="phoneNumber">Номер телефону отримувача.</param>
+        /// <param name="message">Текст повідомлення.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом надсилання.</returns>
         public async Task<ServiceResponse> SendNotificationAsync(string phoneNumber, string message)
         {
             try
@@ -64,6 +90,12 @@ namespace PinterestClone.BLL.Services.SmsService
             }
         }
 
+        /// <summary>
+        /// Надсилає SMS на вказаний номер (використовується внутрішньо).
+        /// </summary>
+        /// <param name="phoneNumber">Номер телефону отримувача.</param>
+        /// <param name="message">Текст повідомлення.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом надсилання.</returns>
         private async Task<ServiceResponse> SendSmsAsync(string phoneNumber, string message)
         {
             try
@@ -84,6 +116,12 @@ namespace PinterestClone.BLL.Services.SmsService
             }
         }
 
+        /// <summary>
+        /// Надсилає SMS через Vonage.
+        /// </summary>
+        /// <param name="phoneNumber">Номер телефону отримувача.</param>
+        /// <param name="message">Текст повідомлення.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом надсилання.</returns>
         private async Task<ServiceResponse> SendViaVonageAsync(string phoneNumber, string message)
         {
             try
@@ -157,6 +195,11 @@ namespace PinterestClone.BLL.Services.SmsService
             }
         }
 
+        /// <summary>
+        /// Нормалізує номер телефону для відправки через Vonage.
+        /// </summary>
+        /// <param name="phoneNumber">Вхідний номер телефону.</param>
+        /// <returns>Нормалізований номер у форматі 380XXXXXXXXX.</returns>
         private static string NormalizePhoneNumber(string phoneNumber)
         {
             var digitsOnly = new string(phoneNumber.Where(char.IsDigit).ToArray());
@@ -175,12 +218,18 @@ namespace PinterestClone.BLL.Services.SmsService
             return digitsOnly;
         }
 
+        /// <summary>
+        /// Модель відповіді Vonage для десеріалізації JSON.
+        /// </summary>
         private class VonageResponse
         {
             public int messageCount { get; set; }
             public VonageMessage[]? messages { get; set; }
         }
 
+        /// <summary>
+        /// Модель повідомлення Vonage.
+        /// </summary>
         private class VonageMessage
         {
             public string? to { get; set; }

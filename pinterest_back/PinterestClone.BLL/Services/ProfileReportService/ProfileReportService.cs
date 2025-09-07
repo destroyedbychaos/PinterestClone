@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.EmailService;
 using PinterestClone.BLL.Services.ProfileReportService;
@@ -8,6 +8,16 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.ProfileReportService
 {
+    /// <summary>
+    /// Сервіс відповідальний за скарги на профілі користувачів.
+    /// --------------------------------------------------------
+    /// Методи:
+    ///     -- Поскаржитися на профіль
+    ///     -- Отримати скаргу за ID
+    ///     -- Отримати всі скарги
+    ///     -- Вирішити скаргу
+    ///     -- Видалити скаргу
+    /// </summary>
     public class ProfileReportService : IProfileReportService
     {
         private readonly IProfileReportRepository _profileReportRepository;
@@ -23,6 +33,12 @@ namespace PinterestClone.BLL.Services.ProfileReportService
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Створює нову скаргу на профіль користувача.
+        /// </summary>
+        /// <param name="reportProfileDto"> <see cref="ReportProfileDto"/> який містить інформацію для створення скарги.</param>
+        /// <param name="reportedByUserId">ID користувача, який скаржиться на профіль.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції та інформацією про створену скаргу.</returns>
         public async Task<ServiceResponse> ReportProfileAsync(ReportProfileDto reportProfileDto, string reportedByUserId)
         {
             try
@@ -73,6 +89,11 @@ namespace PinterestClone.BLL.Services.ProfileReportService
             }
         }
 
+        /// <summary>
+        /// Отримує скаргу на профіль за її ID.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <returns><see cref="ServiceResponse"/> зі скаргою або повідомленням про помилку.</returns>
         public async Task<ServiceResponse> GetReportByIdAsync(int id)
         {
             try
@@ -91,6 +112,12 @@ namespace PinterestClone.BLL.Services.ProfileReportService
             }
         }
 
+        /// <summary>
+        /// Отримує всі скарги з пагінацією.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Розмір сторінки (за замовчуванням 20).</param>
+        /// <returns><see cref="ServiceResponse"/> зі списком скарг.</returns>
         public async Task<ServiceResponse> GetAllReportsAsync(int pageNumber = 1, int pageSize = 20)
         {
             try
@@ -104,6 +131,12 @@ namespace PinterestClone.BLL.Services.ProfileReportService
             }
         }
 
+        /// <summary>
+        /// Позначає скаргу як вирішену.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <param name="resolutionNotes">Примітки щодо вирішення скарги.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції та оновленою скаргою.</returns>
         public async Task<ServiceResponse> ResolveReportAsync(int id, string resolutionNotes)
         {
             try
@@ -132,6 +165,11 @@ namespace PinterestClone.BLL.Services.ProfileReportService
             }
         }
 
+        /// <summary>
+        /// Видаляє скаргу на профіль за її ID.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом видалення.</returns>
         public async Task<ServiceResponse> DeleteReportAsync(int id)
         {
             try

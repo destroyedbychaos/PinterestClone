@@ -4,6 +4,9 @@ using FluentValidation;
 
 namespace PinterestClone.BLL.Validators
 {
+    /// <summary>
+    /// Валідатор для входу в профіль.
+    /// </summary>
     public class LoginValidator : AbstractValidator<LoginVM>
     {
         public LoginValidator() 

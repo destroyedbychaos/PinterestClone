@@ -14,6 +14,16 @@ using System.Text;
 
 namespace PinterestClone.BLL.Services.JwtService
 {
+    /// <summary>
+    /// Сервіс відповідальний за JWT токени.
+    /// ------------------------------------
+    /// Методи:
+    ///     -- Зберегти рефреш токен
+    ///     -- Створити токен доступу
+    ///     -- Створити рефреш токен
+    ///     -- Створити токен доступу та рефреш токен
+    ///     -- Перевірити токен
+    /// </summary>
     public class JwtService : IJwtService
     {
         private readonly AppDbContext _context;
@@ -27,6 +37,13 @@ namespace PinterestClone.BLL.Services.JwtService
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Зберігає новий рефреш токен для користувача у базі даних.
+        /// </summary>
+        /// <param name="user">Користувач, для якого створюється токен.</param>
+        /// <param name="refreshToken">Рефреш токен.</param>
+        /// <param name="jwtId">Ідентифікатор JWT токена.</param>
+        /// <returns>Об’єкт <see cref="RefreshToken"/> якщо успішно збережено; <c>null</c> у разі невдачі.</returns>
         private async Task<RefreshToken?> SaveRefreshTokenAsync(User user, string refreshToken, string jwtId)
         {
             var token = new RefreshToken
@@ -51,6 +68,12 @@ namespace PinterestClone.BLL.Services.JwtService
             return token;
         }
 
+        /// <summary>
+        /// Генерує JWT токен доступу для користувача.
+        /// </summary>
+        /// <param name="user">Користувач, для якого створюється токен.</param>
+        /// <returns>Об’єкт <see cref="JwtSecurityToken"/>.</returns>
+        /// <exception cref="InvalidOperationException">Якщо ключ або email користувача відсутні.</exception>
         private JwtSecurityToken GenerateAccessToken(User user)
         {
             var issuer = _configuration["AuthSettings:issuer"];
@@ -80,6 +103,10 @@ namespace PinterestClone.BLL.Services.JwtService
             return token;
         }
 
+        /// <summary>
+        /// Генерує новий рефреш токен.
+        /// </summary>
+        /// <returns>Рядок, що містить рефреш токен у Base64 форматі.</returns>
         private string GenerateRefreshToken()
         {
             var bytes = new byte[32];
@@ -91,6 +118,11 @@ namespace PinterestClone.BLL.Services.JwtService
             }
         }
 
+        /// <summary>
+        /// Генерує пару токенів: доступу та рефреш для користувача.
+        /// </summary>
+        /// <param name="user">Користувач, для якого генеруються токени.</param>
+        /// <returns>Об’єкт <see cref="ServiceResponse"/> з токенами або повідомленням про помилку.</returns>
         public async Task<ServiceResponse> GenerateTokensAsync(User user)
         {
             var accessToken = GenerateAccessToken(user);
@@ -112,6 +144,12 @@ namespace PinterestClone.BLL.Services.JwtService
             return ServiceResponse.OkResponse("Токени", tokens);
         }
 
+        /// <summary>
+        /// Оновлює токени за наявним рефреш токеном.
+        /// </summary>
+        /// <param name="model">Модель <see cref="JwtVM"/> з токенами користувача.</param>
+        /// <returns>Об’єкт <see cref="ServiceResponse"/> з новими токенами або винятком у разі невдачі.</returns>
+        /// <exception cref="SecurityTokenException">Якщо токен недійсний або протермінований.</exception>
         public async Task<ServiceResponse> RefreshTokensAsync(JwtVM model)
         {
             var storedToken = await _context.RefreshTokens
@@ -158,6 +196,12 @@ namespace PinterestClone.BLL.Services.JwtService
             return response;
         }
 
+        /// <summary>
+        /// Перевіряє дійсність токена доступу та повертає ClaimsPrincipal.
+        /// </summary>
+        /// <param name="accessToken">JWT токен доступу у вигляді рядка.</param>
+        /// <returns>Об’єкт <see cref="ClaimsPrincipal"/> з даними користувача.</returns>
+        /// <exception cref="SecurityTokenException">Якщо токен недійсний або не відповідає очікуваному алгоритму підпису.</exception>
         private ClaimsPrincipal GetPrincipals(string accessToken)
         {
             var jwtSecurityKey = _configuration["AuthSettings:key"];
