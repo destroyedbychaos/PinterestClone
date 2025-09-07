@@ -6,6 +6,20 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер відповідальний за операції з дошками.
+    /// -----------------------------------------------
+    /// Методи:
+    ///     -- Створити дошку
+    ///     -- Отримати всі дошки
+    ///     -- Отримати дошки користувача за ID
+    ///     -- Отримати дошки користувача за нікнеймом
+    ///     -- Отримати дошку за ID
+    ///     -- Оновити дошку
+    ///     -- Видалити дошку
+    ///     -- Заархівувати дошку
+    ///     -- Розархівувати дошку
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class BoardsController : BaseController
@@ -17,6 +31,11 @@ namespace PinterestClone.API.Controllers
             _boardService = boardService;
         }
 
+        /// <summary>
+        /// Створює нову дошку для поточного автентифікованого користувача.
+        /// </summary>
+        /// <param name="boardDto">Об’єкт <see cref="BoardSimpleDto"/>, що містить дані для створення дошки.</param>
+        /// <returns><see cref="ActionResult{BoardResponseDto}"/> з інформацією про створену дошку.</returns>
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<BoardResponseDto>> CreateBoard([FromBody] BoardSimpleDto boardDto)
@@ -36,6 +55,17 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує список усіх дошок з підтримкою пагінації, пошуку, сортування та групування.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <param name="searchTerm">Опціональний пошуковий запит.</param>
+        /// <param name="sortBy">Поле для сортування (за замовчуванням "createdAt").</param>
+        /// <param name="isAscending">Чи виконувати сортування за зростанням.</param>
+        /// <param name="isArchived">Фільтр за архівованими дошками.</param>
+        /// <param name="groupBy">Параметр групування.</param>
+        /// <returns><see cref="ActionResult{BoardListDto}"/> зі списком дошок.</returns>
         [HttpGet]
         public async Task<ActionResult<BoardListDto>> GetBoards(
             [FromQuery] int pageNumber = 1,
@@ -60,6 +90,17 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує список дошок користувача за ID з підтримкою пагінації, пошуку, сортування та групування.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням     20).</param>
+        /// <param name="searchTerm">Опціональний пошуковий запит.</param>
+        /// <param name="sortBy">Поле для сортування (за замовчуванням "createdAt").</param>
+        /// <param name="isAscending">Чи виконувати сортування за зростанням.</param>
+        /// <param name="isArchived">Фільтр за архівованими дошками.</param>
+        /// <param name="groupBy">Параметр групування.</param>
+        /// <returns><see cref="ActionResult{BoardListDto}"/> зі списком дошок.</returns>
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<BoardListDto>> GetUserBoards(
             string userId,
@@ -84,6 +125,17 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує список дошок користувача за нікнеймом з підтримкою пагінації, пошуку, сортування та групування.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <param name="searchTerm">Опціональний пошуковий запит.</param>
+        /// <param name="sortBy">Поле для сортування (за замовчуванням "createdAt").</param>
+        /// <param name="isAscending">Чи виконувати сортування за зростанням.</param>
+        /// <param name="isArchived">Фільтр за архівованими дошками.</param>
+        /// <param name="groupBy">Параметр групування.</param>
+        /// <returns><see cref="ActionResult{BoardListDto}"/> зі списком дошок.</returns>
         [HttpGet("user/username/{username}")]
         public async Task<ActionResult<BoardListDto>> GetUserBoardsByUsername(
             string username,
@@ -108,6 +160,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує дошку за її ID.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <returns><see cref="ActionResult{BoardResponseDto}"/> з інформацією про дошку або інформацією про помилку.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<BoardResponseDto>> GetBoard(string id)
         {
@@ -125,6 +182,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Оновлює дані дошки.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <param name="boardDto">Об’єкт <see cref="BoardSimpleDto"/> з оновленими даними.</param>
+        /// <returns><see cref="ActionResult{BoardResponseDto}"/> з оновленою інформацією про дошку.</returns>
         [HttpPut("{id}")]
         [Authorize]
         public async Task<ActionResult<BoardResponseDto>> UpdateBoard(string id, [FromBody] BoardSimpleDto boardDto)
@@ -147,6 +210,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Видаляє дошку.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <returns><see cref="ActionResult"/> зі статусом операції (NoContent при успіху).</returns>
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<ActionResult> DeleteBoard(string id)
@@ -169,6 +237,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Архівує дошку.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <returns><see cref="ActionResult{BoardResponseDto}"/> з інформацією про архівовану дошку.</returns>
         [HttpPost("{id}/archive")]
         [Authorize]
         public async Task<ActionResult<BoardResponseDto>> ArchiveBoard(string id)
@@ -191,6 +264,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Розархівовує дошку.
+        /// </summary>
+        /// <param name="id">Ідентифікатор дошки.</param>
+        /// <returns><see cref="ActionResult{BoardResponseDto}"/> з інформацією про відновлену дошку.</returns>
         [HttpPost("{id}/restore")]
         [Authorize]
         public async Task<ActionResult<BoardResponseDto>> RestoreBoard(string id)
@@ -213,6 +291,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує ID поточного користувача (внутрішній метод).
+        /// </summary>
+        /// <returns>Рядок із ідентифікатором користувача або <c>null</c>, якщо користувач не автентифікований.</returns>
         private string? GetCurrentUserId()
         {
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

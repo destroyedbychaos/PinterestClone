@@ -1,10 +1,20 @@
-using PinterestClone.BLL.Services.UserBlockService;
+﻿using PinterestClone.BLL.Services.UserBlockService;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.UserBlockService
 {
+    /// <summary>
+    /// Сервіс відповідальний за блокування користувачів.
+    /// -------------------------------------------------
+    /// Методи:
+    ///     -- Заблокувати користувача
+    ///     -- Розблокувати користувача
+    ///     -- Отримати заблокованих користувачів для певного користувача
+    ///     -- Отримати ким заблокований певний користувач
+    ///     -- Перевірити чи користувач заблокований
+    /// </summary>
     public class UserBlockService : IUserBlockService
     {
         private readonly IUserBlockRepository _userBlockRepository;
@@ -16,6 +26,13 @@ namespace PinterestClone.BLL.Services.UserBlockService
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Заблокувати користувача.
+        /// </summary>
+        /// <param name="blockerId">ID користувача, який блокує.</param>
+        /// <param name="blockedUserId">ID користувача, якого потрібно заблокувати.</param>
+        /// <param name="reason">Причина блокування (необов’язково).</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції.</returns>
         public async Task<ServiceResponse> BlockUserAsync(string blockerId, string blockedUserId, string? reason = null)
         {
             try
@@ -61,6 +78,12 @@ namespace PinterestClone.BLL.Services.UserBlockService
             }
         }
 
+        /// <summary>
+        /// Розблокувати користувача.
+        /// </summary>
+        /// <param name="blockerId">ID користувача, який розблокує.</param>
+        /// <param name="blockedUserId">ID користувача, якого потрібно розблокувати.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції.</returns>
         public async Task<ServiceResponse> UnblockUserAsync(string blockerId, string blockedUserId)
         {
             try
@@ -79,6 +102,11 @@ namespace PinterestClone.BLL.Services.UserBlockService
             }
         }
 
+        /// <summary>
+        /// Отримати список користувачів заблокованих певним користувачем.
+        /// </summary>
+        /// <param name="blockerId">ID користувача, який заблокував інших.</param>
+        /// <returns><see cref="ServiceResponse"/> зі списком заблокованих користувачів.</returns>
         public async Task<ServiceResponse> GetBlockedUsersAsync(string blockerId)
         {
             try
@@ -92,6 +120,11 @@ namespace PinterestClone.BLL.Services.UserBlockService
             }
         }
 
+        /// <summary>
+        /// Отримати список користувачів які заблокували певного користувача.
+        /// </summary>
+        /// <param name="blockedUserId">ID користувача, який може бути заблокованим іншими.</param>
+        /// <returns><see cref="ServiceResponse"/> зі списком користувачів, які його заблокували.</returns>
         public async Task<ServiceResponse> GetBlockedByUsersAsync(string blockedUserId)
         {
             try
@@ -105,6 +138,12 @@ namespace PinterestClone.BLL.Services.UserBlockService
             }
         }
 
+        /// <summary>
+        /// Перевірити, чи певний користувач заблокований іншим користувачем.
+        /// </summary>
+        /// <param name="blockerId">ID користувача, який можливо заблокував.</param>
+        /// <param name="blockedUserId">ID користувача, який можливо заблокований.</param>
+        /// <returns><see cref="ServiceResponse"/> з інформацією про статус блокування.</returns>
         public async Task<ServiceResponse> IsBlockedAsync(string blockerId, string blockedUserId)
         {
             try

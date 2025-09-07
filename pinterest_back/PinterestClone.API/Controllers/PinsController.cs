@@ -10,6 +10,30 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для операцій з пінами.
+    /// --------------------------------
+    /// Методи:
+    ///     -- Створити пін
+    ///     -- Отримати пін за ID
+    ///     -- Отримати список всіх пінів
+    ///     -- Отримати список пінів певного користувача
+    ///     -- Отримати всі теги, що використовуються в пінах
+    ///     -- Додати тег
+    ///     -- Отримати всі теги як список
+    ///     -- Шукати піни
+    ///     -- Шукати картинку за хешом
+    ///     -- Знайти подібні картинки
+    ///     -- Отримати список пінів певної дошки
+    ///     -- Оновити пін
+    ///     -- Видалити пін
+    ///     -- Видалити тег
+    ///     -- Додати пін до дошки
+    ///     -- Видалити пін з дошки
+    ///     -- Отримати рекомендації пінів
+    ///     -- Отримати поради за пошуком
+    ///     -- Шукати по картинці
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class PinsController : BaseController
@@ -24,8 +48,12 @@ namespace PinterestClone.API.Controllers
             _db = db;
             _imageService = imageService;
         }
-        
 
+        /// <summary>
+        /// Створює новий пін з завантаженою картинкою.
+        /// </summary>
+        /// <param name="createPinDto"><see cref="CreatePinDto"/> з даними піна.</param>
+        /// <returns><see cref="ActionResult{PinResponseDto}"/> з інформацією про створений пін або повідомленням про помилку.</returns>
         [HttpPost]
         [Authorize]
         [Consumes("multipart/form-data")]
@@ -56,6 +84,74 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+
+
+        [HttpGet("{pinId}/similar-by-tags")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByTags(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByTagsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by tags: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/similar-by-image")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByImage(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByImageAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by image: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/recommendations")]
+        public async Task<ActionResult<PinListDto>> GetPinRecommendations(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetPinRecommendationsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin recommendations: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// Отримує пін за його ID.
+        /// </summary>
+        /// <param name="id">ID піна.</param>
+        /// <returns><see cref="ActionResult{PinResponseDto}"/> з даними піна або повідомленням про помилку.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<PinResponseDto>> GetPin(string id)
         {
@@ -66,6 +162,16 @@ namespace PinterestClone.API.Controllers
             return Ok(pin);
         }
 
+        /// <summary>
+        /// Отримує список всіх пінів із підтримкою пагінації, пошуку та сортування.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки, ціле число (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці, ціле число (за замовчуванням 20).</param>
+        /// <param name="searchTerm">Термін пошуку у заголовку або описі (опційно).</param>
+        /// <param name="tags">Список тегів для фільтрації (опційно).</param>
+        /// <param name="sortBy">Поле для сортування (за замовчуванням = "createdAt").</param>
+        /// <param name="isAscending">Сортування за зростанням (true/false).</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів або повідомленням про помилку.</returns>
         [HttpGet]
         public async Task<ActionResult<PinListDto>> GetPins(
             [FromQuery] int pageNumber = 1,
@@ -90,6 +196,15 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Повертає список пінів, створених конкретним користувачем, з підтримкою пагінації та сортування.
+        /// </summary>
+        /// <param name="userId">ID користувача.</param>
+        /// <param name="pageNumber">Номер сторінки для пагінації (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість пінів на сторінці (за замовчуванням 20).</param>
+        /// <param name="sortBy">Поле для сортування (за замовчуванням = "createdAt").</param>
+        /// <param name="isAscending"><c>True</c> — сортування за зростанням, <c>False</c> — сортування за спаданням.</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів користувача або повідомленням про помилку.</returns>
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<PinListDto>> GetUserPins(
             string userId,
@@ -113,6 +228,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Повертає список усіх тегів, що використовуються в пiнах.
+        /// </summary>
+        /// <returns><see cref="ActionResult{List{string}}"/> зі списком тегів або повідомленням про помилку.</returns>
         [HttpGet("tags")]
         public async Task<ActionResult<List<string>>> GetAllTags()
         {
@@ -127,7 +246,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        /// <param name="dto"></param>
+        /// <summary>
+        /// Додає тег у базу даних.
+        /// </summary>
+        /// <param name="dto"><see cref="TagDto"/> з ім’ям тегу.</param>
+        /// <returns><see cref="ActionResult"/> з повідомленням про успішне додавання або помилку.</returns>
         [HttpPost("tags")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(object), 200)]
@@ -144,7 +267,10 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = $"Tag '{dto.Name}' added", tag });
         }
 
-
+        /// <summary>
+        /// Повертає всі доступні теги з бази даних.
+        /// </summary>
+        /// <returns><see cref="ActionResult{List{string}}"/> зі списком тегів у нижньому регістрі, без дублікатів.</returns>   
         [HttpGet("all-tags")]
         [ProducesResponseType(typeof(List<string>), 200)]
         public ActionResult GetAllTagsCombined()
@@ -163,7 +289,16 @@ namespace PinterestClone.API.Controllers
             return Ok(allTags);
         }
 
-
+        /// <summary>
+        /// Шукає за ключовим словом із можливістю фільтрації за заголовком та описом.
+        /// </summary>
+        /// <param name="searchTerm">Ключове слово для пошуку пінів.</param>
+        /// <param name="searchInTitle"> Чи шукати в заголовках пінів.</param>
+        /// <param name="searchInDescription">Чи шукати в описах пінів.</param>
+        /// <param name="exactMatch">Чи виконувати точне співпадіння рядка.</param>
+        /// <param name="pageNumber"> Номер сторінки для пагінації (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість пінів на сторінку (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів, що відповідають критеріям пошуку або повідомленням про помилку.</returns>
         [HttpGet("search")]
         public async Task<ActionResult<PinListDto>> SearchPins(
             [FromQuery] string searchTerm,
@@ -192,6 +327,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Шукає піни за хешем зображення.
+        /// </summary>
+        /// <param name="imageHash">Хеш зображення.</param>
+        /// <param name="pageNumber">Номер сторінки для пагінації результатів (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість пінів на сторінку (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів, що відповідають хешу зображення або повідомлення про помилку.</returns>
         [HttpGet("search-by-image-hash")]
         public async Task<ActionResult<PinListDto>> SearchPinsByImageHash(
             [FromQuery] string imageHash,
@@ -217,6 +359,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Шукає піни за зображенням.
+        /// </summary>
+        /// <param name="request"><see cref="FindSimilarImagesDto"/> з файлом зображення та параметрами пошуку.</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком схожих пінів або повідомленням про помилку.</returns>
         [HttpPost("find-similar-images")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<PinListDto>> FindSimilarImages([FromForm] FindSimilarImagesDto request)
@@ -241,8 +388,15 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
-
+        /// <summary>
+        /// Отримання списку пінів певної дошки.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <param name="pageNumber">Номер сторінки для пагінації результаті (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість пінів на сторінку (за замовчуванням 20).</param>
+        /// <param name="sortBy"> Поле для сортування пінів (за замовчуванням "createdAt").</param>
+        /// <param name="isAscending"> Вказує порядок сортування: <c>True</c> — за зростанням, <c>False</c> — за спаданням.</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів для вказаної дошки або повідомленням про помилку.</returns>
         [HttpGet("board/{boardId}")]
         public async Task<ActionResult<PinListDto>> GetBoardPins(
             string boardId,
@@ -265,6 +419,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Оновлює дані піна.
+        /// </summary>
+        /// <param name="id">ID піна.</param>
+        /// <param name="updatePinDto"><see cref="UpdatePinDto"/> з новими даними піна.</param>
+        /// <returns><see cref="ActionResult{PinResponseDto}"/> з оновленим піном або повідомленням про помилку.</returns>
         [HttpPut("{id}")]
         [Authorize]
         public async Task<ActionResult<PinResponseDto>> UpdatePin(string id, [FromBody] UpdatePinDto updatePinDto)
@@ -280,7 +441,11 @@ namespace PinterestClone.API.Controllers
             return Ok(pin);
         }
 
-        /// <param name="id"></param>
+        /// <summary>
+        /// Видаляє пін за його ID.
+        /// </summary>
+        /// <param name="id">ID піна.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -298,7 +463,11 @@ namespace PinterestClone.API.Controllers
         }
 
 
-        /// <param name="id"></param>
+        /// <summary>
+        /// Видаляє тег за його ID.
+        /// </summary>
+        /// <param name="id">ID тегу.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpDelete("tags/{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -312,6 +481,12 @@ namespace PinterestClone.API.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Додає пін до дошки користувача.
+        /// </summary>
+        /// <param name="pinId">ID піна, який потрібно додати.</param>
+        /// <param name="boardId">ID дошки, до якої додається пін.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{pinId}/boards/{boardId}")]
         [Authorize]
         public async Task<ActionResult> AddPinToBoard(string pinId, string boardId)
@@ -327,6 +502,12 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Pin successfully added to board" });
         }
 
+        /// <summary>
+        /// Видаляє пін з дошки користувача.
+        /// </summary>
+        /// <param name="pinId">ID піна, який потрібно видалити.</param>
+        /// <param name="boardId">ID дошки, з якої видаляється пін.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpDelete("{pinId}/boards/{boardId}")]
         [Authorize]
         public async Task<ActionResult> RemovePinFromBoard(string pinId, string boardId)
@@ -342,11 +523,19 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Pin successfully removed from board" });
         }
 
+        /// <summary>
+        /// Отримує ID поточного аутентифікованого користувача з токена. Внутрішній метод.
+        /// </summary>
+        /// <returns>Рядок з ID користувача або <c>null</c>, якщо користувач не аутентифікований.</returns>
         private string? GetCurrentUserId()
         {
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
+        /// <summary>
+        /// Повертає список рекомендованих пінів для користувача.
+        /// </summary>
+        /// <returns><see cref="ActionResult{List{PinRecommendationDto}}"/> зі списком рекомендованих пінів або повідомленням про помилку.</returns>
         [HttpGet("recommendations")]
         [Authorize]
         public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
@@ -366,25 +555,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        [HttpGet("recommendations/{userId}")]
-        [AllowAnonymous] // ����� �������� [Authorize], ���� ����� ����� ��� ����������
-        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendationsForUser(string userId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(userId))
-                    return BadRequest("UserId is required");
-
-                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
-                return Ok(recommendedPins);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error loading recommendations for user {userId}: {ex.Message}");
-            }
-        }
-
-
+        /// <summary>
+        /// Повертає список підказок для пошукового запиту.
+        /// </summary>
+        /// <param name="q">Рядок запиту для пошуку порад пінів.</param>
+        /// <returns><see cref="IActionResult"/> зі списком пораджених пінів.</returns>
         [HttpGet("search-suggestions")]
         public async Task<IActionResult> GetSearchSuggestions([FromQuery] string q)
         {
@@ -392,6 +567,11 @@ namespace PinterestClone.API.Controllers
             return Ok(suggestions);
         }
 
+        /// <summary>
+        /// Виконує пошук пінів за завантаженим зображенням.
+        /// </summary>
+        /// <param name="request"><see cref="FindSimilarImagesDto"/>, який містить файл зображення, область пошуку та координати виділення.</param>
+        /// <returns><see cref="ActionResult{PinListDto}"/> зі списком пінів, схожих на завантажене зображення, або повідомленням про помилку.</returns>
         [HttpPost("search-by-image")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<PinListDto>> SearchByImage([FromForm] FindSimilarImagesDto request)

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Container, Typography, Paper, Button, CircularProgress, Alert } from '@mui/material';
+import { Box, Container, Typography, Paper, Button, CircularProgress, Alert, Snackbar } from '@mui/material';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import SimpleHeader from '../../components/layout/SimpleHeader';
 import { useTheme } from '@mui/material';
 import { Icon as Iconify } from '@iconify/react';
 import { savePin, isPinSaved } from '../../utils/savedPinsStorage';
+import EnhancedToast from '../../components/ui/EnhancedToast';
 
 import ImageThumbnailBar from '../../components/ui/CreateAestComponents/ImageThumbnailBar';
 import ImagePreview from '../../components/ui/CreateAestComponents/ImagePreview';
@@ -38,6 +39,13 @@ const CreateAest = () => {
       hashtags: ''
     });
     const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+    
+    // Toast state
+    const [toast, setToast] = useState({
+      open: false,
+      message: '',
+      severity: 'info' // 'success', 'error', 'warning', 'info'
+    });
   
     const fileInputRef = useRef(null);
     const addMoreInputRef = useRef(null);
@@ -79,6 +87,19 @@ const CreateAest = () => {
       uploadedFiles[selectedImageIndex]?.description?.trim() && 
       uploadedFiles[selectedImageIndex]?.link?.trim() && 
       uploadedFiles[selectedImageIndex]?.hashtags?.trim();
+
+    // Toast helper function
+    const showToast = (message, severity = 'info') => {
+      setToast({
+        open: true,
+        message,
+        severity
+      });
+    };
+
+    const hideToast = () => {
+      setToast(prev => ({ ...prev, open: false }));
+    };
   
     useEffect(() => {
       const loadSavedData = async () => {
@@ -117,6 +138,7 @@ const CreateAest = () => {
           }
         } catch (error) {
           console.error('Error loading saved data:', error);
+          showToast('Error loading saved data', 'error');
         } finally {
           setIsLoadingFiles(false);
         }
@@ -261,8 +283,11 @@ const CreateAest = () => {
           }
           return updatedFiles;
         });
+        
+        showToast(`${newFiles.length} image(s) uploaded successfully`, 'success');
       } catch (error) {
         console.error('Error uploading files:', error);
+        showToast('Error uploading files', 'error');
       }
     };
   
@@ -307,6 +332,8 @@ const CreateAest = () => {
         
         return updated;
       });
+      
+      showToast('Image removed successfully', 'info');
     };
   
     const handleInputChange = (field, value) => {
@@ -354,7 +381,7 @@ const CreateAest = () => {
     };
   
     const handleSaveFromUrl = () => {
-
+      // Implementation for saving from URL
     };
   
     const handleBoardSelect = (board) => {
@@ -371,12 +398,11 @@ const CreateAest = () => {
 
     const handleConfirmCreateBoard = async (boardName) => {
       try {
+        // Fixed: Correct API payload structure
         const boardData = {
-          boardDto: {
-            name: boardName,
-            description: "",
-            isPrivate: false
-          }
+          name: boardName,
+          description: "",
+          isPrivate: false
         };
     
         const result = await createBoard(boardData).unwrap();
@@ -393,8 +419,34 @@ const CreateAest = () => {
         setSelectedBoard(newBoard);
     
         setShowCreateBoardModal(false);
+        showToast('Board created successfully', 'success');
       } catch (error) {
-        alert("Failed to create board. Please try again.");
+        console.error('Board creation error:', error);
+        let errorMessage = "Failed to create board. Please try again.";
+        
+        if (error.status === 400) {
+          if (error.data && error.data.errors) {
+            const validationErrors = error.data.errors;
+            const errorMessages = [];
+            
+            Object.keys(validationErrors).forEach(field => {
+              const fieldErrors = validationErrors[field];
+              if (Array.isArray(fieldErrors)) {
+                fieldErrors.forEach(err => {
+                  errorMessages.push(`${field}: ${err}`);
+                });
+              }
+            });
+            
+            if (errorMessages.length > 0) {
+              errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
+            }
+          } else if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+          }
+        }
+        
+        showToast(errorMessage, 'error');
       }
     };
 
@@ -406,7 +458,7 @@ const CreateAest = () => {
       const fileInfo = uploadedFiles[selectedImageIndex];
       
       if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
-        alert("Please fill all required fields");
+        showToast("Please fill all required fields", 'warning');
         setCurrentStep(1);
         return;
       }
@@ -415,36 +467,36 @@ const CreateAest = () => {
       if (!file) {
         const storedData = await fileStorageRef.current.getFile(fileInfo.id);
         if (!storedData) {
-          alert("Image file is missing. Please upload the image again.");
+          showToast("Image file is missing. Please upload the image again.", 'error');
           return;
         }
         file = storedData.file;
       }
       
       if (!selectedBoard) {
-        alert("Please select a board");
+        showToast("Please select a board", 'warning');
         return;
       }
     
       const token = localStorage.getItem('authToken') || 
                    localStorage.getItem('token') || 
                    sessionStorage.getItem('authToken') || 
-                   sessionStorage.getToken('token');
+                   sessionStorage.getItem('token');
       
       if (!token) {
-        alert("Authentication required. Please log in first.");
+        showToast("Authentication required. Please log in first.", 'error');
         return;
       }
     
       try {
         if (!file.type || !file.type.startsWith('image/')) {
-          alert("Please select a valid image file");
+          showToast("Please select a valid image file", 'error');
           return;
         }
     
         const maxFileSize = 10 * 1024 * 1024;
         if (file.size && file.size > maxFileSize) {
-          alert("File size must be less than 10MB");
+          showToast("File size must be less than 10MB", 'error');
           return;
         }
     
@@ -464,7 +516,9 @@ const CreateAest = () => {
         await handleAutoSavePin(result, fileInfo);
         
         setCurrentStep(3);
+        showToast('Pin created successfully!', 'success');
       } catch (error) {
+        console.error('Pin creation error:', error);
         let errorMessage = "Failed to create pin. Please try again.";
         
         if (error.status === 401) {
@@ -484,7 +538,7 @@ const CreateAest = () => {
             });
             
             if (errorMessages.length > 0) {
-              errorMessage = `Validation errors:\n${errorMessages.join('\n')}`;
+              errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
             }
           }
         } else if (error.status === 413) {
@@ -495,7 +549,7 @@ const CreateAest = () => {
           errorMessage = "You don't have permission to create pins.";
         }
         
-        alert(errorMessage);
+        showToast(errorMessage, 'error');
       }
     };
     
@@ -535,8 +589,10 @@ const CreateAest = () => {
     
             if (!response.ok) {
               const errorText = await response.text();
+              console.warn('Failed to add pin to board:', errorText);
             }
           } catch (apiError) {
+            console.warn('Error adding pin to board:', apiError);
           }
         }
 
@@ -545,10 +601,10 @@ const CreateAest = () => {
         }
     
       } catch (error) {
+        console.error('Error auto-saving pin:', error);
       }
     };
     
-  
     const handleDone = async () => {
       if (uploadedFiles.length > 0) {
         const fileId = uploadedFiles[selectedImageIndex]?.id;
@@ -573,7 +629,7 @@ const CreateAest = () => {
     };
   
     const handleView = () => {
-
+      // Implementation for view functionality
     };
 
     if (isLoadingFiles) {
@@ -889,6 +945,7 @@ const CreateAest = () => {
         </Container>
       );
     };
+    
   
     return (
       <>
@@ -910,6 +967,15 @@ const CreateAest = () => {
             onClose={handleCancelCreateBoard}
             onConfirm={handleConfirmCreateBoard}
             isLoading={isCreatingBoard}
+          />
+
+          <EnhancedToast
+            open={toast.open}
+            message={toast.message}
+            severity={toast.severity}
+            onClose={hideToast}
+            autoHideDuration={6000}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           />
         </Box>
       </>

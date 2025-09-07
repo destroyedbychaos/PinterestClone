@@ -10,14 +10,24 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
+    /// <summary>
+    /// Мапер для об'єктів пов'язаних з пінами.
+    /// ---------------------------------------
+    /// CreatePinDto -> Pin
+    /// Pin -> PinSimpleDto -> Pin
+    /// Pin -> PinRecommendationDto -> Pin
+    /// UpdatePinDto -> Pin
+    /// Pin -> PinResponseDto
+    /// PinReport -> PinReportResponseDto
+    /// PinShare -> PinShareResponseDto
+    /// </summary>
     public class PinMappingProfile : Profile
     {
         public PinMappingProfile()
         {
-            // Add this mapping for CreatePinDto -> Pin
             CreateMap<CreatePinDto, Pin>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore()) // Let the database generate the ID
-                .ForMember(dest => dest.UserId, opt => opt.Ignore()) // Set by the service/controller
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore()) 
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.Tags, opt => opt.MapFrom(src =>
                     string.IsNullOrWhiteSpace(src.Tags) ? null :

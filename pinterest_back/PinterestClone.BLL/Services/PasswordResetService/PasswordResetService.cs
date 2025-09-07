@@ -8,6 +8,14 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PinterestClone.BLL.Services.PasswordResetService
 {
+    /// <summary>
+    /// Сервіс відповідальний за скидання паролю
+    /// ----------------------------------------
+    /// Методи:
+    ///     -- Надіслати повідомлення про скидання паролю
+    ///     -- Підтвердити код скидання паролю
+    ///     -- Скидання паролю
+    /// </summary>
     public class PasswordResetService : IPasswordResetService
     {
         private readonly IUserRepository _userRepository;
@@ -27,6 +35,16 @@ namespace PinterestClone.BLL.Services.PasswordResetService
             _userManager = userManager;
         }
 
+        /// <summary>
+        /// Надсилає користувачу електронного листа з кодом для скидання паролю.
+        /// </summary>
+        /// <param name="model">Об’єкт <see cref="ForgotPasswordVM"/> з поштою користувача.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо лист успішно надіслано;
+        ///     -- Помилка, якщо користувача не знайдено або лист не вдалося надіслати.
+        /// </returns>
+        /// <exception cref="System.Exception">Викидається у разі помилки надсилання листа або доступу до бази даних.</exception>
         public async Task<ServiceResponse> ForgotPasswordAsync(ForgotPasswordVM model)
         {
            
@@ -70,6 +88,15 @@ namespace PinterestClone.BLL.Services.PasswordResetService
             return ServiceResponse.OkResponse("Код для скидання пароля надіслано на вашу пошту");
         }
 
+        /// <summary>
+        /// Перевіряє дійсність коду для скидання паролю.
+        /// </summary>
+        /// <param name="model">Об’єкт <see cref="VerifyResetCodeVM"/> з поштою та кодом верифікації.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом перевірки:
+        ///     -- Успіх, якщо код дійсний;
+        ///     -- Помилка, якщо код недійсний або застарів.
+        /// </returns>
         public async Task<ServiceResponse> VerifyResetCodeAsync(VerifyResetCodeVM model)
         {
             var resetCode = await _passwordResetRepository.GetValidResetCodeAsync(model.Email, model.Code);
@@ -85,6 +112,16 @@ namespace PinterestClone.BLL.Services.PasswordResetService
             return ServiceResponse.OkResponse("Код верифіковано успішно");
         }
 
+        /// <summary>
+        /// Скидає пароль користувача, якщо код підтверджено, і надсилає підтвердження на електронну пошту.
+        /// </summary>
+        /// <param name="model">Об’єкт <see cref="ResetPasswordVM"/> з поштою, кодом та новим паролем.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо пароль успішно змінено;
+        ///     -- Помилка, якщо користувача не знайдено, код недійсний або новий пароль співпадає зі старим.
+        /// </returns>
+        /// <exception cref="System.Exception">Викидається у разі помилки доступу до бази даних або зміни паролю.</exception>
         public async Task<ServiceResponse> ResetPasswordAsync(ResetPasswordVM model)
         {
             var resetCode = await _passwordResetRepository.GetValidResetCodeAsync(model.Email, model.Code);

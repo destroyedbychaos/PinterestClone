@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services;
@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для операцій зі сповіщеннями.
+    /// </summary>
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
@@ -21,12 +24,12 @@ namespace PinterestClone.API.Controllers
         public NotificationsController(INotificationService notificationService, AppDbContext context)
         {
             _notificationService = notificationService;
-            _context = context;
-
         }
 
-
-
+        /// <summary>
+        /// Отримує список сповіщень для користувача.
+        /// </summary>
+        /// <returns><see cref="ActionResult{ServiceResponse}"/> з колекцією сповіщень або кодом помилки.</returns>
         [HttpGet]
         public async Task<IActionResult> GetNotifications([FromQuery] string type = "all")
         {
@@ -50,7 +53,7 @@ namespace PinterestClone.API.Controllers
             else
             {
                 notificationsQuery = notificationsQuery
-                    .Where(n => !n.Message.Contains("������� �������! �� ������ ������ � �������."));
+                    .Where(n => !n.Message.Contains("!"));
             }
 
             var notifications = await notificationsQuery.ToListAsync();
@@ -60,7 +63,11 @@ namespace PinterestClone.API.Controllers
 
 
 
-    [HttpPost("mark-read")]
+        /// <summary>
+        /// Позначає всі сповіщення користувача як прочитані.
+        /// </summary>
+        /// <returns><see cref="ActionResult{ServiceResponse}"/> з повідомленням про успіх або повідомленням про помилку.</returns>
+        [HttpPost("mark-read")]
         public async Task<ActionResult<ServiceResponse>> MarkAllAsRead()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
