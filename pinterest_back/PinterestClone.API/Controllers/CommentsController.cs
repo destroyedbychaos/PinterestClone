@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.DAL.Data;
@@ -54,7 +54,6 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error fetching comments: {ex.Message}");
             }
         }
-
         [HttpPost]
         public async Task<ActionResult<object>> CreateComment([FromBody] CreateCommentDto createCommentDto)
         {
@@ -66,7 +65,7 @@ namespace PinterestClone.API.Controllers
                     return Unauthorized("User not authenticated");
                 }
 
-                var pin = await _context.Pins.FindAsync(createCommentDto.PinId);
+                var pin = await _context.Pins.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == createCommentDto.PinId);
                 if (pin == null)
                 {
                     return NotFound("Pin not found");
@@ -82,6 +81,25 @@ namespace PinterestClone.API.Controllers
                 };
 
                 _context.Comments.Add(comment);
+
+                if (pin.UserId != userId)
+                {
+                    var sender = await _context.Users.FindAsync(userId);
+
+                    var notification = new Notification
+                    {
+                        UserId = pin.UserId,
+                        Message = $"{sender?.UserName ?? "Someone"} commented: {comment.Text}",
+                        Title = "New Comment 💬",
+                        Type = NotificationType.System, 
+                        Status = NotificationStatus.Pending,
+                        CreatedAt = DateTime.UtcNow,
+                        PinId = pin.Id
+                    };
+
+                    _context.Notifications.Add(notification);
+                }
+
                 await _context.SaveChangesAsync();
 
                 var user = await _context.Users.FindAsync(userId);
@@ -109,6 +127,7 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error creating comment: {ex.Message}");
             }
         }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteComment(Guid id)

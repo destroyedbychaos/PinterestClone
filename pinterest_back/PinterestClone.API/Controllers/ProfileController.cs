@@ -1,17 +1,19 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.ProfileReportService;
+using PinterestClone.BLL.Services.UserBlockService;
+using PinterestClone.BLL.Services.UserService;
+using PinterestClone.DAL.Data;
+using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
-using PinterestClone.BLL.Services.UserService;
-using PinterestClone.BLL.Services.ProfileReportService;
-using PinterestClone.BLL.Services.UserBlockService;
 
 namespace PinterestClone.API.Controllers
 {
@@ -25,14 +27,18 @@ namespace PinterestClone.API.Controllers
         private readonly IProfileReportService _profileReportService;
         private readonly IUserBlockService _userBlockService;
         private readonly IMapper _mapper;
+        private readonly AppDbContext _context;
 
-        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper)
+
+        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper, AppDbContext context)
         {
             _userManager = userManager;
             _userService = userService;
             _profileReportService = profileReportService;
             _userBlockService = userBlockService;
             _mapper = mapper;
+            _context = context;
+
         }
 
         [HttpPut("update")]
@@ -713,43 +719,50 @@ namespace PinterestClone.API.Controllers
         }
 
         [HttpPost("{targetUserId}/follow")]
+        [Authorize]
         public async Task<IActionResult> FollowUser(string targetUserId)
         {
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
                 if (string.IsNullOrEmpty(currentUserId))
-                {
-                    Console.WriteLine("CurrentUserId is null or empty");
                     return Unauthorized("User not authenticated");
-                }
 
                 if (string.IsNullOrEmpty(targetUserId))
-                {
-                    Console.WriteLine("TargetUserId is null or empty");
                     return BadRequest("Target user ID is required");
-                }
 
-                Console.WriteLine($"Following user: {currentUserId} -> {targetUserId}");
-                
                 var result = await _userService.FollowUserAsync(currentUserId, targetUserId);
-
                 if (!result.Success)
-                {
-                    Console.WriteLine($"Follow failed: {result.Message}");
                     return BadRequest(result.Message);
+
+                if (currentUserId != targetUserId) 
+                {
+                    var follower = await _context.Users.FindAsync(currentUserId);
+                    if (follower != null)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = targetUserId, 
+                            Message = $"{follower.UserName} started following you",
+                            Title = "New Follower 👤",
+                            Type = NotificationType.System, 
+                            Status = NotificationStatus.Pending,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Notifications.Add(notification);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
-                Console.WriteLine("Follow successful");
                 return Ok(result.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in FollowUser: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
 
         [HttpPost("{targetUserId}/unfollow")]
         public async Task<IActionResult> UnfollowUser(string targetUserId)
