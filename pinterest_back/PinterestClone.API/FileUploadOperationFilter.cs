@@ -1,9 +1,14 @@
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 
 namespace PinterestClone.API
 {
+    /// <summary>
+    /// Фільтр для Swagger/OpenAPI, який автоматично налаштовує операції для завантаження файлів.
+    /// Додає підтримку параметрів <see cref="IFormFile"/> та <see cref="IFormFile[]"/> як 
+    /// частину <c>multipart/form-data</c> у Swagger UI.
+    /// </summary>
     public class FileUploadOperationFilter : IOperationFilter
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
