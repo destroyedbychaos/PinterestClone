@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.ProfileReportService;
 using PinterestClone.BLL.Services.UserBlockService;
+using System.Text.Json;
 
 namespace PinterestClone.API.Controllers
 {
@@ -50,43 +51,194 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Updating profile for user: {user.Email}");
+                Console.WriteLine($"Received payload: {JsonSerializer.Serialize(model)}");
 
                 if (!string.IsNullOrWhiteSpace(model.UserName) && model.UserName != user.UserName)
                 {
+                    if (model.UserName.Length < 3 || model.UserName.Length > 50)
+                        return BadRequest(new { error = "Username must be between 3 and 50 characters." });
+
                     var existing = await _userManager.FindByNameAsync(model.UserName);
                     if (existing != null && existing.Id != user.Id)
                         return BadRequest(new { error = "Username already taken." });
 
                     var setNameResult = await _userManager.SetUserNameAsync(user, model.UserName);
                     if (!setNameResult.Succeeded)
-                        return BadRequest(setNameResult.Errors);
+                        return BadRequest(new { errors = setNameResult.Errors });
                 }
 
                 if (model.DisplayName is not null)
-                    user.DisplayName = model.DisplayName;
-                if (model.Bio is not null)
-                    user.Bio = model.Bio;
-                if (model.Country is not null)
-                    user.Country = model.Country;
-                if (model.Language is not null)
-                    user.Language = model.Language;
-                if (model.DateOfBirth is not null)
-                    user.BirthDate = model.DateOfBirth.Value;
+                {
+                    user.DisplayName = string.IsNullOrWhiteSpace(model.DisplayName) ? null : model.DisplayName.Trim();
+                }
+                if (model.Bio is not null) user.Bio = model.Bio;
+                if (model.Country is not null) user.Country = model.Country;
+                if (model.Language is not null) user.Language = model.Language;
+                if (model.DateOfBirth is not null) user.BirthDate = model.DateOfBirth.Value;
                 if (model.ProfileImageUrl is not null)
                     user.AvatarUrl = string.IsNullOrWhiteSpace(model.ProfileImageUrl) ? null : model.ProfileImageUrl;
                 if (model.BannerImageUrl is not null)
                     user.BannerUrl = string.IsNullOrWhiteSpace(model.BannerImageUrl) ? null : model.BannerImageUrl;
 
+                if (model.Interests != null)
+                {
+                    user.InterestsList = model.Interests.Where(i => !string.IsNullOrWhiteSpace(i)).ToList();
+                    Console.WriteLine($"Updated interests: {JsonSerializer.Serialize(user.InterestsList)}");
+                }
+
+                if (model.Vibes != null)
+                {
+                    user.VibesList = model.Vibes.Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+                    Console.WriteLine($"Updated vibes: {JsonSerializer.Serialize(user.VibesList)}");
+                }
+
+                if (!user.OnboardingCompleted)
+                {
+                    user.OnboardingCompleted = true;
+                    user.OnboardingCompletedAt = DateTime.UtcNow;
+                    Console.WriteLine("Marking onboarding as completed");
+                }
+
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
-                    return BadRequest(updateResult.Errors);
+                {
+                    Console.WriteLine($"Update failed: {JsonSerializer.Serialize(updateResult.Errors)}");
+                    return BadRequest(new { errors = updateResult.Errors });
+                }
 
                 Console.WriteLine($"Profile updated successfully for user: {user.Email}");
-                return Ok(new { message = "Profile updated successfully." });
+
+                var updatedUserDto = _mapper.Map<UserProfileDto>(user);
+
+                try
+                {
+                    var followersCount = await _userService.GetFollowersCountAsync(user.Id);
+                    var followingCount = await _userService.GetFollowingCountAsync(user.Id);
+
+                    updatedUserDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
+                    updatedUserDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Could not fetch follower counts: {ex.Message}");
+                }
+
+                return Ok(new
+                {
+                    message = "Profile updated successfully.",
+                    user = updatedUserDto
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in UpdateProfile: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return BadRequest(new { error = "Update failed", details = ex.Message });
+            }
+        }
+
+        [HttpPost("add-interests")]
+        public async Task<IActionResult> AddInterests([FromBody] List<string> interests)
+        {
+            try
+            {
+                if (interests == null || !interests.Any())
+                    return BadRequest("No interests provided.");
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+
+                user.InterestsList ??= new List<string>();
+
+                var newInterests = interests.Except(user.InterestsList).ToList();
+                if (newInterests.Any())
+                {
+                    var updated = user.InterestsList.Concat(newInterests).ToList();
+                    user.InterestsList = updated;
+                    await _userManager.UpdateAsync(user);
+                }
+
+                return Ok(new
+                {
+                    message = "Interests updated successfully.",
+                    interests = user.InterestsList
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddInterests: {ex.Message}");
+                return BadRequest("Failed to update interests");
+            }
+        }
+
+        [HttpPost("add-vibes")]
+        public async Task<IActionResult> AddVibes([FromBody] List<string> vibes)
+        {
+            try
+            {
+                if (vibes == null || !vibes.Any())
+                    return BadRequest("No vibes provided.");
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+
+                user.VibesList ??= new List<string>();
+
+                var newVibes = vibes.Except(user.VibesList).ToList();
+                if (newVibes.Any())
+                {
+                    var updated = user.VibesList.Concat(newVibes).ToList();
+                    user.VibesList = updated;
+                    await _userManager.UpdateAsync(user);
+                }
+
+                return Ok(new
+                {
+                    message = "Vibes updated successfully.",
+                    vibes = user.VibesList
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddVibes: {ex.Message}");
+                return BadRequest("Failed to update vibes");
+            }
+        }
+
+
+        [HttpPut("update-interests-vibes")]
+        public async Task<IActionResult> UpdateInterestsAndVibes([FromBody] UpdateInterestsVibesDto model)
+        {
+            try
+            {
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in UpdateInterestsAndVibes");
+                    return Unauthorized("User not found");
+                }
+
+                Console.WriteLine($"Updating interests and vibes for user: {user.Email}");
+
+                if (model.Interests != null)
+                    user.InterestsList = model.Interests;
+                if (model.Vibes != null)
+                    user.VibesList = model.Vibes;
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                    return BadRequest(updateResult.Errors);
+
+                Console.WriteLine($"Interests and vibes updated successfully for user: {user.Email}");
+                return Ok(new { message = "Interests and vibes updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UpdateInterestsAndVibes: {ex.Message}");
                 return BadRequest("Update failed");
             }
         }
@@ -105,7 +257,7 @@ namespace PinterestClone.API.Controllers
                     Console.WriteLine("User not found in UploadAvatar");
                     return Unauthorized("User not found");
                 }
-                
+
                 if (model.File == null) return BadRequest("Image file is required");
 
                 Console.WriteLine($"Uploading avatar for user: {user.Email}");
@@ -133,6 +285,12 @@ namespace PinterestClone.API.Controllers
         public class FileUploadVM
         {
             public IFormFile File { get; set; }
+        }
+
+        public class UpdateInterestsVibesDto
+        {
+            public List<string>? Interests { get; set; }
+            public List<string>? Vibes { get; set; }
         }
 
         [HttpPost("upload-banner")]
@@ -176,7 +334,6 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
         [HttpPost("reset")]
         public async Task<IActionResult> ResetProfile(
             [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
@@ -188,6 +345,10 @@ namespace PinterestClone.API.Controllers
             user.Bio = null;
             user.Country = null;
             user.Language = null;
+            user.InterestsList = new List<string>();
+            user.VibesList = new List<string>();
+            user.OnboardingCompleted = false;
+            user.OnboardingCompletedAt = null;
 
             if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
             {
@@ -202,7 +363,6 @@ namespace PinterestClone.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(user.Email))
             {
-
                 var setNameResult = await _userManager.SetUserNameAsync(user, user.Email);
                 if (!setNameResult.Succeeded)
                     return BadRequest(setNameResult.Errors);
@@ -252,7 +412,6 @@ namespace PinterestClone.API.Controllers
             var emailResult = await _userManager.SetEmailAsync(user, model.NewEmail);
             if (!emailResult.Succeeded) return BadRequest(emailResult.Errors);
 
-
             var userNameResult = await _userManager.SetUserNameAsync(user, model.NewEmail);
             if (!userNameResult.Succeeded) return BadRequest(userNameResult.Errors);
 
@@ -293,16 +452,15 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"User found: {user.Email}, ID: {user.Id}");
-                
+
                 var userDto = _mapper.Map<UserProfileDto>(user);
-                
 
                 var followersCount = await _userService.GetFollowersCountAsync(user.Id);
                 var followingCount = await _userService.GetFollowingCountAsync(user.Id);
-                
+
                 userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
                 userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
-                
+
                 return Ok(userDto);
             }
             catch (Exception ex)
@@ -322,20 +480,19 @@ namespace PinterestClone.API.Controllers
             if (user == null) return NotFound();
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
 
             bool isBlocked = false;
             bool isBlockedBy = false;
-            
+
             if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
             {
                 var isBlockedResponse = await _userService.IsBlockedAsync(currentUserId, user.Id);
                 var isBlockedByResponse = await _userService.IsBlockedAsync(user.Id, currentUserId);
-                
+
                 isBlocked = isBlockedResponse.Success && (bool)isBlockedResponse.Payload;
                 isBlockedBy = isBlockedByResponse.Success && (bool)isBlockedByResponse.Payload;
             }
-            
+
             if (!user.IsProfilePublic)
             {
                 if (currentUserId != user.Id)
@@ -343,7 +500,6 @@ namespace PinterestClone.API.Controllers
             }
 
             var userDto = _mapper.Map<UserProfileDto>(user);
-            
 
             if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
             {
@@ -351,13 +507,11 @@ namespace PinterestClone.API.Controllers
                 userDto.IsFollowing = isFollowing.Success && (bool)isFollowing.Payload;
             }
 
-
             var followersCount = await _userService.GetFollowersCountAsync(user.Id);
             var followingCount = await _userService.GetFollowingCountAsync(user.Id);
-            
+
             userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
             userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
-
 
             userDto.IsBlocked = isBlocked;
             userDto.IsBlockedBy = isBlockedBy;
@@ -375,20 +529,19 @@ namespace PinterestClone.API.Controllers
             if (user == null) return NotFound();
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
 
             bool isBlocked = false;
             bool isBlockedBy = false;
-            
+
             if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
             {
                 var isBlockedResponse = await _userService.IsBlockedAsync(currentUserId, user.Id);
                 var isBlockedByResponse = await _userService.IsBlockedAsync(user.Id, currentUserId);
-                
+
                 isBlocked = isBlockedResponse.Success && (bool)isBlockedResponse.Payload;
                 isBlockedBy = isBlockedByResponse.Success && (bool)isBlockedByResponse.Payload;
             }
-            
+
             if (!user.IsProfilePublic)
             {
                 if (currentUserId != user.Id)
@@ -396,7 +549,6 @@ namespace PinterestClone.API.Controllers
             }
 
             var userDto = _mapper.Map<UserProfileDto>(user);
-            
 
             if (!string.IsNullOrEmpty(currentUserId) && currentUserId != user.Id)
             {
@@ -404,21 +556,20 @@ namespace PinterestClone.API.Controllers
                 userDto.IsFollowing = isFollowing.Success && (bool)isFollowing.Payload;
             }
 
-
             var followersCount = await _userService.GetFollowersCountAsync(user.Id);
             var followingCount = await _userService.GetFollowingCountAsync(user.Id);
-            
+
             userDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
             userDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
-
 
             userDto.IsBlocked = isBlocked;
             userDto.IsBlockedBy = isBlockedBy;
 
             return Ok(userDto);
         }
+
         [HttpGet("search")]
-        [AllowAnonymous] 
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
             [FromQuery] string query = "",
             [FromQuery] int page = 1,
@@ -431,7 +582,6 @@ namespace PinterestClone.API.Controllers
 
             var usersQuery = _userManager.Users.AsNoTracking();
 
-
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var normalizedQuery = query.Trim().ToLower();
@@ -441,7 +591,6 @@ namespace PinterestClone.API.Controllers
                     (u.Email != null && u.Email.ToLower().Contains(normalizedQuery))
                 );
             }
-
 
             if (!string.IsNullOrEmpty(currentUserId))
             {
@@ -457,7 +606,6 @@ namespace PinterestClone.API.Controllers
                 .ToListAsync();
 
             var result = _mapper.Map<IEnumerable<UserSearchDto>>(users);
-
 
             if (!string.IsNullOrEmpty(currentUserId))
             {
@@ -480,6 +628,9 @@ namespace PinterestClone.API.Controllers
             });
         }
 
+        // Решта методів залишається без змін...
+        // (followers, following, follow/unfollow, report, block/unblock тощо)
+
         [HttpGet("followers")]
         [Authorize]
         public async Task<ActionResult<List<UserProfileDto>>> GetUserFollowers(string userName)
@@ -491,7 +642,7 @@ namespace PinterestClone.API.Controllers
 
             var followersResponse = await _userService.GetFollowersAsync(user);
 
-            if (!followersResponse.Success || followersResponse.Payload == null ) return NotFound();
+            if (!followersResponse.Success || followersResponse.Payload == null) return NotFound();
 
             List<UserProfileDto> followers = (List<UserProfileDto>)followersResponse.Payload;
 
@@ -522,7 +673,7 @@ namespace PinterestClone.API.Controllers
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     Console.WriteLine("CurrentUserId is null or empty");
@@ -536,7 +687,7 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Following user: {currentUserId} -> {targetUserId}");
-                
+
                 var result = await _userService.FollowUserAsync(currentUserId, targetUserId);
 
                 if (!result.Success)
@@ -561,7 +712,7 @@ namespace PinterestClone.API.Controllers
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     Console.WriteLine("CurrentUserId is null or empty");
@@ -575,7 +726,7 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Unfollowing user: {currentUserId} -> {targetUserId}");
-                
+
                 var result = await _userService.UnfollowUserAsync(currentUserId, targetUserId);
 
                 if (!result.Success)
@@ -626,7 +777,7 @@ namespace PinterestClone.API.Controllers
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     Console.WriteLine("CurrentUserId is null or empty");
@@ -640,7 +791,7 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Blocking user: {currentUserId} -> {targetUserId}");
-                
+
                 var result = await _userBlockService.BlockUserAsync(currentUserId, targetUserId);
 
                 if (!result.Success)
@@ -665,7 +816,7 @@ namespace PinterestClone.API.Controllers
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     Console.WriteLine("CurrentUserId is null or empty");
@@ -679,7 +830,7 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Unblocking user: {currentUserId} -> {targetUserId}");
-                
+
                 var result = await _userBlockService.UnblockUserAsync(currentUserId, targetUserId);
 
                 if (!result.Success)
@@ -704,7 +855,7 @@ namespace PinterestClone.API.Controllers
             try
             {
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     Console.WriteLine("CurrentUserId is null or empty");
@@ -718,7 +869,7 @@ namespace PinterestClone.API.Controllers
                 }
 
                 Console.WriteLine($"Checking block status: {currentUserId} -> {targetUserId}");
-                
+
                 var result = await _userBlockService.IsBlockedAsync(currentUserId, targetUserId);
 
                 if (!result.Success)

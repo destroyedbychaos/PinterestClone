@@ -10,7 +10,9 @@ const loadState = () => {
                 isAuthenticated: false,
             };
         }
-        return JSON.parse(serializedState);
+        const loadedState = JSON.parse(serializedState);
+        
+        return loadedState;
     } catch (err) {
         console.error("Could not load state", err);
         return {
@@ -28,19 +30,27 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action) => {
-            const { user, accessToken } = action.payload;
+            const { user, accessToken, token } = action.payload;
+            
+            const authToken = accessToken || token;
+            
+            console.log("Setting credentials:", { user, authToken: !!authToken });
+            
             state.user = user;
-            state.token = accessToken;
+            state.token = authToken;
             state.isAuthenticated = true;
             
-            localStorage.setItem('token', accessToken);
+            localStorage.setItem('token', authToken);
             localStorage.setItem('authState', JSON.stringify({
                 user,
-                token: accessToken,
+                token: authToken,
                 isAuthenticated: true
             }));
+            
+            console.log("Saved auth state:", { user, token: !!authToken, isAuthenticated: true });
         },
         logout: (state) => {
+            console.log("Logging out...");
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
