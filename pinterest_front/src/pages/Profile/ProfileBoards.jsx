@@ -8,7 +8,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useNavigate } from "react-router-dom";
 import SavedPins from "../Saved/SavedPins.jsx";
 import { fetchSavedPins } from "../../utils/fetchSavedPins";
-
+import {apiUrl} from "../../env.js"
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
@@ -21,7 +21,7 @@ const defaultAvatarSvg = (
   </svg>
 );
 
-const API_BASE = "/api";
+const API_BASE = apiUrl;
 
 const ProfileBoards = () => {
   const authState = useSelector((state) => state.auth);

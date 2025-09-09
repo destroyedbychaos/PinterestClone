@@ -10,10 +10,11 @@ import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
 import PinViewModal from '../../components/PinViewModal';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { apiUrl } from '../../env';
 import settingsApi from '../../services/settingsApi';
 import { updateUser } from '../../../store/slices/AuthSlice';
 
-const API_BASE = '/api';
+const API_BASE = apiUrl;
 
 const HomePage = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
