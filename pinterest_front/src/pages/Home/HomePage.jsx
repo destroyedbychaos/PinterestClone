@@ -9,8 +9,9 @@ import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { apiUrl } from '../../env';
 
-const API_BASE = '/api';
+const API_BASE = apiUrl;
 
 const HomePage = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);

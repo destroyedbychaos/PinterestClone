@@ -27,6 +27,7 @@ import {
 } from '../../utils/userUtils';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { fetchSavedPins } from '../../utils/fetchSavedPins';
+import { apiUrl } from '../../env';
 
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,7 +41,7 @@ const defaultAvatarSvg = (
   </svg>
 );
 
-const API_BASE = '/api';
+const API_BASE = apiUrl;
 
 const UserProfile = () => {
   const { username } = useParams();
