@@ -3,6 +3,9 @@ using PinterestClone.DAL.ViewModels;
 
 namespace PinterestClone.BLL.Validators
 {
+    /// <summary>
+    /// Валідатор для форми процесу скидання паролю через забуття.
+    /// </summary>
     public class ForgotPasswordValidator : AbstractValidator<ForgotPasswordVM>
     {
         public ForgotPasswordValidator()

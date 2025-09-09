@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +36,11 @@ namespace PinterestClone.API.Controllers
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Оновлює профіль поточного користувача.
+        /// </summary>
+        /// <param name="model"><see cref="UpdateProfileVM"/> з новими даними користувача.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успішне оновлення або помилку.</returns>
         [HttpPut("update")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileVM model)
         {
@@ -243,6 +248,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Завантажує аватарку користувача.
+        /// </summary>
+        /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
+        /// <param name="model"><see cref="FileUploadVM"/> з файлом зображення.</param>
+        /// <returns><see cref="IActionResult"/> з URL нового аватара або повідомленням про помилку.</returns>
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(
@@ -282,8 +293,14 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Модель для завантаження файлу.
+        /// </summary>
         public class FileUploadVM
         {
+            /// <summary>
+            /// Файл зображення, який потрібно завантажити.
+            /// </summary>
             public IFormFile File { get; set; }
         }
 
@@ -293,6 +310,12 @@ namespace PinterestClone.API.Controllers
             public List<string>? Vibes { get; set; }
         }
 
+        /// <summary>
+        /// Завантажує банер користувача.
+        /// </summary>
+        /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
+        /// <param name="model"><see cref="FileUploadVM"/> з файлом зображення.</param>
+        /// <returns><see cref="IActionResult"/> з URL нового банера або повідомленням про помилку.</returns>
         [HttpPost("upload-banner")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadBanner(
@@ -334,6 +357,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Скидає профіль користувача до початкових значень.
+        /// </summary>
+        /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успішне скидання або помилку.</returns>
         [HttpPost("reset")]
         public async Task<IActionResult> ResetProfile(
             [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
@@ -375,6 +404,11 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Profile reset successfully." });
         }
 
+        /// <summary>
+        /// Змінює пароль поточного користувача.
+        /// </summary>
+        /// <param name="model"><see cref="ChangePasswordVM"/> з поточним та новим паролем.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
         {
@@ -394,6 +428,11 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
+        /// <summary>
+        /// Змінює email та нікнейм на новий email.
+        /// </summary>
+        /// <param name="model"><see cref="ChangeEmailVM"/> з новим email.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("change-email")]
         public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailVM model)
         {
@@ -418,6 +457,11 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Email changed successfully." });
         }
 
+        /// <summary>
+        /// Видаляє обліковий запис користувача.
+        /// </summary>
+        /// <param name="model"><see cref="DeleteAccountVM"/> з паролем користувача.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успішне видалення або помилку.</returns>
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountVM model)
         {
@@ -438,6 +482,10 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Account deleted successfully." });
         }
 
+        /// <summary>
+        /// Отримує інформацію про профіль поточного користувача.
+        /// </summary>
+        /// <returns><see cref="ActionResult{UserProfileDto}"/> з даними користувача або помилкою аутентифікації.</returns>
         [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserProfileDto>> GetMyProfile()
@@ -470,6 +518,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує публічний профіль користувача за публічним іменем.
+        /// </summary>
+        /// <param name="displayName">Публічне ім’я користувача.</param>
+        /// <returns><see cref="ActionResult{UserProfileDto}"/> з даними користувача.</returns>
         [HttpGet("{displayName}")]
         [AllowAnonymous]
         public async Task<ActionResult<UserProfileDto>> GetUserProfile(string displayName)
@@ -519,6 +572,11 @@ namespace PinterestClone.API.Controllers
             return Ok(userDto);
         }
 
+        /// <summary>
+        /// Отримує публічний профіль користувача за нікнеймом.
+        /// </summary>
+        /// <param name="username">Нікнейм користувача.</param>
+        /// <returns><see cref="ActionResult{UserProfileDto}"/> з даними користувача.</returns>
         [HttpGet("username/{username}")]
         [AllowAnonymous]
         public async Task<ActionResult<UserProfileDto>> GetUserProfileByUsername(string username)
@@ -568,6 +626,14 @@ namespace PinterestClone.API.Controllers
             return Ok(userDto);
         }
 
+
+        /// <summary>
+        /// Пошук користувачів за текстовим запитом з пагінацією.
+        /// </summary>
+        /// <param name="query">Текстовий запит для пошуку.</param>
+        /// <param name="page">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{IEnumerable{UserSearchDto}}"/> з результатами пошуку та інформацією про пагінацію.</returns>
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<UserSearchDto>>> Search(
@@ -628,9 +694,15 @@ namespace PinterestClone.API.Controllers
             });
         }
 
-        // ����� ������ ���������� ��� ���...
-        // (followers, following, follow/unfollow, report, block/unblock ����)
 
+        // ����� ������ ���������� ��� ���...
+        // (followers, following, follow/unfollow, report, block/unblock ����)
+
+        /// <summary>
+        /// Отримує список підписників користувача.
+        /// </summary>
+        /// <param name="userName">Публічне ім’я користувача.</param>
+        /// <returns><see cref="ActionResult{List{UserProfileDto}}"/> зі списком фоловерів.</returns>
         [HttpGet("followers")]
         [Authorize]
         public async Task<ActionResult<List<UserProfileDto>>> GetUserFollowers(string userName)
@@ -649,6 +721,11 @@ namespace PinterestClone.API.Controllers
             return Ok(followers);
         }
 
+        /// <summary>
+        /// Отримує список користувачів, на яких підписаний користувач.
+        /// </summary>
+        /// <param name="userName">Публічне ім’я користувача.</param>
+        /// <returns><see cref="ActionResult{List{UserProfileDto}}"/> зі списком підписок.</returns>
         [HttpGet("following")]
         [Authorize]
         public async Task<ActionResult<List<UserProfileDto>>> GetUserFollowing(string userName)
@@ -667,6 +744,11 @@ namespace PinterestClone.API.Controllers
             return Ok(following);
         }
 
+        /// <summary>
+        /// Підписується на користувача.
+        /// </summary>
+        /// <param name="targetUserId">ID користувача на якого потрібно підписатися.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{targetUserId}/follow")]
         public async Task<IActionResult> FollowUser(string targetUserId)
         {
@@ -706,6 +788,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Відписується від користувача.
+        /// </summary>
+        /// <param name="targetUserId">ID користувача, від якого потрібно відписатися.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{targetUserId}/unfollow")]
         public async Task<IActionResult> UnfollowUser(string targetUserId)
         {
@@ -745,6 +832,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Подає скаргу на користувача.
+        /// </summary>
+        /// <param name="userId">ID користувача, на якого подається скарга.</param>
+        /// <param name="reportProfileDto"><see cref="ReportProfileDto"/> з деталями скарги.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{userId}/report")]
         public async Task<IActionResult> ReportUser(string userId, [FromBody] ReportProfileDto reportProfileDto)
         {
@@ -771,6 +864,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Блокує користувача.
+        /// </summary>
+        /// <param name="targetUserId">ID користувача, якого потрібно заблокувати.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{targetUserId}/block")]
         public async Task<IActionResult> BlockUser(string targetUserId)
         {
@@ -810,6 +908,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Розблоковує користувача.
+        /// </summary>
+        /// <param name="targetUserId">ID користувача, якого потрібно розблокувати.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpDelete("{targetUserId}/block")]
         public async Task<IActionResult> UnblockUser(string targetUserId)
         {
@@ -849,6 +952,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Перевіряє, чи заблокований користувач поточним користувачем.
+        /// </summary>
+        /// <param name="targetUserId">ID користувача, блокування якого перевіряється.</param>
+        /// <returns><see cref="IActionResult"/> з результатом перевірки блокування (true/false) або помилкою.</returns>ІІ
         [HttpGet("{targetUserId}/block-status")]
         public async Task<IActionResult> GetBlockStatus(string targetUserId)
         {

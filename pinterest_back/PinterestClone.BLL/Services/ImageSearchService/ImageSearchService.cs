@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using Emgu.CV.Features2D;
@@ -7,6 +7,15 @@ using System.Drawing;
 
 namespace PinterestClone.BLL.Services.ImageSearchService
 {
+    /// <summary>
+    /// Сервіс відповідальний за пошук картинок.
+    /// ----------------------------------------
+    /// Методи:
+    ///     -- Знайти подібні картинки за вибраною картинкою
+    ///     -- Знайти подібні картинки за вибраною пошуковим ключем та картинкою
+    ///     -- Порахувати подібність картинок
+    ///     -- Порахувати подібність картинок враховуючи пошуковий ключ
+    /// </summary>
     public class ImageSearchService : IImageSearchService
     {
         private readonly string _imageStoragePath;
@@ -22,11 +31,24 @@ namespace PinterestClone.BLL.Services.ImageSearchService
             }
         }
 
+        /// <summary>
+        /// Знаходить подібні картинки до завантаженого зображення.
+        /// </summary>
+        /// <param name="uploadedImage">Завантажене зображення (<see cref="IFormFile"/>).</param>
+        /// <param name="similarityThreshold">Поріг подібності (0.0–1.0).</param>
+        /// <returns>Список посилань на подібні зображенея.</returns>
         public async Task<List<string>> FindSimilarImagesAsync(IFormFile uploadedImage, double similarityThreshold = 0.8)
         {
             return await FindSimilarImagesAsync(uploadedImage, null, similarityThreshold);
         }
 
+        /// <summary>
+        /// Знаходить подібні картинки до завантаженого зображення з урахуванням додаткової області пошуку.
+        /// </summary>
+        /// <param name="uploadedImage">Завантажене зображення.</param>
+        /// <param name="searchAreaInfo">Додаткова інформація про область пошуку (може бути <c>null</c>).</param>
+        /// <param name="similarityThreshold">Поріг подібності (0.0–1.0).</param>
+        /// <returns>Список шляхів до подібних зображень.</returns>
         public async Task<List<string>> FindSimilarImagesAsync(IFormFile uploadedImage, object? searchAreaInfo, double similarityThreshold = 0.8)
         {
             try
@@ -127,11 +149,24 @@ namespace PinterestClone.BLL.Services.ImageSearchService
             }
         }
 
+        /// <summary>
+        /// Обчислює схожість між завантаженим зображенням та існуючим зображенням.
+        /// </summary>
+        /// <param name="uploadedImage">Завантажене зображення.</param>
+        /// <param name="existingImageUrl">Шлях або назва існуючого зображення.</param>
+        /// <returns>Число від 0.0 до 1.0, де 1.0 означає повну ідентичність.</returns>
         public async Task<double> CalculateSimilarityAsync(IFormFile uploadedImage, string existingImageUrl)
         {
             return await CalculateSimilarityAsync(uploadedImage, existingImageUrl, null);
         }
 
+        /// <summary>
+        /// Обчислює схожість між завантаженим зображенням та існуючим зображенням з урахуванням додаткової області пошуку.
+        /// </summary>
+        /// <param name="uploadedImage">Завантажене зображення.</param>
+        /// <param name="existingImageUrl">Шлях або назва існуючого зображення.</param>
+        /// <param name="searchAreaInfo">Додаткова інформація про область пошуку (може бути <c>null</c>).</param>
+        /// <returns>Число від 0.0 до 1.0, де 1.0 означає повну ідентичність.</returns>
         public async Task<double> CalculateSimilarityAsync(IFormFile uploadedImage, string existingImageUrl, object? searchAreaInfo)
         {
             try

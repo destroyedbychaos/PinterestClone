@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services;
@@ -7,6 +7,9 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для операцій зі сповіщеннями.
+    /// </summary>
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
@@ -19,6 +22,10 @@ namespace PinterestClone.API.Controllers
             _notificationService = notificationService;
         }
 
+        /// <summary>
+        /// Отримує список сповіщень для користувача.
+        /// </summary>
+        /// <returns><see cref="ActionResult{ServiceResponse}"/> з колекцією сповіщень або кодом помилки.</returns>
         [HttpGet]
         public async Task<ActionResult<ServiceResponse>> GetUserNotifications()
         {
@@ -36,6 +43,10 @@ namespace PinterestClone.API.Controllers
             return BadRequest(response.Message);
         }
 
+        /// <summary>
+        /// Позначає всі сповіщення користувача як прочитані.
+        /// </summary>
+        /// <returns><see cref="ActionResult{ServiceResponse}"/> з повідомленням про успіх або повідомленням про помилку.</returns>
         [HttpPost("mark-read")]
         public async Task<ActionResult<ServiceResponse>> MarkAllAsRead()
         {

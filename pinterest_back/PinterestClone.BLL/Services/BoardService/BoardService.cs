@@ -14,6 +14,20 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.BoardService
 {
+    /// <summary>
+    /// Сервіс відповідальний за організацію дошок.
+    /// -------------------------------------------
+    /// Методи:
+    ///     -- Створити дошку
+    ///     -- Витягнути всі дошки
+    ///     -- Витягнути дошки користувача по ID 
+    ///     -- Отримати дошки за нікнеймом
+    ///     -- Отримати дошки за ID дошки
+    ///     -- Оновити інформацію про дошку
+    ///     -- Видалити дошку
+    ///     -- Заархівувати дошку
+    ///     -- Розархівувати дошку
+    /// </summary>
     public class BoardService : IBoardService
     {
         private readonly IBoardRepository _boardRepository;
@@ -27,6 +41,12 @@ namespace PinterestClone.BLL.Services.BoardService
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Створює нову дошку для користувача.
+        /// </summary>
+        /// <param name="boardDto">Дані для створення дошки.</param>
+        /// <param name="userId">ID користувача, який створює дошку.</param>
+        /// <returns>Об’єкт <see cref="BoardResponseDto"/> з даними нової дошки.</returns>
         public async Task<BoardResponseDto> CreateBoardAsync(BoardSimpleDto boardDto, string userId)
         {
             var board = _mapper.Map<Board>(boardDto);
@@ -39,6 +59,17 @@ namespace PinterestClone.BLL.Services.BoardService
             return _mapper.Map<BoardResponseDto>(createdBoard);
         }
 
+        /// <summary>
+        /// Отримує список усіх дошок з можливістю пошуку, сортування, пагінації та групування.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <param name="searchTerm">Пошуковий запит за назвою дошки.</param>
+        /// <param name="sortBy">Поле для сортування (наприклад, "createdAt").</param>
+        /// <param name="isAscending">Напрямок сортування: true — зростання, false — спадання.</param>
+        /// <param name="isArchived">Фільтр по архівованим дошкам.</param>
+        /// <param name="groupBy">Поле для групування.</param>
+        /// <returns><see cref="BoardListDto"/> зі списком або згрупованими дошками.</returns>
         public async Task<BoardListDto> GetAllBoards(int pageNumber = 1, int pageSize = 20, string? searchTerm = null,
         string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
         {
@@ -109,6 +140,17 @@ namespace PinterestClone.BLL.Services.BoardService
             };
         }
 
+        /// <summary>
+        /// Отримує всі дошки певного користувача за його ID.
+        /// </summary>
+        /// <param name="userId">ID користувача.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).(</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <param name="sortBy">Поле для сортування (наприклад, "createdAt")ю</param>
+        /// <param name="isAscending">Напрямок сортування: true — зростання, false — спадання.</param>
+        /// <param name="isArchived">Фільтр по архівованим дошкам.</param>
+        /// <param name="groupBy">Поле для групування.</param>
+        /// <returns><see cref="BoardListDto"/> зі списком або згрупованими дошками.</returns>
         public async Task<BoardListDto> GetBoardsByUserId(string userId, int pageNumber = 1, int pageSize = 20,
         string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
         {
@@ -174,6 +216,17 @@ namespace PinterestClone.BLL.Services.BoardService
             };
         }
 
+        /// <summary>
+        /// Отримує всі дошки за нікнеймом користувача.
+        /// </summary>
+        /// <param name="username">Нікнейм користувача.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <param name="sortBy">Поле для сортування (наприклад, "createdAt").</param>
+        /// <param name="isAscending">Напрямок сортування.</param>
+        /// <param name="isArchived">Фільтр архівованих.</param>
+        /// <param name="groupBy">Поле для групування.</param>
+        /// <returns><see cref="BoardListDto"/> зі списком або згрупованими дошками.</returns>
         public async Task<BoardListDto> GetBoardsByUsername(string username, int pageNumber = 1, int pageSize = 20,
         string? sortBy = "createdAt", bool isAscending = false, bool? isArchived = null, string? groupBy = null)
         {
@@ -239,6 +292,11 @@ namespace PinterestClone.BLL.Services.BoardService
             };
         }
 
+        /// <summary>
+        /// Отримує дошку за її унікальним ID.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <returns><see cref="BoardResponseDto"/> або <c>null</c>, якщо дошку не знайдено.</returns>
         public async Task<BoardResponseDto?> GetBoardByIdAsync(string boardId)
         {
             var board = await _boardRepository.GetBoardByIdAsync(boardId);
@@ -248,6 +306,13 @@ namespace PinterestClone.BLL.Services.BoardService
             return _mapper.Map<BoardResponseDto>(board);
         }
 
+        /// <summary>
+        /// Оновлює інформацію про існуючу дошку.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <param name="updateBoard">Модель з новими даними.</param>
+        /// <param name="userId">ID власника дошки.</param>
+        /// <returns>Оновлений <see cref="BoardResponseDto"/> або <c>null</c>, якщо дошка не належить користувачу.</returns>
         public async Task<BoardResponseDto?> UpdateBoardAsync(string boardId, BoardSimpleDto updateBoard, string userId)
         {
             var board = await _boardRepository.GetBoardByIdAsync(boardId);
@@ -263,11 +328,22 @@ namespace PinterestClone.BLL.Services.BoardService
             return await GetBoardByIdAsync(boardId);
         }
 
+        /// <summary>
+        /// Видаляє дошку за ID.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <returns><c>True</c>, якщо видалення успішне, інакше <c>False</c></returns>
         public async Task<bool> DeleteBoardAsync(string boardId)
         {
             return await _boardRepository.DeleteBoardAsync(boardId);
         }
 
+        /// <summary>
+        /// Архівує дошку.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <param name="userId">ID користувача-власника.</param>
+        /// <returns>Оновлений <see cref="BoardResponseDto"/> або null.</returns>
         public async Task<BoardResponseDto?> ArchiveBoardAsync(string boardId, string userId)
         {
             var board = await _boardRepository.GetBoardByIdAsync(boardId);
@@ -281,6 +357,12 @@ namespace PinterestClone.BLL.Services.BoardService
             return await GetBoardByIdAsync(boardId);
         }
 
+        /// <summary>
+        /// Відновлює дошку з архіву.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <param name="userId">ID користувача-власника.</param>
+        /// <returns>Оновлений <see cref="BoardResponseDto"/> або null.</returns>
         public async Task<BoardResponseDto?> RestoreBoardAsync(string boardId, string userId)
         {
             var board = await _boardRepository.GetBoardByIdAsync(boardId);

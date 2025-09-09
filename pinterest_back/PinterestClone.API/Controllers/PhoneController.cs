@@ -6,6 +6,7 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
@@ -18,7 +19,11 @@ namespace PinterestClone.API.Controllers
             _phoneService = phoneService;
         }
 
-
+        /// <summary>
+        /// Додає новий номер телефону для поточного користувача та надсилає код підтвердження.
+        /// </summary>
+        /// <param name="dto">ї<see cref="AddPhoneNumberDto"/> що містить номер телефону користувача.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або повідомленням про помилку.</returns>
         [HttpPost("add")]
         public async Task<IActionResult> AddPhoneNumber([FromBody] AddPhoneNumberDto dto)
         {
@@ -43,7 +48,11 @@ namespace PinterestClone.API.Controllers
             return BadRequest(new { error = result.Message });
         }
 
-
+        /// <summary>
+        /// Підтверджує номер телефону користувача за допомогою коду.
+        /// </summary>
+        /// <param name="dto"><see cref="VerifyPhoneDto"/> що містить номер телефону та код підтвердження.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успішне підтвердження або повідомленням про помилку.</returns>
         [HttpPost("verify")]
         public async Task<IActionResult> VerifyPhoneNumber([FromBody] VerifyPhoneDto dto)
         {
@@ -68,7 +77,11 @@ namespace PinterestClone.API.Controllers
             return BadRequest(new { error = result.Message });
         }
 
-
+        /// <summary>
+        /// Повторно надсилає код підтвердження на вказаний номер телефону.
+        /// </summary>
+        /// <param name="phoneNumber"><see cref="string"/>із номером телефону, на який необхідно повторно відправити код підтвердження.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх у випадку повторної відправки коду або повідомленням про помилку.</returns>
         [HttpPost("resend")]
         public async Task<IActionResult> ResendVerificationCode([FromBody] string phoneNumber)
         {
@@ -93,7 +106,11 @@ namespace PinterestClone.API.Controllers
             return BadRequest(new { error = result.Message });
         }
 
-
+        /// <summary>
+        /// Отримує інформацію про номер телефону користувача.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з даними про номер телефону користувача
+        /// або повідомленням про помилку.</returns>
         [HttpGet("info")]
         public async Task<IActionResult> GetPhoneInfo()
         {
@@ -113,7 +130,11 @@ namespace PinterestClone.API.Controllers
             return BadRequest(new { error = result.Message });
         }
 
-
+        /// <summary>
+        /// Видаляє номер телефону прив’язаний до облікового запису користувача.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх у випадку видалення
+        /// або повідомленням про помилку.</returns>
         [HttpDelete("remove")]
         public async Task<IActionResult> RemovePhoneNumber()
         {
@@ -133,7 +154,11 @@ namespace PinterestClone.API.Controllers
             return BadRequest(new { error = result.Message });
         }
 
-
+        /// <summary>
+        /// Оновлює налаштування SMS-сповіщень для користувача.
+        /// </summary>
+        /// <param name="enableSms"><c>True</c>, щоб увімкнути SMS-сповіщення, або <c>False</c>, щоб вимкнути.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успішне оновлення налаштувань або повідомленням про помилку.</returns>
         [HttpPut("notifications")]
         public async Task<IActionResult> UpdateNotificationSettings([FromBody] bool enableSms)
         {
