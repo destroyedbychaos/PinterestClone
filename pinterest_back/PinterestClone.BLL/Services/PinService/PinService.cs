@@ -386,14 +386,56 @@ namespace PinterestClone.BLL.Services.PinService
             return tagSet.OrderBy(t => t).ToList();
         }
 
-        /// <summary>
-        /// Отримує рекомендовані піни.
-        /// </summary>
-        /// <returns>Список підів у форматі <see cref="PinRecommendationDto"/>.</returns>
-        public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync()
+        public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync(string userId, int count = 20)
         {
-            var pins = await _pinRepository.GetRecommendedPinsAsync(8);
-            return _mapper.Map<List<PinRecommendationDto>>(pins);
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(user.Interests))
+            {
+                var latestPins = await _pinRepository.GetLatestPinsAsync(count);
+                return _mapper.Map<List<PinRecommendationDto>>(latestPins);
+            }
+
+            var interests = user.Interests
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(i => i.Trim().ToLower())
+                .ToList();
+
+            var allPins = await _pinRepository.GetAllPins()
+                .Include(p => p.Likes)
+                .Include(p => p.BoardPins)
+                .ToListAsync();
+
+            var scoredPins = allPins.Select(p =>
+            {
+                int score = 0;
+
+                if (!string.IsNullOrEmpty(p.Tags))
+                {
+                    var tags = p.Tags.ToLower().Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var interest in interests)
+                    {
+                        if (tags.Contains(interest)) score += 3;
+                        else if (tags.Any(t => t.Contains(interest))) score += 2;
+                    }
+                }
+
+                score += p.Likes?.Count / 5 ?? 0;
+                score += p.BoardPins?.Count / 3 ?? 0;
+
+                if (p.CreatedAt >= DateTime.UtcNow.AddDays(-7))
+                    score += 1;
+
+                return new { Pin = p, Score = score };
+            });
+
+            var recommended = scoredPins
+                .OrderByDescending(x => x.Score)
+                .ThenByDescending(x => x.Pin.CreatedAt)
+                .Take(count)
+                .Select(x => x.Pin)
+                .ToList();
+
+            return _mapper.Map<List<PinRecommendationDto>>(recommended);
         }
 
         /// <summary>

@@ -472,11 +472,16 @@ namespace PinterestClone.API.Controllers
         /// </summary>
         /// <returns><see cref="ActionResult{List{PinRecommendationDto}}"/> зі списком рекомендованих пінів або повідомленням про помилку.</returns>
         [HttpGet("recommendations")]
+        [Authorize]
         public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
         {
             try
             {
-                var recommendedPins = await _pinService.GetRecommendedPinsAsync();
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
                 return Ok(recommendedPins);
             }
             catch (Exception ex)
@@ -484,6 +489,25 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error loading recommendations: {ex.Message}");
             }
         }
+
+        [HttpGet("recommendations/{userId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendationsForUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest("UserId is required");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations for user {userId}: {ex.Message}");
+            }
+        }
+
 
         /// <summary>
         /// Повертає список підказок для пошукового запиту.

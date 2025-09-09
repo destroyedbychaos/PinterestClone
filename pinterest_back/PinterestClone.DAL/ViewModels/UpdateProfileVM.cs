@@ -16,5 +16,9 @@ namespace PinterestClone.DAL.ViewModels
         public string? Language { get; set; }
         public string? ProfileImageUrl { get; set; }
         public string? BannerImageUrl { get; set; }
+
+        // Нові поля
+        public List<string>? Interests { get; set; }
+        public List<string>? Vibes { get; set; }
     }
 }
