@@ -73,7 +73,7 @@ export const fetchCurrentUser = async (dispatch) => {
       throw new Error('No token found');
     }
 
-    const response = await fetch(`${apiUrl}/  profile/me`, {
+    const response = await fetch(`${apiUrl}/profile/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
