@@ -15,7 +15,7 @@ namespace PinterestClone.BLL.DTOs
         public string? BannerUrl { get; set; } 
 
         public string? Bio { get; set; }
-        public DateTime BirthDate { get; set; }
+        public DateTime? BirthDate { get; set; }
         public string? Gender { get; set; }
         public string? Country { get; set; }
         public string? Language { get; set; }

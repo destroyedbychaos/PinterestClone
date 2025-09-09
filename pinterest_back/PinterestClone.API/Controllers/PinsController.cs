@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using PinterestClone.BLL.DTOs;
-using PinterestClone.BLL.Services.PinService;
-using PinterestClone.BLL.Services.ImageService;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.ImageService;
+using PinterestClone.BLL.Services.PinService;
+using PinterestClone.DAL.Models;
+using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
@@ -34,16 +36,14 @@ namespace PinterestClone.API.Controllers
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User not authenticated");
-                
+
                 if (createPinDto.ImageFile == null)
-                {
-                    return BadRequest("Потрібно вказати файл зображення");
-                }
+                    return BadRequest("Image file is required");
 
-                var (_, fileName, _, _) = await _imageService.SaveImageAsync(createPinDto.ImageFile);
-                createPinDto.ImageUrl = _imageService.GetImageUrl(fileName);
+                var pin = await _pinService.CreatePinAsync(createPinDto, userId, createPinDto.ImageFile);
+                if (pin == null)
+                    return BadRequest("Failed to create pin");
 
-                var pin = await _pinService.CreatePinAsync(createPinDto, userId);
                 return Ok(pin);
             }
             catch (ArgumentException ex)
@@ -56,6 +56,67 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+
+
+        [HttpGet("{pinId}/similar-by-tags")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByTags(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByTagsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by tags: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/similar-by-image")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByImage(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByImageAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by image: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{pinId}/recommendations")]
+        public async Task<ActionResult<PinListDto>> GetPinRecommendations(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetPinRecommendationsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin recommendations: {ex.Message}");
+            }
+        }
 
 
         [HttpGet("{id}")]
@@ -92,9 +153,9 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        [HttpGet("user/{username}")]
+        [HttpGet("user/{userId}")]
         public async Task<ActionResult<PinListDto>> GetUserPins(
-            string username,
+            string userId,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20,
             [FromQuery] string? sortBy = "createdAt",
@@ -105,7 +166,7 @@ namespace PinterestClone.API.Controllers
                 if (pageSize > 100) pageSize = 100;
                 if (pageNumber < 1) pageNumber = 1;
 
-                var pins = await _pinService.GetUserPinsAsync(username, pageNumber, pageSize, sortBy, isAscending);
+                var pins = await _pinService.GetUserPinsAsync(userId, pageNumber, pageSize, sortBy, isAscending);
                 
                 return Ok(pins);
             }
@@ -288,16 +349,14 @@ namespace PinterestClone.API.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeletePin(string id)
         {
-            var pin = await _db.Pins.FindAsync(Guid.Parse(id));
-            if (pin == null)
-                return NotFound();
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-            if (!string.IsNullOrEmpty(pin.ImageUrl))
-            {
-                await _imageService.DeleteImageAsync(pin.ImageUrl);
-            }
-            _db.Pins.Remove(pin);
-            await _db.SaveChangesAsync();
+            var deleted = await _pinService.DeletePinAsync(id, userId);
+            if (!deleted)
+                return NotFound("Pin not found or you don't have permission to delete it");
+
             return NoContent();
         }
 
@@ -407,5 +466,102 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error searching by image: {ex.Message}");
             }
         }
+
+        [HttpGet("{pinId}/likes")]
+        public async Task<ActionResult<object>> GetPinLikes(string pinId)
+        {
+            try
+            {
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+                var userId = GetCurrentUserId();
+                var isLiked = false;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    isLiked = await _db.Likes.AnyAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+                }
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin likes: {ex.Message}");
+            }
+        }
+
+        [HttpPost("{pinId}/like")]
+        [Authorize]
+        public async Task<ActionResult<object>> TogglePinLike(string pinId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var existingLike = await _db.Likes
+                    .FirstOrDefaultAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+
+                bool isLiked;
+
+                if (existingLike != null)
+                {
+                    _db.Likes.Remove(existingLike);
+                    isLiked = false;
+                }
+                else
+                {
+                    var like = new PinterestClone.DAL.Models.Like
+                    {
+                        Id = Guid.NewGuid(),
+                        PinId = Guid.Parse(pinId),
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.Likes.Add(like);
+                    isLiked = true;
+
+                    var pin = await _db.Pins.Include(p => p.User)
+                                            .FirstOrDefaultAsync(p => p.Id.ToString() == pinId);
+
+                    if (pin != null && pin.UserId != userId) 
+                    {
+                        var sender = await _db.Users.FindAsync(userId);
+
+                        var notification = new Notification
+                        {
+                            UserId = pin.UserId, 
+                            Message = $"{sender?.UserName ?? "Someone"} liked your Aest",
+                            Title = "New Like ❤️",
+                            Type = NotificationType.System,  
+                            Status = NotificationStatus.Pending,
+                            CreatedAt = DateTime.UtcNow,
+                            PinId = pin.Id
+                        };
+
+                        _db.Notifications.Add(notification);
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error toggling pin like: {ex.Message}");
+            }
+        }
+
     }
 } 

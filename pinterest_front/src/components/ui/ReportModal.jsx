@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ReportModal.css';
 
-const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
+const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle, type = 'pin' }) => {
   const [reportMessage, setReportMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,7 +62,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
     <div className="report-modal-overlay" onClick={handleClose}>
       <div className="report-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="report-modal-header">
-          <h2>Повідомити про пін</h2>
+          <h2>{type === 'comment' ? 'Повідомити про коментар' : 'Повідомити про пін'}</h2>
           <button 
             className="report-modal-close" 
             onClick={handleClose}
@@ -76,7 +76,10 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
         
         <div className="report-modal-content">
           <p className="report-modal-description">
-            Повідомте нам, що вас не влаштовує в цьому піні. Ми розглянемо вашу скаргу.
+            {type === 'comment' 
+              ? 'Повідомте нам, що вас не влаштовує в цьому коментарі. Ми розглянемо вашу скаргу.'
+              : 'Повідомте нам, що вас не влаштовує в цьому піні. Ми розглянемо вашу скаргу.'
+            }
           </p>
           
           <form onSubmit={handleSubmit} className="report-modal-form">
@@ -86,7 +89,10 @@ const ReportModal = ({ isOpen, onClose, onSubmit, pinId, pinTitle }) => {
                 id="reportMessage"
                 value={reportMessage}
                 onChange={(e) => setReportMessage(e.target.value)}
-                placeholder="Опишіть проблему з цим піном..."
+                placeholder={type === 'comment' 
+                  ? 'Опишіть проблему з цим коментарем...'
+                  : 'Опишіть проблему з цим піном...'
+                }
                 rows={5}
                 required
                 disabled={isSubmitting}

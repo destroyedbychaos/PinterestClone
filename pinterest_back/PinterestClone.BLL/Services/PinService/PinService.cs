@@ -11,6 +11,7 @@ using PinterestClone.BLL.Services.ImageAnalysisService;
 using PinterestClone.BLL.Services.ImageSearchService;
 using AutoMapper;
 using PinterestClone.DAL.Repositories.UserRepository;
+using PinterestClone.BLL.Services.FileBlobService;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -20,18 +21,20 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IImageAnalysisService _imageAnalysisService;
         private readonly IImageSearchService _imageSearchService;
         private readonly IMapper _mapper;
+        private readonly IFileService _fileService;
         private readonly IUserRepository _userRepository;
 
-        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository)
+        public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository, IFileService fileService)
         {
             _pinRepository = pinRepository;
             _imageAnalysisService = imageAnalysisService;
             _imageSearchService = imageSearchService;
             _mapper = mapper;
             _userRepository = userRepository;
+            _fileService = fileService;
         }
 
-        public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId)
+        public async Task<PinResponseDto?> CreatePinAsync(CreatePinDto createPinDto, string userId, IFormFile? imageFile)
         {
             string? normalizedTags = null;
             if (!string.IsNullOrWhiteSpace(createPinDto.Tags))
@@ -42,9 +45,20 @@ namespace PinterestClone.BLL.Services.PinService
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                 );
             }
+
             var pin = _mapper.Map<Pin>(createPinDto);
             pin.UserId = userId;
             pin.User = await _userRepository.GetByIdAsync(userId);
+            pin.Tags = normalizedTags;
+
+            if (imageFile != null)
+            {
+                var uploadResult = await _fileService.UploadAsync(imageFile);
+                if (!uploadResult.Error)
+                {
+                    pin.ImageUrl = uploadResult.Blob.Uri;
+                }
+            }
 
             var result = await _pinRepository.CreatePinAsync(pin, userId);
             if (result == null)
@@ -185,7 +199,7 @@ namespace PinterestClone.BLL.Services.PinService
             if (pin == null || pin.UserId != userId)
                 return null;
 
-            pin = _mapper.Map<Pin>(updatePinDto);
+            _mapper.Map(updatePinDto, pin);
 
             await _pinRepository.UpdatePinAsync(pinId, pin, userId);
             return await GetPinByIdAsync(pinId);
@@ -196,6 +210,12 @@ namespace PinterestClone.BLL.Services.PinService
             var pin = await _pinRepository.GetPinByIdAsync(pinId);
             if (pin == null || pin.UserId != userId)
                 return false;
+
+            if (!string.IsNullOrWhiteSpace(pin.ImageUrl))
+            {
+                var blobName = new Uri(pin.ImageUrl).Segments.Last();
+                await _fileService.DeleteAsync(blobName);
+            }
 
             return await _pinRepository.DeletePinAsync(pin);
         }
@@ -453,6 +473,165 @@ namespace PinterestClone.BLL.Services.PinService
                 .ToList();
 
             return combined;
+        }
+
+        public async Task<PinListDto?> GetSimilarPinsByTagsAsync(string pinId, int pageNumber = 1, int pageSize = 20)
+        {
+            try
+            {
+                var currentPin = await _pinRepository.GetPinByIdAsync(pinId);
+                if (currentPin == null || string.IsNullOrEmpty(currentPin.Tags))
+                {
+                    return await GetRecommendedPinsAsync(pageNumber, pageSize);
+                }
+
+                var currentTags = currentPin.Tags.Split(',')
+                    .Select(t => t.Trim().ToLower())
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .ToList();
+
+                if (!currentTags.Any())
+                {
+                    return await GetRecommendedPinsAsync(pageNumber, pageSize);
+                }
+
+                var allPins = await _pinRepository.GetAllPins()
+                    .Where(p => p.Id.ToString() != pinId)
+                    .ToListAsync();
+
+                var similarPins = new List<(Pin pin, double similarity)>();
+
+                foreach (var pin in allPins)
+                {
+                    if (!string.IsNullOrEmpty(pin.Tags))
+                    {
+                        var pinTags = pin.Tags.Split(',')
+                            .Select(t => t.Trim().ToLower())
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                            .ToList();
+
+                        if (pinTags.Any())
+                        {
+                            var commonTags = currentTags.Intersect(pinTags).Count();
+                            var totalTags = Math.Max(currentTags.Count, pinTags.Count);
+                            var similarity = commonTags / (double)totalTags;
+
+                            if (similarity > 0.1) 
+                            {
+                                similarPins.Add((pin, similarity));
+                            }
+                        }
+                    }
+                }
+
+                var sortedPins = similarPins
+                    .OrderByDescending(x => x.similarity)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => x.pin)
+                    .ToList();
+
+                return new PinListDto
+                {
+                    Pins = _mapper.Map<List<PinSimpleDto>>(sortedPins),
+                    TotalCount = similarPins.Count,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)similarPins.Count / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка в GetSimilarPinsByTagsAsync: {ex.Message}");
+                return await GetRecommendedPinsAsync(pageNumber, pageSize);
+            }
+        }
+
+        public async Task<PinListDto?> GetSimilarPinsByImageAsync(string pinId, int pageNumber = 1, int pageSize = 20)
+        {
+            try
+            {
+                var currentPin = await _pinRepository.GetPinByIdAsync(pinId);
+                if (currentPin == null)
+                {
+                    return await GetRecommendedPinsAsync(pageNumber, pageSize);
+                }
+
+
+                return await GetSimilarPinsByTagsAsync(pinId, pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка в GetSimilarPinsByImageAsync: {ex.Message}");
+                return await GetRecommendedPinsAsync(pageNumber, pageSize);
+            }
+        }
+
+        public async Task<PinListDto?> GetPinRecommendationsAsync(string pinId, int pageNumber = 1, int pageSize = 20)
+        {
+            try
+            {
+                var recommendedPins = await _pinRepository.GetRecommendedPinsAsync(pageSize);
+                var filteredPins = recommendedPins
+                    .Where(p => p.Id.ToString() != pinId)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PinListDto
+                {
+                    Pins = _mapper.Map<List<PinSimpleDto>>(filteredPins),
+                    TotalCount = recommendedPins.Count,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка в GetPinRecommendationsAsync: {ex.Message}");
+                return new PinListDto
+                {
+                    Pins = new List<PinSimpleDto>(),
+                    TotalCount = 0,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = 0
+                };
+            }
+        }
+
+        private async Task<PinListDto?> GetRecommendedPinsAsync(int pageNumber, int pageSize)
+        {
+            try
+            {
+                var recommendedPins = await _pinRepository.GetRecommendedPinsAsync(pageSize);
+                var pagedPins = recommendedPins
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PinListDto
+                {
+                    Pins = _mapper.Map<List<PinSimpleDto>>(pagedPins),
+                    TotalCount = recommendedPins.Count,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка в GetRecommendedPinsAsync: {ex.Message}");
+                return new PinListDto
+                {
+                    Pins = new List<PinSimpleDto>(),
+                    TotalCount = 0,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = 0
+                };
+            }
         }
 
     }
