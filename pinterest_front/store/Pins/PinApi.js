@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const pinApi = createApi({
   reducerPath: 'pinApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_BASE_URL,
+    baseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token || 
                     localStorage.getItem('authToken') || 
