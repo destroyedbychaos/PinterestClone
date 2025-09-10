@@ -50,7 +50,7 @@ namespace PinterestClone.API.Controllers
                 return BadRequest("Invalid request.");
             }
 
-            BlobResponseDto result = await _fileService.UploadAsync(file);
+            BlobResponseDto result = await _fileService.UploadAsync(file, Guid.NewGuid().ToString());
 
             if (result.Error == true)
             {

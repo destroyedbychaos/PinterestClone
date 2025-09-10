@@ -1,17 +1,18 @@
+using AutoMapper;
 using DocumentFormat.OpenXml.InkML;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Vml;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.FileBlobService;
+using PinterestClone.BLL.Services.ImageAnalysisService;
+using PinterestClone.BLL.Services.ImageSearchService;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.Repositories.PinRepository;
-using Microsoft.AspNetCore.Http;
-using PinterestClone.BLL.Services.ImageAnalysisService;
-using PinterestClone.BLL.Services.ImageSearchService;
-using AutoMapper;
 using PinterestClone.DAL.Repositories.UserRepository;
-using PinterestClone.BLL.Services.FileBlobService;
 
 namespace PinterestClone.BLL.Services.PinService
 {
@@ -52,7 +53,7 @@ namespace PinterestClone.BLL.Services.PinService
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                 );
             }
-
+            
             var pin = _mapper.Map<Pin>(createPinDto);
             pin.UserId = userId;
             pin.User = await _userRepository.GetByIdAsync(userId);
@@ -60,7 +61,7 @@ namespace PinterestClone.BLL.Services.PinService
 
             if (imageFile != null)
             {
-                var uploadResult = await _fileService.UploadAsync(imageFile);
+                var uploadResult = await _fileService.UploadAsync(imageFile, pin.Id.ToString());
                 if (!uploadResult.Error)
                 {
                     pin.ImageUrl = uploadResult.Blob.Uri;
@@ -579,7 +580,7 @@ namespace PinterestClone.BLL.Services.PinService
 
                 foreach (var imagePath in similarImagePaths)
                 {
-                    var fileName = Path.GetFileName(imagePath);
+                    var fileName = System.IO.Path.GetFileName(imagePath);
                     var matchingPins = allPins.Where(pin => pin.ImageUrl != null && 
                         (pin.ImageUrl.Contains(fileName) || pin.ImageUrl.EndsWith(fileName))).ToList();
                     similarPins.AddRange(matchingPins);
