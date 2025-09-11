@@ -1,0 +1,414 @@
+
+.settings-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: white;
+  position: relative;
+  overflow: visible;
+}
+
+.settings-main-content {
+  flex: 1;
+  margin-left: 160px;
+  background: transparent;
+  position: relative;
+  min-height: 100vh;
+  height: auto;
+}
+
+
+
+.settings-user-header {
+  position: absolute;
+  top: 48px;
+  right: 40px;
+  display: flex;
+  width: 267px;
+  height: 64px;
+  padding: 8px;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-radius: 100px;
+  border: 1px solid var(--Blue-100, #CBD7F1);
+  background: var(--White, #FFF);
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.settings-user-header:hover {
+  background: #f8f9fa;
+}
+
+.settings-user-avatar {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.settings-user-avatar-placeholder {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: #eaeff9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #6b7280 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  font-family: Geologica !important;
+  flex-shrink: 0;
+}
+
+.settings-user-name {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: #111 !important;
+  margin-left: 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-family: Geologica !important;
+}
+
+
+
+.settings-title {
+  position: absolute;
+  top: 48px;
+  left: 40px;
+  color: #000D17 !important;
+  font-size: 51px !important;
+  font-family: Geologica !important;
+  font-weight: 700 !important;
+  word-wrap: break-word;
+}
+
+.settings-section-header {
+  position: absolute;
+  top: 256px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.settings-section-title {
+  color: #000D17 !important;
+  font-size: 38px !important;
+  font-family: Geologica !important;
+  font-weight: 700 !important;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.settings-section-subtitle {
+  color: #52697C !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+.settings-tabs-container {
+  position: absolute;
+  top: 152px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 1720px;
+}
+
+.settings-tab-button {
+  height: 56px;
+  padding: 8px 24px;
+  background: #EAEFF9;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.settings-tab-button.settings-tab-active {
+  background: white;
+  border: 2px solid #CBD7F1;
+}
+
+.settings-tab-text {
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+
+
+.settings-content-area {
+  position: relative;
+  margin-top: 402px;
+  padding: 0 40px 40px 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.settings-cards-container {
+  display: flex;
+  gap: 25px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  min-height: 400px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.settings-card {
+  width: 557px !important;
+  padding: 40px !important;
+  border-radius: 40px !important;
+  border: 1px solid #B4C6EB !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.settings-card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 40px !important;
+  padding: 0 !important;
+}
+
+.settings-card-title {
+  color: #000D17 !important;
+  font-size: 28px !important;
+  font-family: Geologica !important;
+  font-weight: 600 !important;
+  word-wrap: break-word;
+  margin: 0 !important;
+}
+
+.settings-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-field-label {
+  color: #01233F !important;
+  font-size: 16px !important;
+  font-family: Geologica !important;
+  font-weight: 300 !important;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.settings-input {
+  width: 100% !important;
+}
+
+.settings-input .MuiOutlinedInput-root {
+  background: rgba(215, 224, 244, 0.50) !important;
+  border-radius: 100px !important;
+  border: none !important;
+  padding: 16px 24px !important;
+}
+
+.settings-input .MuiOutlinedInput-input {
+  color: #01233F !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  padding: 0 !important;
+}
+
+.settings-input .MuiOutlinedInput-input::placeholder {
+  color: #7B8D9B !important;
+}
+
+.settings-input .MuiOutlinedInput-notchedOutline {
+  border: none !important;
+}
+
+.settings-select {
+  width: 100% !important;
+}
+
+.settings-select .MuiOutlinedInput-root {
+  background: transparent !important;
+  border-radius: 100px !important;
+  border: 1px solid #52697C !important;
+  padding: 16px 24px !important;
+}
+
+.settings-select .MuiOutlinedInput-input {
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  padding: 0 !important;
+}
+
+.settings-select .MuiOutlinedInput-notchedOutline {
+  border: none !important;
+}
+
+.settings-radio-group {
+  display: flex !important;
+  gap: 40px !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.settings-radio-group .MuiFormControlLabel-root {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.settings-radio-group .MuiFormControlLabel-label {
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+}
+
+.settings-radio-group .MuiRadio-root {
+  color: #6F91D9 !important;
+  padding: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.settings-radio-group .MuiRadio-root.Mui-checked {
+  color: #6F91D9 !important;
+}
+
+.settings-button {
+  background: #D7E0F4 !important;
+  border-radius: 100px !important;
+  border: none !important;
+  padding: 16px 24px !important;
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.settings-button:hover {
+  background: #CBD7F1 !important;
+  box-shadow: none !important;
+}
+
+.settings-button-danger {
+  background: #D7E0F4 !important;
+  border-radius: 100px !important;
+  border: none !important;
+  padding: 16px 24px !important;
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.settings-button-danger:hover {
+  background: #ffebee !important;
+  color: #d32f2f !important;
+  box-shadow: none !important;
+}
+
+.settings-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-action-title {
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 600 !important;
+  word-wrap: break-word;
+  margin: 0 !important;
+}
+
+.settings-action-description {
+  color: #000D17 !important;
+  font-size: 21px !important;
+  font-family: Geologica !important;
+  font-weight: 400 !important;
+  word-wrap: break-word;
+  margin: 0 !important;
+}
+
+.settings-coming-soon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+}
+
+.settings-coming-soon .MuiTypography-root {
+  color: #52697C !important;
+  font-family: Geologica !important;
+}
+
+@media (max-width: 1920px) {
+  .settings-main-content {
+    margin-left: 120px;
+  }
+  
+  .settings-tabs-container {
+    width: calc(100% - 80px);
+  }
+  
+  .settings-cards-container {
+    flex-wrap: wrap;
+  }
+  
+  .settings-card {
+    width: calc(50% - 12.5px) !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .settings-card {
+    width: 100% !important;
+  }
+  
+  .settings-cards-container {
+    flex-direction: column;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,13 +1,18 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.ProfileReportService;
+using PinterestClone.BLL.Services.UserBlockService;
+using PinterestClone.BLL.Services.UserService;
+using PinterestClone.DAL.Data;
+using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.ProfileReportService;
@@ -26,14 +31,18 @@ namespace PinterestClone.API.Controllers
         private readonly IProfileReportService _profileReportService;
         private readonly IUserBlockService _userBlockService;
         private readonly IMapper _mapper;
+        private readonly AppDbContext _context;
 
-        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper)
+
+        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper, AppDbContext context)
         {
             _userManager = userManager;
             _userService = userService;
             _profileReportService = profileReportService;
             _userBlockService = userBlockService;
             _mapper = mapper;
+            _context = context;
+
         }
 
         /// <summary>
@@ -248,6 +257,237 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        [HttpGet("settings")]
+        public async Task<IActionResult> GetSettings()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+
+                Console.WriteLine($"User BirthDate from database: {user.BirthDate}");
+                Console.WriteLine($"User Gender from database: {user.Gender}");
+                Console.WriteLine($"User Gender type: {user.Gender?.GetType()}");
+                Console.WriteLine($"User Gender is null: {user.Gender == null}");
+                
+                var userPasswords = new Dictionary<string, string>();
+                
+                var settings = new
+                {
+                    email = user.Email,
+                    phoneNumber = user.PhoneNumber,
+                    displayName = user.DisplayName,
+                    userName = user.UserName,
+                    bio = user.Bio,
+                    birthDate = user.BirthDate,
+                    gender = user.Gender,
+                    country = user.Country,
+                    language = user.Language,
+                    isProfilePublic = user.IsProfilePublic,
+                    isSearchPrivate = user.IsSearchPrivate,
+                    password = "•••••••••" 
+                };
+
+                Console.WriteLine($"Returning settings object: {System.Text.Json.JsonSerializer.Serialize(settings)}");
+                Console.WriteLine($"Returning gender: {settings.gender}");
+
+                return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetSettings: {ex.Message}");
+                return BadRequest("Failed to get settings");
+            }
+        }
+
+        [HttpPut("settings")]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsVM model)
+        {
+            try
+            {
+                Console.WriteLine($"UpdateSettings called with model: {System.Text.Json.JsonSerializer.Serialize(model)}");
+                Console.WriteLine($"Model Gender: {model.Gender}");
+                
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+                
+                Console.WriteLine($"Current user Gender before update: {user.Gender}");
+
+                if (!string.IsNullOrWhiteSpace(model.Email) && model.Email != user.Email)
+                {
+                    var existing = await _userManager.FindByEmailAsync(model.Email);
+                    if (existing != null && existing.Id != user.Id)
+                        return BadRequest(new { error = "Email already taken." });
+
+                    var setEmailResult = await _userManager.SetEmailAsync(user, model.Email);
+                    if (!setEmailResult.Succeeded)
+                        return BadRequest(setEmailResult.Errors);
+                }
+
+                if (!string.IsNullOrWhiteSpace(model.UserName) && model.UserName != user.UserName)
+                {
+                    var existing = await _userManager.FindByNameAsync(model.UserName);
+                    if (existing != null && existing.Id != user.Id)
+                        return BadRequest(new { error = "Username already taken." });
+
+                    var setUserNameResult = await _userManager.SetUserNameAsync(user, model.UserName);
+                    if (!setUserNameResult.Succeeded)
+                        return BadRequest(setUserNameResult.Errors);
+                }
+
+                if (model.PhoneNumber is not null)
+                    user.PhoneNumber = model.PhoneNumber;
+                if (model.DisplayName is not null)
+                    user.DisplayName = model.DisplayName;
+                if (model.Bio is not null)
+                    user.Bio = model.Bio;
+                if (model.BirthDate is not null)
+                {
+                    Console.WriteLine($"Updating BirthDate from {user.BirthDate} to {model.BirthDate.Value}");
+                    user.BirthDate = model.BirthDate.Value;
+                }
+                if (model.Gender is not null)
+                {
+                    Console.WriteLine($"Updating Gender from '{user.Gender}' to '{model.Gender}'");
+                    user.Gender = model.Gender;
+                    Console.WriteLine($"User Gender after update: {user.Gender}");
+                }
+                if (model.Country is not null)
+                    user.Country = model.Country;
+                if (model.Language is not null)
+                    user.Language = model.Language;
+                if (model.IsProfilePublic is not null)
+                    user.IsProfilePublic = model.IsProfilePublic.Value;
+                if (model.IsSearchPrivate is not null)
+                    user.IsSearchPrivate = model.IsSearchPrivate.Value;
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                    return BadRequest(updateResult.Errors);
+
+                Console.WriteLine($"User Gender after database update: {user.Gender}");
+                Console.WriteLine($"Update result succeeded: {updateResult.Succeeded}");
+
+                return Ok(new { message = "Settings updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UpdateSettings: {ex.Message}");
+                return BadRequest("Update failed");
+            }
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+
+                // var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+                
+                // Замість цього встановлюємо новий пароль напряму
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+
+                if (!result.Succeeded)
+                    return BadRequest(result.Errors);
+
+
+                return Ok(new { message = "Password changed successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ChangePassword: {ex.Message}");
+                return BadRequest("Password change failed");
+            }
+        }
+
+        [HttpPost("deactivate")]
+        public async Task<IActionResult> DeactivateAccount()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized("User not found");
+
+                Console.WriteLine($"Deactivating account for user: {user.Email}");
+
+                user.IsProfilePublic = false;
+                
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    Console.WriteLine($"Failed to deactivate account for user: {user.Email}");
+                    return BadRequest(updateResult.Errors);
+                }
+
+                Console.WriteLine($"Account deactivated successfully for user: {user.Email}");
+                return Ok(new { message = "Account deactivated successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in DeactivateAccount: {ex.Message}");
+                return BadRequest("Deactivation failed");
+            }
+        }
+
+        [HttpDelete("delete")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    Console.WriteLine("User not found in DeleteAccount");
+                    return Unauthorized("User not found");
+                }
+
+                Console.WriteLine($"Deleting account for user: {user.Email}");
+
+                user.AvatarUrl = null;
+                user.BannerUrl = null;
+                user.Bio = null;
+                user.BirthDate = null;
+                user.Country = null;
+                user.Language = null;
+                user.Gender = null;
+                user.IsProfilePublic = false;
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    Console.WriteLine($"Failed to update user before deletion: {string.Join(", ", updateResult.Errors)}");
+                    return BadRequest(updateResult.Errors);
+                }
+
+                var deleteResult = await _userManager.DeleteAsync(user);
+                if (!deleteResult.Succeeded)
+                {
+                    Console.WriteLine($"Failed to delete user: {string.Join(", ", deleteResult.Errors)}");
+                    return BadRequest(deleteResult.Errors);
+                }
+
+                Console.WriteLine($"Account deleted successfully for user: {user.Email}");
+                return Ok(new { message = "Account deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in DeleteAccount: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return BadRequest("Deletion failed");
+            }
+        }
+
         /// <summary>
         /// Завантажує аватарку користувача.
         /// </summary>
@@ -404,6 +644,7 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Profile reset successfully." });
         }
 
+
         /// <summary>
         /// Змінює пароль поточного користувача.
         /// </summary>
@@ -417,16 +658,6 @@ namespace PinterestClone.API.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var result = await _userManager.ChangePasswordAsync(
-                user,
-                model.CurrentPassword ?? throw new ArgumentException("Current password is required"),
-                model.NewPassword ?? throw new ArgumentException("New password is required"));
-
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            return Ok(new { message = "Password changed successfully." });
-        }
 
         /// <summary>
         /// Змінює email та нікнейм на новий email.
@@ -457,6 +688,7 @@ namespace PinterestClone.API.Controllers
             return Ok(new { message = "Email changed successfully." });
         }
 
+
         /// <summary>
         /// Видаляє обліковий запис користувача.
         /// </summary>
@@ -479,8 +711,6 @@ namespace PinterestClone.API.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok(new { message = "Account deleted successfully." });
-        }
 
         /// <summary>
         /// Отримує інформацію про профіль поточного користувача.
@@ -750,6 +980,7 @@ namespace PinterestClone.API.Controllers
         /// <param name="targetUserId">ID користувача на якого потрібно підписатися.</param>
         /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("{targetUserId}/follow")]
+        [Authorize]
         public async Task<IActionResult> FollowUser(string targetUserId)
         {
             try
@@ -757,36 +988,46 @@ namespace PinterestClone.API.Controllers
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (string.IsNullOrEmpty(currentUserId))
-                {
-                    Console.WriteLine("CurrentUserId is null or empty");
                     return Unauthorized("User not authenticated");
-                }
 
                 if (string.IsNullOrEmpty(targetUserId))
-                {
-                    Console.WriteLine("TargetUserId is null or empty");
                     return BadRequest("Target user ID is required");
-                }
+
 
                 Console.WriteLine($"Following user: {currentUserId} -> {targetUserId}");
 
                 var result = await _userService.FollowUserAsync(currentUserId, targetUserId);
-
                 if (!result.Success)
-                {
-                    Console.WriteLine($"Follow failed: {result.Message}");
                     return BadRequest(result.Message);
+
+                if (currentUserId != targetUserId) 
+                {
+                    var follower = await _context.Users.FindAsync(currentUserId);
+                    if (follower != null)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = targetUserId, 
+                            Message = $"{follower.UserName} started following you",
+                            Title = "New Follower 👤",
+                            Type = NotificationType.System, 
+                            Status = NotificationStatus.Pending,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Notifications.Add(notification);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
-                Console.WriteLine("Follow successful");
                 return Ok(result.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in FollowUser: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// Відписується від користувача.

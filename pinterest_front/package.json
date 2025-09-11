@@ -20,6 +20,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.1.7",
     "axios": "^1.11.0",
+    "date-fns": "^4.1.0",
     "formik": "^2.4.6",
     "iconify": "^1.4.0",
     "lodash.debounce": "^4.0.8",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -8,13 +8,18 @@ import TagsFilter from '../../components/ui/TagsFilter';
 import DiscoverHeader from '../../components/layout/DiscoverHeader';
 import SearchModal from '../../components/SearchModal';
 import ImageSearchModal from '../../components/ImageSearchModal';
+import PinViewModal from '../../components/PinViewModal';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { apiUrl } from '../../env';
+import settingsApi from '../../services/settingsApi';
+import { updateUser } from '../../../store/slices/AuthSlice';
 
-const API_BASE = '/api';
+const API_BASE = apiUrl;
 
 const HomePage = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const user = useCurrentUser();
+  const dispatch = useDispatch();
   const [tags, setTags] = useState([]);
   const [activeTag, setActiveTag] = useState('');
   const [pins, setPins] = useState([]);
@@ -26,6 +31,8 @@ const HomePage = () => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
+  const [showPinViewModal, setShowPinViewModal] = useState(false);
+  const [selectedPin, setSelectedPin] = useState(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -100,6 +107,17 @@ const HomePage = () => {
 
   const handleLogin = () => navigate('/login');
   const handleSignup = () => navigate('/register');
+
+  const handlePinClick = (pin) => {
+    console.log('🖱️ Клік на пін:', pin);
+    setSelectedPin(pin);
+    setShowPinViewModal(true);
+  };
+
+  const handlePinViewClose = () => {
+    setShowPinViewModal(false);
+    setSelectedPin(null);
+  };
 
   const handlePinHidden = (pinId) => {
     setHiddenPinIds((prev) => [...prev, pinId]);
@@ -201,15 +219,57 @@ const HomePage = () => {
                 };
               })}
               onPinHidden={handlePinHidden}
+              onPinClick={handlePinClick}
             />
           )}
         </Box>
       </Box>
 
+      <PinViewModal
+        pin={selectedPin}
+        isOpen={showPinViewModal}
+        onClose={handlePinViewClose}
+        source="home"
+        onLike={(pinId, isLiked) => {
+          console.log('Pin liked:', pinId, isLiked);
+        }}
+        onComment={(pinId, comment) => {
+          console.log('Comment added:', pinId, comment);
+
+        }}
+        onSave={(pinId) => {
+          console.log('Pin saved:', pinId);
+        }}
+      />
+
       <OnboardingModal
         open={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={async (userData) => {
+          try {
+
+            const settingsData = {
+              displayName: userData.name,
+              userName: userData.username,
+              gender: userData.gender === 'female' ? 'Female' : userData.gender === 'male' ? 'Male' : 'Other',
+              country: userData.country === 'ukraine' ? 'Ukraine (Україна)' : 
+                      userData.country === 'usa' ? 'United States' : 
+                      userData.country === 'uk' ? 'United Kingdom' : 'Ukraine (Україна)',
+              language: userData.language === 'english' ? 'English (UK)' : 
+                       userData.language === 'ukrainian' ? 'Ukrainian' : 'English (UK)'
+            };
+            
+            await settingsApi.updateSettings(settingsData);
+            
+            dispatch(updateUser(settingsData));
+            
+            console.log('Onboarding data saved:', userData);
+          } catch (error) {
+            console.error('Error saving onboarding data:', error);
+          }
+          
+          setShowOnboarding(false);
+        }}
       />
 
       <SearchModal
