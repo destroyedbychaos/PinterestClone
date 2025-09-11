@@ -22,7 +22,6 @@ namespace PinterestClone.DAL.Repositories.PinRepository
         Task<List<Pin>> GetLatestPinsAsync(int count);
         Task<List<string>> GetTitleMatchesAsync(string query, int limit);
         Task<List<string>> GetTagMatchesAsync(string query, int limit);
-        Task<List<Pin>> GetRecommendedPinsAsync(int count);
 
     }
 }

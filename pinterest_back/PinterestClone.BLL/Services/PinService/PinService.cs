@@ -751,10 +751,10 @@ namespace PinterestClone.BLL.Services.PinService
                 return new PinListDto
                 {
                     Pins = _mapper.Map<List<PinSimpleDto>>(filteredPins),
-                    TotalCount = recommendedPins.Count(),
+                    TotalCount = recommendedPins.Count,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count() / pageSize)
+                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count / pageSize)
                 };
             }
             catch (Exception ex)
@@ -784,10 +784,10 @@ namespace PinterestClone.BLL.Services.PinService
                 return new PinListDto
                 {
                     Pins = _mapper.Map<List<PinSimpleDto>>(pagedPins),
-                    TotalCount = recommendedPins.Count(),
+                    TotalCount = recommendedPins.Count,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count() / pageSize)
+                    TotalPages = (int)Math.Ceiling((double)recommendedPins.Count / pageSize)
                 };
             }
             catch (Exception ex)

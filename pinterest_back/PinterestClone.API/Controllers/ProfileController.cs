@@ -646,6 +646,20 @@ namespace PinterestClone.API.Controllers
 
 
         /// <summary>
+        /// Змінює пароль поточного користувача.
+        /// </summary>
+        /// <param name="model"><see cref="ChangePasswordVM"/> з поточним та новим паролем.</param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+
+        /// <summary>
         /// Змінює email та нікнейм на новий email.
         /// </summary>
         /// <param name="model"><see cref="ChangeEmailVM"/> з новим email.</param>
@@ -697,8 +711,6 @@ namespace PinterestClone.API.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok(new { message = "Account deleted successfully." });
-        }
 
         /// <summary>
         /// Отримує інформацію про профіль поточного користувача.
