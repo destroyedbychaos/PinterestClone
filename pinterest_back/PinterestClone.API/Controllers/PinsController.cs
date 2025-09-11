@@ -114,7 +114,7 @@ namespace PinterestClone.API.Controllers
         {
             try
             {
-                if (pageSize > 100) pageSihttps://github.com/destroyedbychaos/PinterestClone/pull/95/conflict?name=pinterest_back%252FPinterestClone.API%252FControllers%252FPinsController.cs&ancestor_oid=27a11134a052d8f8d4cafbc6a22280ee36e6a8bd&base_oid=ca98807be6234c925c6349e818af1634cf62e435&head_oid=2502bd39fef97bf3b33037db05f09e2f4d5d576cze = 100;
+                if (pageSize > 100) pageSize = 100;
                 if (pageNumber < 1) pageNumber = 1;
 
                 var pins = await _pinService.GetSimilarPinsByImageAsync(pinId, pageNumber, pageSize);
