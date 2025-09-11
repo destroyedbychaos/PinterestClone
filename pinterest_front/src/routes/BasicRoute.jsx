@@ -81,6 +81,7 @@ const BasicRoute = () => {
             </Route>
             <Route path="/notifications" element={<Layout />}>
                 <Route index element={<Notifications/>} />
+            </Route>
 
 
             <Route path="/create-aest" element={<Layout />}>
