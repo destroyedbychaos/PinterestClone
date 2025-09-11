@@ -8,6 +8,14 @@ using PinterestClone.DAL.Models;
 
 namespace PinterestClone.BLL.Services.NotificationService
 {
+    /// <summary>
+    /// Сервіс відповідальний за сповіщення
+    /// -------------------------------------
+    /// Методи:
+    ///     -- Отримати сповіщення користувача
+    ///     -- Надіслати сповіщення про логін
+    ///     -- Позначити всі отримані сповіщення як прочитані
+    /// </summary>
     public class NotificationService : INotificationService
     {
         private readonly AppDbContext _context;
@@ -21,6 +29,14 @@ namespace PinterestClone.BLL.Services.NotificationService
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Отримує всі сповіщення користувача, що доступні в додатку.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// Об’єкт <see cref="ServiceResponse"/> зі списком <see cref="NotificationDto"/> або повідомленням про помилку.
+        /// </returns>
+        /// <exception cref="System.Exception">Викидається у разі помилки доступу до бази даних.</exception>
         public async Task<ServiceResponse> GetUserNotificationsAsync(string userId)
         {
             try
@@ -38,6 +54,13 @@ namespace PinterestClone.BLL.Services.NotificationService
             }
         }
 
+        /// <summary>
+        /// Створює сповіщення про успішний вхід користувача та надсилає SMS, якщо дозволено.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// Об’єкт <see cref="ServiceResponse"/> з результатом створення сповіщення.
+        /// </returns>
         public async Task<ServiceResponse> CreateLoginNotificationAsync(string userId)
         {
             try
@@ -76,6 +99,14 @@ namespace PinterestClone.BLL.Services.NotificationService
             }
         }
 
+        /// <summary>
+        /// Позначає всі сповіщення користувача як прочитані.
+        /// </summary>
+        /// <param name="userId">Ідентифікатор користувача.</param>
+        /// <returns>
+        /// Об’єкт <see cref="ServiceResponse"/> з результатом операції.
+        /// </returns>
+        /// <exception cref="System.Exception">Викидається у разі помилки доступу до бази даних.</exception>
         public async Task<ServiceResponse> MarkAllAsReadAsync(string userId)
         {
             try

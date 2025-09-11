@@ -141,13 +141,15 @@ namespace PinterestClone.DAL.Repositories.PinRepository
 
             return true;
         }
-        public async Task<List<Pin>> GetRecommendedPinsAsync(int count)
+        // Використовуємо тільки як fallback
+        public async Task<List<Pin>> GetLatestPinsAsync(int count)
         {
             return await _context.Pins
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(count)
                 .ToListAsync();
         }
+
 
         public async Task<List<string>> GetTitleMatchesAsync(string query, int limit)
         {

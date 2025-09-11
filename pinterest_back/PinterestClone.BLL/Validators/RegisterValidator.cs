@@ -4,6 +4,9 @@ using FluentValidation;
 
 namespace PinterestClone.BLL.Validators
 {
+    /// <summary>
+    /// Валідатор для реєстрації нового користувача.
+    /// </summary>
     public class RegisterValidator : AbstractValidator<RegisterVM>
     {
         public RegisterValidator() 

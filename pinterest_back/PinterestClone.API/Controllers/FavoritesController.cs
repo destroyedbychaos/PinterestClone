@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.Services.PinService;
 using PinterestClone.BLL.DTOs;
@@ -6,6 +6,12 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер відповідальний за операції зі збереженням пінів.
+    /// ----------------------------------------------------------
+    /// Методи:
+    ///     -- Отримати збережені користувачем піни
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class FavoritesController : BaseController
@@ -17,6 +23,13 @@ namespace PinterestClone.API.Controllers
             _pinService = pinService;
         }
 
+        /// <summary>
+        /// Отримує збережені користувачем піни.
+        /// </summary>
+        /// <param name="username">Нікнейм користувача.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Розмір сторінки (за замовчуванням 20).</param>
+        /// <returns></returns>
         [HttpGet("user/{username}")]
         [AllowAnonymous]
         public async Task<ActionResult<PinListDto>> GetUserSavedPins(

@@ -1,4 +1,4 @@
-using PinterestClone.BLL.DTOs;
+﻿using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.PinShareService;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Repositories.PinShareRepository;
@@ -8,6 +8,16 @@ using AutoMapper;
 
 namespace PinterestClone.BLL.Services.PinShareService
 {
+    /// <summary>
+    /// Сервіс відповідальний за поширення пінів.
+    /// -----------------------------------------
+    /// Методи:
+    ///     -- Створити поширення піна
+    ///     -- Отримати поширення піна за ID
+    ///     -- Позначити поширення піна як прочитане
+    ///     -- Видалити поширення піна
+    ///     -- Порахувати непрочитані поширення пінів
+    /// </summary>
     public class PinShareService : IPinShareService
     {
         private readonly IPinShareRepository _pinShareRepository;
@@ -23,6 +33,12 @@ namespace PinterestClone.BLL.Services.PinShareService
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Створює нове поширення піна для конкретного користувача.
+        /// </summary>
+        /// <param name="sharePinDto">Дані для поширення піна.</param>
+        /// <param name="sharedByUserId">ID користувача, який поширює пін.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції та інформацією про поширення.</returns>
         public async Task<ServiceResponse> SharePinAsync(SharePinDto sharePinDto, string sharedByUserId)
         {
             try
@@ -75,6 +91,11 @@ namespace PinterestClone.BLL.Services.PinShareService
             }
         }
 
+        /// <summary>
+        /// Отримує поширення піна за його ID.
+        /// </summary>
+        /// <param name="id">ID поширення піна.</param>
+        /// <returns><see cref="ServiceResponse"/> з даними поширення або повідомленням про помилку.</returns>
         public async Task<ServiceResponse> GetPinShareByIdAsync(int id)
         {
             try
@@ -94,6 +115,12 @@ namespace PinterestClone.BLL.Services.PinShareService
             }
         }
 
+        /// <summary>
+        /// Позначає поширення піна як прочитане.
+        /// </summary>
+        /// <param name="id">ID поширення піна.</param>
+        /// <param name="userId">ID користувача, який отримав пін.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції.</returns>
         public async Task<ServiceResponse> MarkAsReadAsync(int id, string userId)
         {
             try
@@ -120,6 +147,12 @@ namespace PinterestClone.BLL.Services.PinShareService
             }
         }
 
+        /// <summary>
+        /// Видаляє поширення піна.
+        /// </summary>
+        /// <param name="id">ID поширення піна.</param>
+        /// <param name="userId">ID користувача, який виконує видалення.</param>
+        /// <returns><see cref="ServiceResponse"/> з результатом операції.</returns>
         public async Task<ServiceResponse> DeletePinShareAsync(int id, string userId)
         {
             try
@@ -146,6 +179,11 @@ namespace PinterestClone.BLL.Services.PinShareService
             }
         }
 
+        /// <summary>
+        /// Отримує кількість непрочитаних поширень піна для користувача.
+        /// </summary>
+        /// <param name="userId">ID користувача.</param>
+        /// <returns><see cref="ServiceResponse"/> з кількістю непрочитаних поширень.</returns>
         public async Task<ServiceResponse> GetUnreadCountAsync(string userId)
         {
             try

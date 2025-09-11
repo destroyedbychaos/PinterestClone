@@ -6,9 +6,19 @@ using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.DAL.Models;
 
 namespace PinterestClone.BLL.Services.FileBlobService
 {
+    /// <summary>
+    /// Сервіс відповідальний за взаємодію з Azure Blob файловою системою.
+    /// ------------------------------------------------------------------
+    /// Методи:
+    ///     -- Витягнути всі назви блобів
+    ///     -- Зберегти файл в базі
+    ///     -- Завантажити файл з бази
+    ///     -- Видалити файл з бази
+    /// </summary>
     public class FileService : IFileService
     {
         private readonly BlobContainerClient _filesContainer;
@@ -22,6 +32,10 @@ namespace PinterestClone.BLL.Services.FileBlobService
             _filesContainer.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.None);
         }
 
+        /// <summary>
+        /// Отримує всі файли (блоби) з контейнера.
+        /// </summary>
+        /// <returns>Список об’єктів <see cref="BlobDto"/>, що містить назви, URI та типи вмісту файлів.</returns>
         public async Task<List<BlobDto?>> GetAllBlobsAsync()
         {
             List<BlobDto> files = new List<BlobDto>();
@@ -43,14 +57,25 @@ namespace PinterestClone.BLL.Services.FileBlobService
             return files;
         }
 
-        public async Task<BlobResponseDto> UploadAsync(IFormFile blob)
+        /// <summary>
+        /// Завантажує новий файл до Azure Blob Storage.
+        /// </summary>
+        /// <param name="blob">Файл, який потрібно завантажити.</param>
+        /// <returns>Об’єкт <see cref="BlobResponseDto"/> зі статусом операції, ознакою помилки та даними про файл.</returns>
+        /// <exception cref="Azure.RequestFailedException">Викидається у випадку помилки з боку Azure Storage під час завантаження.</exception>
+        public async Task<BlobResponseDto> UploadAsync(IFormFile blob, string id)
         {
             BlobResponseDto response = new BlobResponseDto();
-            BlobClient client = _filesContainer.GetBlobClient(blob.FileName);
+
+            var extension = Path.GetExtension(blob.FileName)?.ToLowerInvariant();
+
+            var normalizedFileName = $"{id}{extension}";
+
+            BlobClient client = _filesContainer.GetBlobClient(normalizedFileName);
 
             if (await client.ExistsAsync())
             {
-                response.Status = $"File {blob.FileName} already exists.";
+                response.Status = $"File {normalizedFileName} already exists.";
                 response.Error = true;
                 response.Blob.Uri = client.Uri.AbsoluteUri;
                 response.Blob.Name = client.Name;
@@ -63,7 +88,7 @@ namespace PinterestClone.BLL.Services.FileBlobService
                 await client.UploadAsync(data, overwrite: true);
             }
 
-            response.Status = $"File {blob.FileName} uploaded successfully.";
+            response.Status = $"File {normalizedFileName} uploaded successfully.";
             response.Error = false;
             response.Blob.Uri = client.Uri.AbsoluteUri;
             response.Blob.Name = client.Name;
@@ -71,6 +96,11 @@ namespace PinterestClone.BLL.Services.FileBlobService
             return response;
         }
 
+        /// <summary>
+        /// Завантажує файл з Azure Blob Storage за його назвою.
+        /// </summary>
+        /// <param name="blobFilename">Назва файлу (блоба), який потрібно отримати.</param>
+        /// <returns>Об’єкт <see cref="BlobDto"/>, що містить вміст, назву та тип файлу, або <c>null</c>, якщо файл не існує.</returns>
         public async Task<BlobDto?> DownloadAsync(string blobFilename)
         {
             BlobClient file = _filesContainer.GetBlobClient(blobFilename);
@@ -86,6 +116,11 @@ namespace PinterestClone.BLL.Services.FileBlobService
             return null;
         }
 
+        /// <summary>
+        /// Видаляє файл з Azure Blob Storage за його назвою.
+        /// </summary>
+        /// <param name="blobFilename">Назва файлу (блоба), який потрібно видалити.</param>
+        /// <returns>Об’єкт <see cref="BlobResponseDto"/> з інформацією про успішність або невдачу операції.</returns>
         public async Task<BlobResponseDto> DeleteAsync(string blobFilename)
         {
             BlobClient file = _filesContainer.GetBlobClient(blobFilename);

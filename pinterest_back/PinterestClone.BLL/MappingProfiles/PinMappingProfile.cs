@@ -10,10 +10,38 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
+    /// <summary>
+    /// Мапер для об'єктів пов'язаних з пінами.
+    /// ---------------------------------------
+    /// CreatePinDto -> Pin
+    /// Pin -> PinSimpleDto -> Pin
+    /// Pin -> PinRecommendationDto -> Pin
+    /// UpdatePinDto -> Pin
+    /// Pin -> PinResponseDto
+    /// PinReport -> PinReportResponseDto
+    /// PinShare -> PinShareResponseDto
+    /// </summary>
     public class PinMappingProfile : Profile
     {
         public PinMappingProfile()
         {
+            CreateMap<CreatePinDto, Pin>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore()) 
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src =>
+                    string.IsNullOrWhiteSpace(src.Tags) ? null :
+                    string.Join(",",
+                        src.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim().ToLower())
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                    )
+                ))
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Likes, opt => opt.Ignore())
+                .ForMember(dest => dest.Comments, opt => opt.Ignore())
+                .ForMember(dest => dest.BoardPins, opt => opt.Ignore());
+
             CreateMap<Pin, PinSimpleDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl ?? ""))
@@ -61,10 +89,10 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl ?? ""))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : ""))
                 .ForMember(dest => dest.Boards, opt => opt.MapFrom(src => src.BoardPins.Select(bp => new BoardSimpleDto
-                    {
-                        Id = bp.Board != null ? bp.Board.Id.ToString() : "",
-                        Name = bp.Board != null ? bp.Board.Name : ""
-                    }).ToList()))
+                {
+                    Id = bp.Board != null ? bp.Board.Id.ToString() : "",
+                    Name = bp.Board != null ? bp.Board.Name : ""
+                }).ToList()))
                 .ForMember(dest => dest.LikesCount, opt => opt.MapFrom(src => src.Likes.Count))
                 .ForMember(dest => dest.CommentsCount, opt => opt.MapFrom(src => src.Comments.Count));
 

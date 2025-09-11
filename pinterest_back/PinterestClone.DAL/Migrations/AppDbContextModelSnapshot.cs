@@ -329,6 +329,9 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("text");
 
+                    b.Property<string>("Interests")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsPhoneNumberVerified")
                         .HasColumnType("boolean");
 
@@ -355,6 +358,12 @@ namespace PinterestClone.DAL.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<bool>("OnboardingCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("OnboardingCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
@@ -379,6 +388,9 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Vibes")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

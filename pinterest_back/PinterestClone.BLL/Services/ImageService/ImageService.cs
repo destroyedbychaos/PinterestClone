@@ -1,8 +1,18 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System.Security.Cryptography;
 
 namespace PinterestClone.BLL.Services.ImageService
 {
+    /// <summary>
+    /// Сервіс для роботи з картинками для аватарки та банеру.
+    /// ------------------------------------------------------
+    /// Методи:
+    ///     -- Перевірка валідності картинки
+    ///     -- Зберегти картинку
+    ///     -- Отримати посилання на картинку в базі
+    ///     -- Створити хеш картинки
+    ///     -- Видалити картинку
+    /// </summary>
     public class ImageService : IImageService
     {
         private readonly string _uploadsPath;
@@ -22,6 +32,11 @@ namespace PinterestClone.BLL.Services.ImageService
             }
         }
 
+        /// <summary>
+        /// Перевіряє, чи є файл валідним зображенням за розширенням, MIME-типом та розміром.
+        /// </summary>
+        /// <param name="file">Файл для перевірки.</param>
+        /// <returns><c>True</c>, якщо файл валідний, інакше <c>False</c>.</returns>
         public bool IsValidImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -42,6 +57,12 @@ namespace PinterestClone.BLL.Services.ImageService
             return true;
         }
 
+        /// <summary>
+        /// Зберігає файл зображення на диск та обчислює його хеш.
+        /// </summary>
+        /// <param name="file">Завантажене зображення.</param>
+        /// <returns>Кортеж з шляхом до файлу, ім’ям файлу, хешем та розміром файлу.</returns>
+        /// <exception cref="ArgumentException">Якщо файл не є валідним зображенням.</exception>
         public async Task<(string filePath, string fileName, string hash, long size)> SaveImageAsync(IFormFile file)
         {
             if (!IsValidImage(file))
@@ -64,11 +85,21 @@ namespace PinterestClone.BLL.Services.ImageService
             return (filePath, fileName, hash, file.Length);
         }
 
+        /// <summary>
+        /// Повертає URL картинки для використання в веб-додатку.
+        /// </summary>
+        /// <param name="fileName">Ім’я файлу картинки.</param>
+        /// <returns>Повний URL картинки.</returns>
         public string GetImageUrl(string fileName)
         {
             return $"{_baseUrl}/{fileName}";
         }
 
+        /// <summary>
+        /// Обчислює MD5-хеш файлу.
+        /// </summary>
+        /// <param name="file">Файл для обчислення хешу.</param>
+        /// <returns>Хеш файлу у вигляді рядка у шістнадцятковій системі.</returns>
         public async Task<string> CalculateFileHashAsync(IFormFile file)
         {
             using var md5 = MD5.Create();
@@ -77,6 +108,11 @@ namespace PinterestClone.BLL.Services.ImageService
             return Convert.ToHexString(hashBytes).ToLowerInvariant();
         }
 
+        /// <summary>
+        /// Видаляє картинку з диску за URL або ім’ям файлу.
+        /// </summary>
+        /// <param name="imageUrlOrFileName">URL або ім’я файлу картинки.</param>
+        /// <returns><c>True</c>, якщо файл успішно видалено, інакше <c>False</c>.</returns>
         public async Task<bool> DeleteImageAsync(string imageUrlOrFileName)
         {
             if (string.IsNullOrWhiteSpace(imageUrlOrFileName))

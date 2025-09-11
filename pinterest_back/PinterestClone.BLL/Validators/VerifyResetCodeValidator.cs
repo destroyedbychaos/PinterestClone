@@ -3,6 +3,9 @@ using PinterestClone.DAL.ViewModels;
 
 namespace PinterestClone.BLL.Validators
 {
+    /// <summary>
+    /// Валідатор підтвердження коду скидання паролю.
+    /// </summary>
     public class VerifyResetCodeValidator : AbstractValidator<VerifyResetCodeVM>
     {
         public VerifyResetCodeValidator()

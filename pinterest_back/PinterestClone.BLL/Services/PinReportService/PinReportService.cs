@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.EmailService;
 using PinterestClone.BLL.Services.PinReportService;
@@ -9,6 +9,16 @@ using PinterestClone.DAL.Repositories.UserRepository;
 
 namespace PinterestClone.BLL.Services.PinReportService
 {
+    /// <summary>
+    /// Сервіс відповідальний за обробку скарг про пін.
+    /// --------------------------------------------------
+    /// Методи:
+    ///     -- Надіслати скаргу про пін
+    ///     -- Отримати скаргу за ID
+    ///     -- Отримати всі скарги з пагінацією
+    ///     -- Вирішити скаргу
+    ///     -- Видалити скаргу
+    /// </summary>
     public class PinReportService : IPinReportService
     {
         private readonly IPinReportRepository _pinReportRepository;
@@ -26,6 +36,16 @@ namespace PinterestClone.BLL.Services.PinReportService
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Створює нову скаргу на пін.
+        /// </summary>
+        /// <param name="reportPinDto">Об’єкт <see cref="ReportPinDto"/> з ID піна та текстом скарги.</param>
+        /// <param name="reportedByUserId">Ідентифікатор користувача, який надсилає скаргу.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо скаргу успішно створено та надіслано адміністратору;
+        ///     -- Помилка, якщо пін або користувач не знайдено, або скарга вже існує.
+        /// </returns>
         public async Task<ServiceResponse> ReportPinAsync(ReportPinDto reportPinDto, string reportedByUserId)
         {
             try
@@ -85,6 +105,15 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
+        /// <summary>
+        /// Отримує скаргу на пін за її ID.
+        /// </summary>
+        /// <param name="id">Ідентифікатор скарги.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з об’єктом <see cref="PinReportResponseDto"/>:
+        ///     -- Успіх, якщо скаргу знайдено;
+        ///     -- Помилка, якщо скаргу не існує.
+        /// </returns>
         public async Task<ServiceResponse> GetReportByIdAsync(int id)
         {
             try
@@ -104,6 +133,16 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
+        /// <summary>
+        /// Отримує всі скарги на піни з підтримкою пагінації.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінку (за замовчуванням 20).</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> зі списком <see cref="PinReportResponseDto"/>:
+        ///     -- Успіх, якщо скарги знайдено;
+        ///     -- Помилка при отриманні скарг.
+        /// </returns>
         public async Task<ServiceResponse> GetAllReportsAsync(int pageNumber = 1, int pageSize = 20)
         {
             try
@@ -119,6 +158,16 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
+        /// <summary>
+        /// Відзначає скаргу як вирішену та додає примітки щодо вирішення.
+        /// </summary>
+        /// <param name="id">Ідентифікатор скарги.</param>
+        /// <param name="resolutionNotes">Примітки щодо вирішення скарги.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо скаргу успішно вирішено;
+        ///     -- Помилка, якщо скаргу не знайдено або не вдалося оновити.
+        /// </returns>
         public async Task<ServiceResponse> ResolveReportAsync(int id, string resolutionNotes)
         {
             try
@@ -147,6 +196,15 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
+        /// <summary>
+        /// Видаляє скаргу на пін за її ID.
+        /// </summary>
+        /// <param name="id">Ідентифікатор скарги.</param>
+        /// <returns>
+        /// <see cref="ServiceResponse"/> з результатом операції:
+        ///     -- Успіх, якщо скаргу успішно видалено;
+        ///     -- Помилка, якщо скаргу не знайдено.
+        /// </returns>
         public async Task<ServiceResponse> DeleteReportAsync(int id)
         {
             try
@@ -165,6 +223,11 @@ namespace PinterestClone.BLL.Services.PinReportService
             }
         }
 
+        /// <summary>
+        /// Перетворює об’єкт <see cref="PinReport"/> у DTO для відповіді <see cref="PinReportResponseDto"/> використовуючи AutoMapper.
+        /// </summary>
+        /// <param name="pinReport">Об’єкт <see cref="PinReport"/> для конвертації.</param>
+        /// <returns>Об’єкт <see cref="PinReportResponseDto"/>, який містить дані скарги у форматі відповіді.</returns>
         private PinReportResponseDto MapToResponseDto(PinReport pinReport)
         {
             return _mapper.Map<PinReportResponseDto>(pinReport);

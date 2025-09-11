@@ -10,6 +10,12 @@ using PinterestClone.DAL.Models.Identity;
 
 namespace PinterestClone.BLL.MappingProfiles
 {
+    /// <summary>
+    /// Мапер для об'єктів пов'язаних з сервісом зв'язку з користувачем.
+    /// ----------------------------------------------------------------
+    /// Notification -> NotificationDto -> Notification
+    /// 
+    /// </summary>
     public class DeviceServicesMappingProfile : Profile
     {
         public DeviceServicesMappingProfile() 
@@ -35,18 +41,6 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.Pin, opt => opt.Ignore())
                 .ForMember(dest => dest.Board, opt => opt.Ignore())
                 .ForMember(dest => dest.Comment, opt => opt.Ignore());
-
-            CreateMap<User, UserProfileDto>()
-                .ReverseMap()
-                .ForMember(dest => dest.Boards, opt => opt.Ignore())
-                .ForMember(dest => dest.Pins, opt => opt.Ignore())
-                .ForMember(dest => dest.Comments, opt => opt.Ignore())
-                .ForMember(dest => dest.Likes, opt => opt.Ignore())
-                .ForMember(dest => dest.Claims, opt => opt.Ignore())
-                .ForMember(dest => dest.Logins, opt => opt.Ignore())
-                .ForMember(dest => dest.Tokens, opt => opt.Ignore());
-
-            CreateMap<User, UserSearchDto>();
 
         }
     }

@@ -23,6 +23,7 @@ import AccountDeletion from "../pages/Settings/AccountDeletion.jsx";
 import HistoryPage from "../pages/History/HistoryPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Notifications from "../pages/Notifications/Notifications.jsx";
+import CreateAest from "../pages/CreateAest/CreateAest.jsx";
 
 
 
@@ -80,6 +81,10 @@ const BasicRoute = () => {
             </Route>
             <Route path="/notifications" element={<Layout />}>
                 <Route index element={<Notifications/>} />
+
+
+            <Route path="/create-aest" element={<Layout />}>
+                <Route index element={<CreateAest/>} />
             </Route>
 
             <Route path="/user/:username" element={<LayoutWithoutFooter />}>

@@ -87,6 +87,10 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -128,7 +132,7 @@ builder.Services.AddAuthentication(options =>
     
 });
 
-
+//Add services and repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
@@ -160,8 +164,7 @@ builder.Services.AddScoped<IPinViewHistoryRepository, PinViewHistoryRepository>(
 builder.Services.AddScoped<IPinViewHistoryService, PinViewHistoryService>();
 builder.Services.AddSingleton<IFileService, FileService>();
 
-//automapper
- 
+//AutoMapper
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddMaps(typeof(PinMappingProfile).Assembly);

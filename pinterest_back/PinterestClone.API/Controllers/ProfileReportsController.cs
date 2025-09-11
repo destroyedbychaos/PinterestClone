@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.ProfileReportService;
@@ -6,6 +6,16 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для операцій з скаргами на профілі.
+    /// ---------------------------------------------
+    /// Методи:
+    ///     -- Поскаржитися на профіль
+    ///     -- Отримати скаргу по ID
+    ///     -- Отримати всі скарги
+    ///     -- Вирішити скаргу
+    ///     -- Видалити скаргу
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -18,6 +28,11 @@ namespace PinterestClone.API.Controllers
             _profileReportService = profileReportService;
         }
 
+        /// <summary>
+        /// Створює скаргу на профіль користувача.
+        /// </summary>
+        /// <param name="reportProfileDto"><see cref="ReportProfileDto"/> з даними скарги.</param>
+        /// <returns><see cref="IActionResult"/> зі статусом створення або помилкою.</returns>
         [HttpPost("report")]
         public async Task<IActionResult> ReportProfile([FromBody] ReportProfileDto reportProfileDto)
         {
@@ -39,6 +54,11 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Отримує скаргу за її ID.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <returns><see cref="IActionResult"/> зі скаргою або повідомленням про помилку.</returns>
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReportById(int id)
@@ -47,6 +67,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Отримує список усіх скарг із підтримкою пагінації.
+        /// </summary>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="IActionResult"/> зі списком скарг або повідомленням про помилку.</returns>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllReports([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
@@ -55,6 +81,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Позначає скаргу як вирішену та додає нотатки щодо рішення.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <param name="resolutionNotes">Нотатки щодо вирішення скарги.</param>
+        /// <returns><see cref="IActionResult"/> зі статусом виконання або повідомленням про помилку.</returns>
         [HttpPut("{id}/resolve")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ResolveReport(int id, [FromBody] string resolutionNotes)
@@ -63,6 +95,11 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Видаляє скаргу за її ID.
+        /// </summary>
+        /// <param name="id">ID скарги.</param>
+        /// <returns><see cref="IActionResult"/> зі статусом видалення або повідомленням про помилку.</returns>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteReport(int id)
