@@ -57,7 +57,7 @@ namespace PinterestClone.API.Controllers
             else
             {
                 notificationsQuery = notificationsQuery
-                    .Where(n => !n.Message.Contains("������� �������! �� ������ ������ � �������."));
+                    .Where(n => !n.Message.Contains("!"));
             }
 
             var notifications = await notificationsQuery.ToListAsync();
@@ -67,7 +67,6 @@ namespace PinterestClone.API.Controllers
 
 
 
-    [HttpPost("mark-read")]
         /// <summary>
         /// Позначає всі сповіщення користувача як прочитані.
         /// </summary>

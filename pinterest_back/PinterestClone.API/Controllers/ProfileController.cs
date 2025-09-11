@@ -440,53 +440,7 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteAccount()
-        {
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
-                {
-                    Console.WriteLine("User not found in DeleteAccount");
-                    return Unauthorized("User not found");
-                }
-
-                Console.WriteLine($"Deleting account for user: {user.Email}");
-
-                user.AvatarUrl = null;
-                user.BannerUrl = null;
-                user.Bio = null;
-                user.BirthDate = null;
-                user.Country = null;
-                user.Language = null;
-                user.Gender = null;
-                user.IsProfilePublic = false;
-
-                var updateResult = await _userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    Console.WriteLine($"Failed to update user before deletion: {string.Join(", ", updateResult.Errors)}");
-                    return BadRequest(updateResult.Errors);
-                }
-
-                var deleteResult = await _userManager.DeleteAsync(user);
-                if (!deleteResult.Succeeded)
-                {
-                    Console.WriteLine($"Failed to delete user: {string.Join(", ", deleteResult.Errors)}");
-                    return BadRequest(deleteResult.Errors);
-                }
-
-                Console.WriteLine($"Account deleted successfully for user: {user.Email}");
-                return Ok(new { message = "Account deleted successfully." });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in DeleteAccount: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                return BadRequest("Deletion failed");
-            }
-        }
+        
 
         /// <summary>
         /// Завантажує аватарку користувача.
