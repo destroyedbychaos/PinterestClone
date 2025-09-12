@@ -1,10 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
 export const boardsApi = createApi({
     reducerPath: 'boardsApi',
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
         prepareHeaders: (headers, { getState }) => {
-            const token = getState().auth?.token;
+            const token = getState().auth?.token || 
+                         localStorage.getItem('authToken') || 
+                         localStorage.getItem('token') || 
+                         sessionStorage.getItem('authToken') || 
+                         sessionStorage.getItem('token');
             if (token) {
                 headers.set('Authorization', `Bearer ${token}`);
             }
@@ -35,25 +40,25 @@ export const boardsApi = createApi({
                 }
             }),
             providesTags: ['Board'],
-    transformResponse: (response) => {
-        return {
-            boards: response.boards?.map(board => ({
-                id: board.id,
-                name: board.name,
-                count: `${board.assetsCount || 0} Assets`,
-                image: board.coverImageUrl || null,
-                isPrivate: board.isPrivate || false,
-                description: board.description,
-                createdAt: board.createdAt,
-                updatedAt: board.updatedAt,
-                isArchived: board.isArchived || false
-            })) || [],
-            totalCount: response.totalCount || 0,
-            pageNumber: response.pageNumber || 1,
-            pageSize: response.pageSize || 20,
-            totalPages: response.totalPages || 1
-        };
-    }
+            transformResponse: (response) => {
+                return {
+                    boards: response.boards?.map(board => ({
+                        id: board.id,
+                        name: board.name,
+                        count: `${board.assetsCount || 0} Assets`,
+                        image: board.coverImageUrl || null,
+                        isPrivate: board.isPrivate || false,
+                        description: board.description,
+                        createdAt: board.createdAt,
+                        updatedAt: board.updatedAt,
+                        isArchived: board.isArchived || false
+                    })) || [],
+                    totalCount: response.totalCount || 0,
+                    pageNumber: response.pageNumber || 1,
+                    pageSize: response.pageSize || 20,
+                    totalPages: response.totalPages || 1
+                };
+            }
         }),
 
         getAllBoards: builder.query({
@@ -81,19 +86,44 @@ export const boardsApi = createApi({
         }),
 
         createBoard: builder.mutation({
-            query: (boardData) => ({
-                url: '/Boards',
-                method: 'POST',
-                body: boardData,
-            }),
+            query: (boardData) => {
+                // Ensure the data matches BoardSimpleDto structure
+                const payload = {
+                    id: boardData.id || "", // Required by DTO but empty for new boards
+                    name: boardData.name || "",
+                    description: boardData.description || "",
+                    isPrivate: boardData.isPrivate || false,
+                    isArchived: boardData.isArchived || false,
+                    userId: boardData.userId || ""
+                };
+
+                console.log('Sending board creation payload:', payload);
+
+                return {
+                    url: '/Boards',
+                    method: 'POST',
+                    body: payload,
+                };
+            },
             invalidatesTags: ['Board'],
+            transformErrorResponse: (response, meta, arg) => {
+                console.error('Board creation error response:', response);
+                return response;
+            }
         }),
 
         updateBoard: builder.mutation({
             query: ({ id, ...boardData }) => ({
                 url: `/Boards/${id}`,
                 method: 'PUT',
-                body: boardData,
+                body: {
+                    id: id,
+                    name: boardData.name || "",
+                    description: boardData.description || "",
+                    isPrivate: boardData.isPrivate || false,
+                    isArchived: boardData.isArchived || false,
+                    userId: boardData.userId || ""
+                },
             }),
             invalidatesTags: ['Board'],
         }),
