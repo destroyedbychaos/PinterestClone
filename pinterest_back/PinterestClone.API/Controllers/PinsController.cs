@@ -85,8 +85,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
-
+        /// <summary>
+        /// Отримує список подібних пінів на основі спільних тегів.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список подібних пінів, або повідомлення про помилку.</returns>
         [HttpGet("{pinId}/similar-by-tags")]
         public async Task<ActionResult<PinListDto>> GetSimilarPinsByTags(
             string pinId,
@@ -107,6 +112,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує список подібних пінів на основі зображення.
+        /// </summary>
+        /// <param name="pinId">ID піну.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список подібних пінів, або повідомленням про помилку.</returns>
         [HttpGet("{pinId}/similar-by-image")]
         public async Task<ActionResult<PinListDto>> GetSimilarPinsByImage(
             string pinId,
@@ -127,6 +139,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує рекомендації для вказаного піну.
+        /// </summary>
+        /// <param name="pinId">ID піну.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список рекомендованих пінів, або повідомлення про помилку.</returns>
         [HttpGet("{pinId}/recommendations")]
         public async Task<ActionResult<PinListDto>> GetPinRecommendations(
             string pinId,
@@ -557,6 +576,30 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
+        /// Отримує список рекомендованих пінів для користувача.
+        /// </summary>
+        /// <param name="userId">ID користувача.</param>
+        /// <returns>Список рекомендованих пінів у вигляді <see cref="PinRecommendationDto"/>.</returns>
+        [HttpGet("recommendations/{userId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendationsForUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest("UserId is required");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations for user {userId}: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
         /// Повертає список підказок для пошукового запиту.
         /// </summary>
         /// <param name="q">Рядок запиту для пошуку порад пінів.</param>
@@ -610,6 +653,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує кількість вподобань для піна та чи вподобав його поточний користувач.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <returns>
+        /// Об’єкт із кількістю вподобань <c>likesCount</c> та позначкою <c>isLiked</c>, який показує, чи користувач вподобав цей пін.</returns>
         [HttpGet("{pinId}/likes")]
         public async Task<ActionResult<object>> GetPinLikes(string pinId)
         {
@@ -636,6 +685,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Додає вподобання, якщо його ще немає, або видаляє — якщо користувач уже вподобав пін.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <returns>Об’єкт із новою кількістю вподобань <c>likesCount</c> та позначкою <c>isLiked</c>, який показує поточний стан вподобання.
+        /// </returns>
         [HttpPost("{pinId}/like")]
         [Authorize]
         public async Task<ActionResult<object>> TogglePinLike(string pinId)
