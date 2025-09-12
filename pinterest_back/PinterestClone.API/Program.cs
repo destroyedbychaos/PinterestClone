@@ -198,6 +198,12 @@ app.UseCors(policy => policy
     .AllowAnyHeader());
 
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    await next();
+});
+
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();

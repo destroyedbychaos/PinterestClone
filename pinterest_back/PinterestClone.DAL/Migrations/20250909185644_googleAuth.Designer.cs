@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PinterestClone.DAL.Data;
@@ -11,9 +12,11 @@ using PinterestClone.DAL.Data;
 namespace PinterestClone.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909185644_googleAuth")]
+    partial class googleAuth
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -307,7 +310,6 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("BirthDate")
-                    b.Property<DateTime?>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -339,9 +341,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<bool>("IsProfilePublic")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsSearchPrivate")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Language")
                         .HasColumnType("text");
 
@@ -358,12 +357,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("OnboardingCompleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("OnboardingCompletedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
@@ -389,9 +382,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Vibes")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -659,48 +649,6 @@ namespace PinterestClone.DAL.Migrations
                     b.HasIndex("SharedWithUserId", "IsRead");
 
                     b.ToTable("PinShares");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.PinViewHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("IpAddress")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsCompleteView")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("PinId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Source")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserAgent")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ViewDuration")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ViewedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PinId");
-
-                    b.HasIndex("ViewedAt");
-
-                    b.HasIndex("UserId", "ViewedAt");
-
-                    b.ToTable("PinViewHistories");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.ProfileReport", b =>
@@ -1153,25 +1101,6 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("SharedByUser");
 
                     b.Navigation("SharedWithUser");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.PinViewHistory", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.Pin", "Pin")
-                        .WithMany()
-                        .HasForeignKey("PinId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pin");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.ProfileReport", b =>

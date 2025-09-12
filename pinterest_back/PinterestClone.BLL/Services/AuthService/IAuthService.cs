@@ -6,6 +6,7 @@ namespace PinterestClone.BLL.Services.AuthService
     {
         Task<ServiceResponse> LoginAsync(LoginVM model);
         Task<ServiceResponse> RegisterAsync(RegisterVM model);
+        Task<ServiceResponse> GoogleAuthAsync(GoogleAuthVM model);
     }
 }
 
