@@ -21,6 +21,36 @@ using System.Text.Json;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для операцій з профілем користувача.
+    /// ----------------------------------------------
+    /// Методи:
+    ///     -- Оновити профіль
+    ///     -- Додати інтереси користувача
+    ///     -- Додати vibes користувача
+    ///     -- Оновити інтереси та vibes
+    ///     -- Отримати налаштування профілю
+    ///     -- Оновити налаштування профілю
+    ///     -- Змінити пароль
+    ///     -- Деактивувати акаунт
+    ///     -- Завантажити аватар користувача
+    ///     -- Завантажити банер для профілю
+    ///     -- Скинути профіль до нуля
+    ///     -- Змінити емейл
+    ///     -- Видалити акаунт
+    ///     -- Отримати профіль поточного користувача
+    ///     -- Отримати профіль користувача
+    ///     -- Отримати профіль користувача за нікнеймом
+    ///     -- Знайти користувача
+    ///     -- Отримати підписників користувача
+    ///     -- Отримати користувачів на яких підписаний певний користувач
+    ///     -- Підписатися на користувача
+    ///     -- Відписатися від користувача
+    ///     -- Поскаржитися на користувача
+    ///     -- Заблокувати користувача
+    ///     -- Розблокувати користувача
+    ///     -- Перевірити чи заблокований користувач поточним користувачем
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -151,6 +181,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Зберігає інтереси користувача до профілю.
+        /// </summary>
+        /// <param name="interests">Список інтересів. </param>
+        /// <returns><see cref="IActionResult"/> зі списком інтересів або повідомленням про помилку.</returns>
         [HttpPost("add-interests")]
         public async Task<IActionResult> AddInterests([FromBody] List<string> interests)
         {
@@ -186,6 +221,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Додає vibes користувача.
+        /// </summary>
+        /// <param name="vibes">Список vibes.</param>
+        /// <returns><see cref="IActionResult"/> зі списком vibes або повідомленням про помилку.</returns>
         [HttpPost("add-vibes")]
         public async Task<IActionResult> AddVibes([FromBody] List<string> vibes)
         {
@@ -221,9 +261,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Оновити інтереси та vibes користувача.
+        /// </summary>
+        /// <param name="model"><see cref="UpdateInterestsAndVibesDto"/></param>
+        /// <returns><see cref="IActionResult"/> з списком vibes і списком інтересів або повідомленням про помилку.</returns>
         [HttpPut("update-interests-vibes")]
-        public async Task<IActionResult> UpdateInterestsAndVibes([FromBody] UpdateInterestsVibesDto model)
+        public async Task<IActionResult> UpdateInterestsAndVibes([FromBody] UpdateInterestsAndVibesDto model)
         {
             try
             {
@@ -257,6 +301,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує параметри профілю.
+        /// </summary>
+        /// <returns>Змінна з усіма параметрами профілю.</returns>
         [HttpGet("settings")]
         public async Task<IActionResult> GetSettings()
         {
@@ -301,6 +349,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Оновлює налаштування профілю.
+        /// </summary>
+        /// <param name="model"><see cref="UpdateSettingsVM"/></param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPut("settings")]
         public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsVM model)
         {
@@ -381,6 +434,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Змінює пароль акаунту користувача.
+        /// </summary>
+        /// <param name="model"><see cref="ChangePasswordVM"/></param>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordVM model)
         {
@@ -390,9 +448,6 @@ namespace PinterestClone.API.Controllers
                 if (user == null)
                     return Unauthorized("User not found");
 
-                // var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-                
-                // Замість цього встановлюємо новий пароль напряму
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
 
@@ -409,6 +464,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Деактивує акаунт.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з повідомленням про успіх або помилку.</returns>
         [HttpPost("deactivate")]
         public async Task<IActionResult> DeactivateAccount()
         {
@@ -446,13 +505,13 @@ namespace PinterestClone.API.Controllers
         /// Завантажує аватарку користувача.
         /// </summary>
         /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
-        /// <param name="model"><see cref="FileUploadVM"/> з файлом зображення.</param>
+        /// <param name="model"><see cref="FileUploadDto"/> з файлом зображення.</param>
         /// <returns><see cref="IActionResult"/> з URL нового аватара або повідомленням про помилку.</returns>
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(
         [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
-        [FromForm] FileUploadVM model)
+        [FromForm] FileUploadDto model)
         {
             try
             {
@@ -488,33 +547,16 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
-        /// Модель для завантаження файлу.
-        /// </summary>
-        public class FileUploadVM
-        {
-            /// <summary>
-            /// Файл зображення, який потрібно завантажити.
-            /// </summary>
-            public IFormFile File { get; set; }
-        }
-
-        public class UpdateInterestsVibesDto
-        {
-            public List<string>? Interests { get; set; }
-            public List<string>? Vibes { get; set; }
-        }
-
-        /// <summary>
         /// Завантажує банер користувача.
         /// </summary>
         /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
-        /// <param name="model"><see cref="FileUploadVM"/> з файлом зображення.</param>
+        /// <param name="model"><see cref="FileUploadDto"/> з файлом зображення.</param>
         /// <returns><see cref="IActionResult"/> з URL нового банера або повідомленням про помилку.</returns>
         [HttpPost("upload-banner")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadBanner(
             [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
-            [FromForm] FileUploadVM model)
+            [FromForm] FileUploadDto model)
         {
             try
             {

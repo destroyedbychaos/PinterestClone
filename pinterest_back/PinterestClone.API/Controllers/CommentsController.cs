@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PinterestClone.BLL.DTOs;
 using PinterestClone.DAL.Data;
 using PinterestClone.DAL.Models;
 using PinterestClone.DAL.Models.Identity;
@@ -8,6 +9,14 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для роботи з коментарями.
+    /// -----------------------------------
+    /// Методи:
+    ///     -- Отримати всі коментарі для піну
+    ///     -- Створити новий коментар під піном
+    ///     -- Видалити коментар за ID
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -20,6 +29,11 @@ namespace PinterestClone.API.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Отримує всі коментарі для вказаного піну.
+        /// </summary>
+        /// <param name="pinId">ID піну.</param>
+        /// <returns><see cref="ActionResult{T}"/> зі списком коментарів у вигляді анонімних об’єктів або повідомленням про помилку.</returns>
         [HttpGet("pin/{pinId}")]
         public async Task<ActionResult<IEnumerable<object>>> GetCommentsForPin(Guid pinId)
         {
@@ -54,6 +68,12 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error fetching comments: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Створює новий коментар до вказаного піну.
+        /// </summary>
+        /// <param name="createCommentDto"><see cref="CreateCommentDto"/> з даними для створення коментаря.</param>
+        /// <returns><see cref="ActionResult{T}"/> з даними створеного коментаря або повідомленням про помилку/автентифікацію.</returns>
         [HttpPost]
         public async Task<ActionResult<object>> CreateComment([FromBody] CreateCommentDto createCommentDto)
         {
@@ -128,7 +148,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Видаляє коментар за його ідентифікатором.
+        /// </summary>
+        /// <param name="id">ID коментаря.</param>
+        /// <returns><see cref="ActionResult"/> з повідомленням про успішне видалення або повідомленням про помилку.</returns>
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteComment(Guid id)
         {
@@ -161,11 +185,5 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error deleting comment: {ex.Message}");
             }
         }
-    }
-
-    public class CreateCommentDto
-    {
-        public Guid PinId { get; set; }
-        public string Content { get; set; } = string.Empty;
     }
 }
