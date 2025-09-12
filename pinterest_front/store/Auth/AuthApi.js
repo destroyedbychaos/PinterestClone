@@ -36,6 +36,15 @@ export const authApi = createApi({
             invalidatesTags: ['User'],
         }),
 
+        googleAuth: builder.mutation({
+            query: (googleData) => ({
+                url: '/Auth/google',
+                method: 'POST',
+                body: googleData,
+            }),
+            invalidatesTags: ['User'],
+        }),
+
         refreshToken: builder.mutation({
             query: () => ({
                 url: '/Auth/refresh',
@@ -50,5 +59,6 @@ export const authApi = createApi({
 export const {
     useLoginMutation,
     useRegisterMutation,
+    useGoogleAuthMutation,
     useRefreshTokenMutation,
 } = authApi;

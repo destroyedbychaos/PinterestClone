@@ -17,7 +17,7 @@ namespace PinterestClone.DAL.Models.Identity
         public string? BannerUrl { get; set; }
         public string? Bio { get; set; }
 
-        public DateTime BirthDate { get; set; }
+        public DateTime? BirthDate { get; set; }
         public string? Gender { get; set; }
         public string? Country { get; set; }
         public string? Language { get; set; }
@@ -28,6 +28,10 @@ namespace PinterestClone.DAL.Models.Identity
         public bool IsPhoneNumberVerified { get; set; } = false;
         public bool SmsNotificationsEnabled { get; set; } = true;
         public DateTime? PhoneNumberVerifiedAt { get; set; }
+
+        public string? GoogleId { get; set; }
+        public string? MagicLinkToken { get; set; }
+        public DateTime? MagicLinkExpiration { get; set; }
 
         public virtual ICollection<Board> Boards { get; set; } = [];
         public virtual ICollection<Pin> Pins { get; set; } = [];

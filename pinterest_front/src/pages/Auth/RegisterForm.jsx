@@ -1,12 +1,13 @@
 ﻿import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useRegisterMutation } from '../../../store/Auth/AuthApi.js';
+import { useRegisterMutation, useGoogleAuthMutation } from '../../../store/Auth/AuthApi.js';
 import { setCredentials } from '../../../store/slices/AuthSlice.js';
 import { Button, Typography, useTheme, Box } from '@mui/material';
 import { useNavigate } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
 import AuthLayout from '../../components/ui/Auth/AuthLayout';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const RegisterForm = () => {
     const theme = useTheme();
@@ -14,6 +15,7 @@ const RegisterForm = () => {
     const [password, setPassword] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [register, { isLoading, error }] = useRegisterMutation();
+    const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +31,7 @@ const RegisterForm = () => {
 
             dispatch(setCredentials({
                 user: { email: email },
-                accessToken: response.accessToken
+                accessToken: response.payload.accessToken
             }));
 
             localStorage.setItem('isNewUser', 'true');
@@ -38,6 +40,38 @@ const RegisterForm = () => {
             console.error('Registration error:', err);
         }
     };
+
+    const handleGoogleSuccess = async (tokenResponse) => {
+        try {
+            // Якщо користувач вводив дату народження, передаємо її
+            const googleData = {
+                accessToken: tokenResponse.access_token
+            };
+
+            if (dateOfBirth) {
+                googleData.birthDate = tokenResponse.birthDate;
+            }
+
+            const response = await googleAuth(googleData).unwrap();
+            
+            dispatch(setCredentials({
+                user: { email: response.payload.user?.email || '' },
+                accessToken: response.payload.accessToken
+            }));
+            
+            localStorage.setItem('isNewUser', 'true');
+            navigate('/');
+        } catch (err) {
+            console.error('Google auth error:', err);
+        }
+    };
+
+    const loginGoogle = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            console.error('Google login error:', error);
+        }
+    });
 
     return (
         <AuthLayout title="Create an account" subtitle={'Start Your Collection of Inspiration.'}>
@@ -103,6 +137,8 @@ const RegisterForm = () => {
                 <SocialLoginButton
                     icon={<img width={'26px'} height={'26px'} src={'../../../src/assets/images/google.png'} alt="Google" />}
                     text="Continue with Google"
+                    onClick={loginGoogle}
+                    disabled={isGoogleLoading}
                 />
 
                 <Box color={theme.palette.blue[500]} sx={{

@@ -1,22 +1,30 @@
 ﻿import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useLoginMutation } from '../../../store/Auth/AuthApi.js';
+import { useLoginMutation, useGoogleAuthMutation } from '../../../store/Auth/AuthApi.js';
 import { setCredentials } from '../../../store/slices/AuthSlice.js';
-import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
+import { Button, Typography, useTheme, Icon, Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
 import LoginLayout from '../../components/ui/Auth/AuthLayout';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const LoginForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [login, { isLoading, error }] = useLoginMutation();
+    const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
+    
+    // New state for Google auth additional info
+    const [showGoogleDialog, setShowGoogleDialog] = useState(false);
+    const [googleToken, setGoogleToken] = useState('');
+    const [googleUserInfo, setGoogleUserInfo] = useState(null);
+    const [birthDate, setBirthDate] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -31,6 +39,82 @@ const LoginForm = () => {
             console.error('Login error:', err);
         }
     };
+
+    // Fetch Google user info
+    const fetchGoogleUserInfo = async (accessToken) => {
+        try {
+            const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
+            const userInfo = await response.json();
+            return userInfo;
+        } catch (error) {
+            console.error('Error fetching Google user info:', error);
+            return null;
+        }
+    };
+
+    const handleGoogleSuccess = async (tokenResponse) => {
+        try {
+            // First, try to authenticate (for existing users)
+            const response = await googleAuth({ 
+                accessToken: tokenResponse.access_token 
+            }).unwrap();
+            console.log('Google auth response:', response);
+            dispatch(setCredentials({
+                user: { email: response.payload.user?.email || '' },
+                accessToken: response.payload.accessToken
+            }));
+            
+            navigate('/');
+        } catch (err) {
+            // If authentication fails, it might be a new user needing registration
+            if (err.status === 400) {
+                // Fetch user info from Google
+                const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
+                if (userInfo) {
+                    setGoogleToken(tokenResponse.access_token);
+                    setGoogleUserInfo(userInfo);
+                    setShowGoogleDialog(true);
+                }
+            } else {
+                console.error('Google auth error:', err);
+            }
+        }
+    };
+
+    const handleGoogleRegistration = async () => {
+        if (!birthDate) {
+            alert('Please enter your birth date');
+            return;
+        }
+
+        try {
+            const response = await googleAuth({
+                accessToken: googleToken,
+                email: googleUserInfo.email,
+                firstName: googleUserInfo.given_name,
+                lastName: googleUserInfo.family_name,
+                birthDate: googleUserInfo.birthDate,
+                profilePicture: googleUserInfo.picture
+            }).unwrap();
+
+            dispatch(setCredentials({
+                user: { email: response.payload.user?.email || '' },
+                accessToken: response.payload.accessToken
+            }));
+
+            setShowGoogleDialog(false);
+            navigate('/');
+        } catch (err) {
+            console.error('Google registration error:', err);
+        }
+    };
+
+    const loginGoogle = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            console.error('Google login error:', error);
+        }
+    });
 
     return (
         <LoginLayout title={'Welcome to Aestify!'}>
@@ -88,7 +172,6 @@ const LoginForm = () => {
                     </Typography>
                 </Button>
 
-
                 <Typography
                     textAlign={'center'}
                     fontStyle='Bold'
@@ -110,6 +193,8 @@ const LoginForm = () => {
                 <SocialLoginButton
                     icon={<img width={'26px'} height={'26px'} src={'../../../src/assets/images/google.png'} alt="Google" />}
                     text="Continue with Google"
+                    onClick={loginGoogle}
+                    disabled={isGoogleLoading}
                 />
 
                 <SocialLoginButton
@@ -154,10 +239,46 @@ const LoginForm = () => {
                     mt: 2,
                 }} onClick={() => navigate('/register')}
                 >
-                    
                     Not on Aestify yet? Sign Up
                 </Typography>
             </Box>
+
+            {/* Google Registration Dialog */}
+            <Dialog open={showGoogleDialog} onClose={() => setShowGoogleDialog(false)}>
+                <DialogTitle>Complete Your Registration</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                            We need a bit more information to complete your Google registration:
+                        </Typography>
+                        
+                        {googleUserInfo && (
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2">
+                                    <strong>Name:</strong> {googleUserInfo.name}
+                                </Typography>
+                                <Typography variant="body2">
+                                    <strong>Email:</strong> {googleUserInfo.email}
+                                </Typography>
+                            </Box>
+                        )}
+
+                        <InputField
+                            label="Birth Date"
+                            type="date"
+                            value={birthDate}
+                            onChange={(e) => setBirthDate(e.target.value)}
+                            required
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowGoogleDialog(false)}>Cancel</Button>
+                    <Button onClick={handleGoogleRegistration} variant="contained">
+                        Complete Registration
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </LoginLayout>
     );
 };
