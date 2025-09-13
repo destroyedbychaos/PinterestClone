@@ -27,6 +27,11 @@
   will-change: transform;
   backface-visibility: hidden;
   pointer-events: auto;
+
+  top: 120px;
+  left: 180px;
+
+  bottom: auto;
 }
 
 @media (max-width: 480px) {
@@ -259,4 +264,42 @@
 
 .save-boards-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+@media (max-width: 768px) {
+  .save-modal {
+    width: 280px !important;
+    max-height: 350px !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    bottom: auto !important;
+  }
+  
+  .save-modal-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .save-option {
+    padding: 10px 20px;
+    margin: 1px 6px;
+    width: calc(100% - 12px);
+  }
+}
+
+@media (max-width: 480px) {
+  .save-modal {
+    width: 260px !important;
+    max-height: 320px !important;
+  }
+  
+  .save-modal-header {
+    padding: 14px 18px 10px;
+  }
+  
+  .save-option {
+    padding: 8px 18px;
+    margin: 1px 4px;
+    width: calc(100% - 8px);
+  }
 }

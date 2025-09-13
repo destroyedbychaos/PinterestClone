@@ -186,6 +186,7 @@ const SearchProfile = () => {
       <Box sx={{ flex: 1 }}>
         <SearchHeader
           user={user}
+          title="Search"
           searchRef={searchRef}
           onLogin={() => navigate("/login")}
           onSignup={() => navigate("/register")}
@@ -244,7 +245,7 @@ const SearchProfile = () => {
 
           <Box sx={{ mt: 3 }}>
             {loading ? (
-              <CircularProgress />
+              "Loading..."
             ) : results.length > 0 ? (
               <Box
                 sx={{

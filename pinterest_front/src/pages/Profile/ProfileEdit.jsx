@@ -6,7 +6,7 @@ import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import { useNavigate } from "react-router-dom";
 import { useRefreshUserData } from "../../hooks/useCurrentUser";
-
+import {apiUrl} from "../../env.js"
 
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,7 +20,7 @@ const defaultAvatarSvg = (
   </svg>
 );
 
-const API_BASE = "/api";
+const API_BASE = apiUrl;
 
 const ProfileEdit = () => {
   const authState = useSelector((state) => state.auth);

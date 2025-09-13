@@ -46,6 +46,8 @@ namespace PinterestClone.API.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User not authenticated");
 
+                boardDto.Id = Guid.NewGuid().ToString();
+
                 var board = await _boardService.CreateBoardAsync(boardDto, userId);
                 return Ok(board);
             }

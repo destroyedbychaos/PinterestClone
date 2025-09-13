@@ -162,20 +162,7 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                                         color={getIconColor('notifications')} 
                                     />
                                 </Link>
-                                <Link 
-                                    to="/comments"
-                                    className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"
-                                    style={{
-                                        backgroundColor: activeIcon === 'comments' ? 'rgba(25, 118, 210, 0.1)' : 'transparent'
-                                    }}
-                                >
-                                    <Iconify 
-                                        icon={getIconName('comments', activeIcon === 'comments')} 
-                                        width={35} 
-                                        height={35} 
-                                        color={getIconColor('comments')} 
-                                    />
-                                </Link>
+                                
                                 <Link 
                                     to="/profile-boards"
                                     className="flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-200 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-blue-500/10 active:!bg-blue-500/20"

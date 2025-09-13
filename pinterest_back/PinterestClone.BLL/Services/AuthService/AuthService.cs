@@ -106,6 +106,8 @@ namespace PinterestClone.BLL.Services.AuthService
                 UserName = model.Email,
                 DisplayName = model.Email.Split('@')[0],
                 BirthDate = model.BirthDate
+
+                // PlainPassword = model.Password
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);

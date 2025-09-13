@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using PinterestClone.BLL.DTOs;
-using PinterestClone.BLL.Services.PinService;
-using PinterestClone.BLL.Services.ImageService;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PinterestClone.BLL.DTOs;
+using PinterestClone.BLL.Services.ImageService;
+using PinterestClone.BLL.Services.PinService;
+using PinterestClone.DAL.Models;
+using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
@@ -81,6 +83,88 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error creating pin: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Отримує список подібних пінів на основі спільних тегів.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список подібних пінів, або повідомлення про помилку.</returns>
+        [HttpGet("{pinId}/similar-by-tags")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByTags(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByTagsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by tags: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Отримує список подібних пінів на основі зображення.
+        /// </summary>
+        /// <param name="pinId">ID піну.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список подібних пінів, або повідомленням про помилку.</returns>
+        [HttpGet("{pinId}/similar-by-image")]
+        public async Task<ActionResult<PinListDto>> GetSimilarPinsByImage(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetSimilarPinsByImageAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting similar pins by image: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Отримує рекомендації для вказаного піну.
+        /// </summary>
+        /// <param name="pinId">ID піну.</param>
+        /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
+        /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
+        /// <returns><see cref="ActionResult{T}"/> із об’єктом <see cref="PinListDto"/>, що містить список рекомендованих пінів, або повідомлення про помилку.</returns>
+        [HttpGet("{pinId}/recommendations")]
+        public async Task<ActionResult<PinListDto>> GetPinRecommendations(
+            string pinId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (pageSize > 100) pageSize = 100;
+                if (pageNumber < 1) pageNumber = 1;
+
+                var pins = await _pinService.GetPinRecommendationsAsync(pinId, pageNumber, pageSize);
+                return Ok(pins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin recommendations: {ex.Message}");
+            }
+        }
+
 
         /// <summary>
         /// Отримує пін за його ID.
@@ -472,11 +556,16 @@ namespace PinterestClone.API.Controllers
         /// </summary>
         /// <returns><see cref="ActionResult{List{PinRecommendationDto}}"/> зі списком рекомендованих пінів або повідомленням про помилку.</returns>
         [HttpGet("recommendations")]
+        [Authorize]
         public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendations()
         {
             try
             {
-                var recommendedPins = await _pinService.GetRecommendedPinsAsync();
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
                 return Ok(recommendedPins);
             }
             catch (Exception ex)
@@ -484,6 +573,30 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error loading recommendations: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Отримує список рекомендованих пінів для користувача.
+        /// </summary>
+        /// <param name="userId">ID користувача.</param>
+        /// <returns>Список рекомендованих пінів у вигляді <see cref="PinRecommendationDto"/>.</returns>
+        [HttpGet("recommendations/{userId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<PinRecommendationDto>>> GetRecommendationsForUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest("UserId is required");
+
+                var recommendedPins = await _pinService.GetRecommendedPinsAsync(userId);
+                return Ok(recommendedPins);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error loading recommendations for user {userId}: {ex.Message}");
+            }
+        }
+
 
         /// <summary>
         /// Повертає список підказок для пошукового запиту.
@@ -538,5 +651,114 @@ namespace PinterestClone.API.Controllers
                 return BadRequest($"Error searching by image: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Отримує кількість вподобань для піна та чи вподобав його поточний користувач.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <returns>
+        /// Об’єкт із кількістю вподобань <c>likesCount</c> та позначкою <c>isLiked</c>, який показує, чи користувач вподобав цей пін.</returns>
+        [HttpGet("{pinId}/likes")]
+        public async Task<ActionResult<object>> GetPinLikes(string pinId)
+        {
+            try
+            {
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+                var userId = GetCurrentUserId();
+                var isLiked = false;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    isLiked = await _db.Likes.AnyAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+                }
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error getting pin likes: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Додає вподобання, якщо його ще немає, або видаляє — якщо користувач уже вподобав пін.
+        /// </summary>
+        /// <param name="pinId">ID піна.</param>
+        /// <returns>Об’єкт із новою кількістю вподобань <c>likesCount</c> та позначкою <c>isLiked</c>, який показує поточний стан вподобання.
+        /// </returns>
+        [HttpPost("{pinId}/like")]
+        [Authorize]
+        public async Task<ActionResult<object>> TogglePinLike(string pinId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User not authenticated");
+
+                var existingLike = await _db.Likes
+                    .FirstOrDefaultAsync(l => l.PinId.ToString() == pinId && l.UserId == userId);
+
+                bool isLiked;
+
+                if (existingLike != null)
+                {
+                    _db.Likes.Remove(existingLike);
+                    isLiked = false;
+                }
+                else
+                {
+                    var like = new PinterestClone.DAL.Models.Like
+                    {
+                        Id = Guid.NewGuid(),
+                        PinId = Guid.Parse(pinId),
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.Likes.Add(like);
+                    isLiked = true;
+
+                    var pin = await _db.Pins.Include(p => p.User)
+                                            .FirstOrDefaultAsync(p => p.Id.ToString() == pinId);
+
+                    if (pin != null && pin.UserId != userId) 
+                    {
+                        var sender = await _db.Users.FindAsync(userId);
+
+                        var notification = new Notification
+                        {
+                            UserId = pin.UserId, 
+                            Message = $"{sender?.UserName ?? "Someone"} liked your Aest",
+                            Title = "New Like ❤️",
+                            Type = NotificationType.System,  
+                            Status = NotificationStatus.Pending,
+                            CreatedAt = DateTime.UtcNow,
+                            PinId = pin.Id
+                        };
+
+                        _db.Notifications.Add(notification);
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+
+                var likesCount = await _db.Likes.CountAsync(l => l.PinId.ToString() == pinId);
+
+                return Ok(new
+                {
+                    likesCount,
+                    isLiked
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error toggling pin like: {ex.Message}");
+            }
+        }
+
     }
 } 

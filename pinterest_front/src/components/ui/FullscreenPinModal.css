@@ -1,0 +1,153 @@
+.fullscreen-pin-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.fullscreen-pin-content {
+  width: 1722px;
+  height: 792px;
+  padding: 24px;
+  background: white;
+  box-shadow: -1px 10px 16px 1px rgba(1, 35, 63, 0.25);
+  overflow: hidden;
+  border-radius: 40px;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  display: flex;
+  position: relative;
+}
+
+.fullscreen-pin-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  height: 100%;
+}
+
+.fullscreen-pin-image-container {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  overflow: hidden;
+}
+
+.fullscreen-pin-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+
+.fullscreen-pin-controls {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10001;
+}
+
+.fullscreen-control-button {
+  width: 40px !important;
+  height: 40px !important;
+  position: relative;
+  background: transparent !important;
+  color: #01233F !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.fullscreen-control-button svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.fullscreen-control-button:hover {
+  background: rgba(1, 35, 63, 0.1) !important;
+  transform: scale(1.05);
+}
+
+.fullscreen-control-button:active {
+  transform: scale(0.95);
+}
+
+.fullscreen-control-buttons {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  gap: 24px;
+  display: flex;
+}
+
+.fullscreen-control-button:hover {
+  background: rgba(1, 35, 63, 0.1) !important;
+  transform: scale(1.05);
+}
+
+.fullscreen-control-button:active {
+  transform: scale(0.95);
+}
+
+.close-button {
+  margin-bottom: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 1800px) {
+  .fullscreen-pin-content {
+    width: 90vw;
+    height: 80vh;
+    max-width: 1722px;
+    max-height: 792px;
+  }
+  
+  .fullscreen-pin-image {
+    width: 100%;
+    height: auto;
+    max-width: 439.78px;
+    max-height: 744px;
+  }
+  
+  .fullscreen-pin-image-container {
+    width: auto;
+    flex: 1;
+  }
+}
+
+@media (max-width: 1200px) {
+  .fullscreen-pin-content {
+    width: 95vw;
+    height: 90vh;
+    padding: 16px;
+  }
+  
+  .fullscreen-pin-main {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .fullscreen-pin-controls {
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .fullscreen-control-buttons {
+    gap: 12px;
+  }
+}

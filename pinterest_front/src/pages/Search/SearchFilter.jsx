@@ -9,6 +9,7 @@ import SideMenu from "../../components/layout/SideMenu";
 import SearchModal from "../../components/SearchModal";
 import ImageSearchModal from "../../components/ImageSearchModal";
 import SearchFilterModal from "../../components/SearchFilterModal";
+import PinViewModal from "../../components/PinViewModal";
 
 const API_BASE = "/api";
 
@@ -27,6 +28,8 @@ const SearchFilter = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [showSearchFilterModal, setShowSearchFilterModal] = useState(false);
+  const [showPinViewModal, setShowPinViewModal] = useState(false);
+  const [selectedPin, setSelectedPin] = useState(null);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
@@ -72,6 +75,16 @@ const SearchFilter = () => {
     }
   }, [token]);
 
+  const handlePinClick = (pin) => {
+    setSelectedPin(pin);
+    setShowPinViewModal(true);
+  };
+
+  const handlePinViewClose = () => {
+    setShowPinViewModal(false);
+    setSelectedPin(null);
+  };
+
   const handlePinHidden = (pinId) => {
     setHiddenPinIds((prev) => [...prev, pinId]);
     setPins((prev) =>
@@ -93,6 +106,7 @@ const SearchFilter = () => {
       <Box sx={{ flex: 1 }}>
         <SearchHeader
           user={user}
+          title="Search"
           onSearch={setSearch}
           searchRef={searchRef}
           onFocusSearch={() => setShowSearchModal(true)}
@@ -184,6 +198,7 @@ const SearchFilter = () => {
                 };
               })}
               onPinHidden={handlePinHidden}
+              onPinClick={handlePinClick}
             />
           )}
         </Box>
@@ -207,6 +222,24 @@ const SearchFilter = () => {
           setImageSearchLoading(false);
         }}
         onSearchStart={() => setImageSearchLoading(true)}
+      />
+
+      <PinViewModal
+        pin={selectedPin}
+        isOpen={showPinViewModal}
+        onClose={handlePinViewClose}
+        source="search"
+        onLike={(pinId, isLiked) => {
+          console.log('Pin liked:', pinId, isLiked);
+        }}
+        onComment={(pinId, comment) => {
+          console.log('Comment added:', pinId, comment);
+ 
+        }}
+        onSave={(pinId) => {
+          console.log('Pin saved:', pinId);
+
+        }}
       />
 
       <SearchFilterModal open={showSearchFilterModal} onClose={() => setShowSearchFilterModal(false)} />

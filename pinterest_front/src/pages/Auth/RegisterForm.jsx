@@ -34,6 +34,7 @@ const RegisterForm = () => {
                 accessToken: response.payload.accessToken
             }));
 
+            localStorage.setItem('userPassword', password);
             localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {

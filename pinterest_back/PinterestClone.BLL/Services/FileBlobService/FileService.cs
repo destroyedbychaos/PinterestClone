@@ -6,6 +6,7 @@ using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using PinterestClone.BLL.DTOs;
+using PinterestClone.DAL.Models;
 
 namespace PinterestClone.BLL.Services.FileBlobService
 {
@@ -62,14 +63,19 @@ namespace PinterestClone.BLL.Services.FileBlobService
         /// <param name="blob">Файл, який потрібно завантажити.</param>
         /// <returns>Об’єкт <see cref="BlobResponseDto"/> зі статусом операції, ознакою помилки та даними про файл.</returns>
         /// <exception cref="Azure.RequestFailedException">Викидається у випадку помилки з боку Azure Storage під час завантаження.</exception>
-        public async Task<BlobResponseDto> UploadAsync(IFormFile blob)
+        public async Task<BlobResponseDto> UploadAsync(IFormFile blob, string id)
         {
             BlobResponseDto response = new BlobResponseDto();
-            BlobClient client = _filesContainer.GetBlobClient(blob.FileName);
+
+            var extension = Path.GetExtension(blob.FileName)?.ToLowerInvariant();
+
+            var normalizedFileName = $"{id}{extension}";
+
+            BlobClient client = _filesContainer.GetBlobClient(normalizedFileName);
 
             if (await client.ExistsAsync())
             {
-                response.Status = $"File {blob.FileName} already exists.";
+                response.Status = $"File {normalizedFileName} already exists.";
                 response.Error = true;
                 response.Blob.Uri = client.Uri.AbsoluteUri;
                 response.Blob.Name = client.Name;
@@ -82,7 +88,7 @@ namespace PinterestClone.BLL.Services.FileBlobService
                 await client.UploadAsync(data, overwrite: true);
             }
 
-            response.Status = $"File {blob.FileName} uploaded successfully.";
+            response.Status = $"File {normalizedFileName} uploaded successfully.";
             response.Error = false;
             response.Blob.Uri = client.Uri.AbsoluteUri;
             response.Blob.Name = client.Name;

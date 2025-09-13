@@ -32,13 +32,10 @@ namespace PinterestClone.BLL.DTOs
         public string? AvatarUrl { get; set; }
 
         /// <summary>
-        /// Опис профілю користувача.
-        /// </summary>
-        public string? Bio { get; set; }
-
-        /// <summary>
         /// Чи підписаний певний користувач на них.
         /// </summary>
         public bool IsFollowing { get; set; }
+        public List<string> Interests { get; set; } = new();
+        public List<string> Vibes { get; set; } = new();
     }
 }
