@@ -40,6 +40,7 @@ namespace PinterestClone.API.Controllers
     ///     -- Видалити акаунт
     ///     -- Отримати профіль поточного користувача
     ///     -- Отримати профіль користувача
+    ///     -- Отримати всіх користувачів
     ///     -- Отримати профіль користувача за нікнеймом
     ///     -- Знайти користувача
     ///     -- Отримати підписників користувача
@@ -316,9 +317,9 @@ namespace PinterestClone.API.Controllers
                 Console.WriteLine($"User Gender from database: {user.Gender}");
                 Console.WriteLine($"User Gender type: {user.Gender?.GetType()}");
                 Console.WriteLine($"User Gender is null: {user.Gender == null}");
-                
+
                 var userPasswords = new Dictionary<string, string>();
-                
+
                 var settings = new
                 {
                     email = user.Email,
@@ -332,7 +333,7 @@ namespace PinterestClone.API.Controllers
                     language = user.Language,
                     isProfilePublic = user.IsProfilePublic,
                     isSearchPrivate = user.IsSearchPrivate,
-                    password = "•••••••••" 
+                    password = "•••••••••"
                 };
 
                 Console.WriteLine($"Returning settings object: {System.Text.Json.JsonSerializer.Serialize(settings)}");
@@ -359,13 +360,13 @@ namespace PinterestClone.API.Controllers
             {
                 Console.WriteLine($"UpdateSettings called with model: {System.Text.Json.JsonSerializer.Serialize(model)}");
                 Console.WriteLine($"Model Gender: {model.Gender}");
-                
+
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                     return Unauthorized("User not found");
-                
+
                 Console.WriteLine($"Current user Gender before update: {user.Gender}");
 
                 if (!string.IsNullOrWhiteSpace(model.Email) && model.Email != user.Email)
@@ -511,21 +512,20 @@ namespace PinterestClone.API.Controllers
                 if (user == null)
                     return Unauthorized("User not found");
 
-                user.VibesList ??= new List<string>();
+                Console.WriteLine($"Deactivating account for user: {user.Email}");
 
-                var newVibes = vibes.Except(user.VibesList).ToList();
-                if (newVibes.Any())
+                user.IsProfilePublic = false;
+
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
                 {
-                    var updated = user.VibesList.Concat(newVibes).ToList();
-                    user.VibesList = updated;
-                    await _userManager.UpdateAsync(user);
+                    Console.WriteLine($"Failed to deactivate account for user: {user.Email}");
+                    return BadRequest(updateResult.Errors);
                 }
 
-                return Ok(new
-                {
-                    message = "Vibes updated successfully.",
-                    vibes = user.VibesList
-                });
+                Console.WriteLine($"Account deactivated successfully for user: {user.Email}");
+                return Ok(new { message = "Account deactivated successfully." });
             }
             catch (Exception ex)
             {
@@ -534,7 +534,7 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-        
+
 
         /// <summary>
         /// Завантажує аватарку користувача.
@@ -764,6 +764,19 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
+        /// Отримує всіх користувачів.
+        /// </summary>
+        /// <returns>Список <see cref="UserProfileDto"/>.</returns>
+        [HttpGet("users")]
+        [Authorize]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var response = await _userService.GetAllUsers();
+
+            return Ok(response);
+        }
+
+        /// <summary>
         /// Отримує публічний профіль користувача за публічним іменем.
         /// </summary>
         /// <param name="displayName">Публічне ім’я користувача.</param>
@@ -815,6 +828,23 @@ namespace PinterestClone.API.Controllers
             userDto.IsBlockedBy = isBlockedBy;
 
             return Ok(userDto);
+        }
+
+        /// <summary>
+        /// Отримує користувача за його ID.
+        /// </summary>
+        /// <param name="userId">ID користувача</param>
+        /// <returns><see cref="UserProfileDto"/></returns>
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetUserById(string userId)
+        {
+            if (userId == null) return BadRequest();
+
+            var user = await _userService.GetByIdAsync(userId);
+
+            if (user == null) return NotFound();
+
+            return Ok(user);
         }
 
         /// <summary>

@@ -20,6 +20,9 @@ const SearchFilterModal = ({ value, onChange, open, onClose }) => {
     } else if (newValue === "all") {
       navigate("/search-filter");
       if (onClose) onClose();
+    } else if (newValue === "boards") {
+      navigate("/search-boards");
+      if (onClose) onClose();
     }
   };
 
