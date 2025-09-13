@@ -12,6 +12,7 @@ namespace PinterestClone.BLL.Services.UserService
 {
     public interface IUserService
     {
+        Task<ServiceResponse> GetAllUsers();
         Task<ServiceResponse> GetByEmailAsync(string email);
         Task<ServiceResponse> GetByIdAsync(string id, bool includeRoles = false);
         Task<ServiceResponse> GetByUserNameAsync(string userName);
