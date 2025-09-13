@@ -28,6 +28,8 @@ namespace PinterestClone.DAL.Models.Identity
         public bool SmsNotificationsEnabled { get; set; } = true;
         public DateTime? PhoneNumberVerifiedAt { get; set; }
 
+        public string? GoogleId { get; set; }
+        
         public string? Interests { get; set; }
         public string? Vibes { get; set; }
         public bool OnboardingCompleted { get; set; } = false;

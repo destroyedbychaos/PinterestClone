@@ -14,6 +14,8 @@ namespace PinterestClone.API.Controllers
     /// Методи:
     ///     -- Увійти в аккаунт
     ///     -- Зареєструвати новий акаунт
+    ///     -- Реєстрація через Google
+    ///     -- Вхід через Google
     ///     -- Оновити токени доступу
     ///     -- Забули пароль
     ///     -- Підтвердити код скидання паролю
@@ -28,7 +30,7 @@ namespace PinterestClone.API.Controllers
         private readonly IPasswordResetService _passwordResetService;
 
         public AuthController(
-            IAuthService accountService, 
+            IAuthService accountService,
             IJwtService jwtService,
             IPasswordResetService passwordResetService)
         {
@@ -75,6 +77,23 @@ namespace PinterestClone.API.Controllers
             }
 
             var response = await _accountService.RegisterAsync(model);
+            return GetResult(response);
+        }
+
+        /// <summary>
+        /// Реєстрація або вхід через Google.
+        /// </summary>
+        /// <param name="model">Модель з Google токеном.</param>
+        /// <returns><see cref="IActionResult"/> з результатом реєстрації/входу через Google.</returns>
+        [HttpPost("google")]
+        public async Task<IActionResult> GoogleAuthAsync([FromBody] GoogleAuthVM model)
+        {
+            if (string.IsNullOrEmpty(model.AccessToken))
+            {
+                return BadRequest("Google access token is required");
+            }
+
+            var response = await _accountService.GoogleAuthAsync(model);
             return GetResult(response);
         }
 
@@ -157,4 +176,3 @@ namespace PinterestClone.API.Controllers
         }
     }
 }
-
