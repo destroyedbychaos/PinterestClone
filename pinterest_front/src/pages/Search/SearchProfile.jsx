@@ -186,6 +186,7 @@ const SearchProfile = () => {
       <Box sx={{ flex: 1 }}>
         <SearchHeader
           user={user}
+          title="Search"
           searchRef={searchRef}
           onLogin={() => navigate("/login")}
           onSignup={() => navigate("/register")}

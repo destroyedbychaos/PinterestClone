@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 import SideMenu from "../../components/layout/SideMenu";
 import SearchHeader from "../../components/layout/SearchHeader";
 import SearchFilterModal from "../../components/SearchFilterModal";
-import BoardViewModal from "../../components/BoardViewModal";
 import { apiUrl } from "../../env";
 
 const API_BASE = apiUrl;
-const defaultBoardCover = "/images/default-board.png";
 
 const SearchBoards = () => {
   const { user } = useSelector((state) => state.auth);
@@ -19,68 +17,69 @@ const SearchBoards = () => {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [showSearchFilterModal, setShowSearchFilterModal] = useState(false);
-  const [selectedBoard, setSelectedBoard] = useState(null);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const fetchBoards = async () => {
+    const fetchBoardsAndUsers = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/boards?pageNumber=1&pageSize=40`, {
+        const boardsRes = await fetch(`${API_BASE}/Boards?pageNumber=1&pageSize=40`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        if (!res.ok) throw new Error("Failed to fetch boards");
-        const data = await res.json();
+        if (!boardsRes.ok) throw new Error("Failed to fetch boards");
+        const boardsData = await boardsRes.json();
+        const boardsRaw = boardsData.boards || boardsData.Boards || [];
 
-        const boardsRaw = data.boards || data.Boards || [];
-        const userIds = [...new Set(boardsRaw.map((b) => b.userId))];
-
-        const usersRes = await Promise.allSettled(
-          userIds.map((id) =>
-            fetch(`${API_BASE}/users/${id}`, {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            }).then((r) => r.json())
-          )
-        );
-
-        const usersMap = {};
-        usersRes.forEach((r, idx) => {
-          if (r.status === "fulfilled") {
-            usersMap[userIds[idx]] = r.value.username || "Unknown";
-          } else {
-            usersMap[userIds[idx]] = "Unknown";
-          }
+        const usersRes = await fetch(`${API_BASE}/Profile/users`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
+        const usersData = await usersRes.json();
+        const usersMap = {};
+        if (usersData.success && Array.isArray(usersData.payload)) {
+          usersData.payload.forEach((user) => {
+            usersMap[user.id] = user.displayName || user.userName || "Unknown";
+          });
+        }
 
         const boardsWithPins = await Promise.all(
-        boardsRaw.map(async (b) => {
+          boardsRaw.map(async (b) => {
             let pins = [];
             try {
-            const pinsRes = await fetch(`${API_BASE}/Pins/board/${b.id}`, {
+              const pinsRes = await fetch(`${API_BASE}/Pins/board/${b.id}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            if (pinsRes.ok) {
+              });
+              if (pinsRes.ok) {
                 const pinsData = await pinsRes.json();
                 pins = pinsData.pins || [];
-            }
-            } catch (err) {
-            pins = [];
+              }
+            } catch {
+              pins = [];
             }
 
             const previewPins = [...pins.slice(0, 4)];
+            while (previewPins.length < 4) {
+              previewPins.push({
+                id: `empty-${previewPins.length}`,
+                title: "",
+                description: "",
+                imageUrl: "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=",
+                author: "",
+                tags: "",
+              });
+            }
 
             return {
-            id: b.id,
-            title: b.name || "Untitled Board",
-            description: b.description || "",
-            ownerName: b.userId && usersMap[b.userId] ? usersMap[b.userId] : "Unknown",
-            pins: previewPins,
-            updatedAt: b.updatedAt || Date.now(),
+              id: b.id,
+              title: b.name || "Untitled Board",
+              description: b.description || "",
+              ownerName: usersMap[b.userId] || "Unknown",
+              pins: previewPins,
+              updatedAt: b.updatedAt || Date.now(),
             };
-        })
+          })
         );
 
         setBoards(boardsWithPins);
@@ -94,7 +93,7 @@ const SearchBoards = () => {
       }
     };
 
-    fetchBoards();
+    fetchBoardsAndUsers();
   }, [token]);
 
   useEffect(() => {
@@ -110,6 +109,10 @@ const SearchBoards = () => {
       );
     }
   }, [query, boards]);
+
+  const handleBoardClick = (board) => {
+    navigate(`/board/${board.id}`);
+  };
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
@@ -179,23 +182,21 @@ const SearchBoards = () => {
             </Box>
 
           {loading ? (
-            <Box sx={{ mt: 4, textAlign: "center" }}>
-              Loading...
-            </Box>
+            <Box sx={{ mt: 4, textAlign: "center" }}>Loading...</Box>
           ) : results.length > 0 ? (
             <Box
-            sx={{
+              sx={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
                 gap: 1,
                 mt: 3,
-            }}
+              }}
             >
-            {results.map((board) => (
+              {results.map((board) => (
                 <Box
-                key={board.id}
-                onClick={() => setSelectedBoard(board)}
-                sx={{
+                  key={board.id}
+                  onClick={() => handleBoardClick(board)}
+                  sx={{
                     backgroundColor: "#ffffff",
                     borderRadius: "16px",
                     height: "400px",
@@ -205,45 +206,77 @@ const SearchBoards = () => {
                     flexDirection: "column",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                    backgroundColor: "#EAEFF9",
-                    transform: "translateY(-1px)",
+                      backgroundColor: "#EAEFF9",
+                      transform: "translateY(-1px)",
                     },
                     "&:active": { transform: "translateY(0)" },
-                }}
+                  }}
                 >
-                <Box
+                  <Box
                     sx={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gridTemplateRows: "1fr 1fr",
-                    gap: 1,
-                    width: "100%",
-                    height: "calc(100% - 110px)",
+                      display: "grid",
+                      gridTemplateColumns: "2fr 1fr",
+                      gridTemplateRows: "1fr 1fr",
+                      gap: 1,
+                      width: "100%",
+                      height: "calc(100% - 110px)",
                     }}
-                >
+                  >
                     {board.pins.slice(0, 3).map((pin, idx) => {
-                    let style = { width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" };
-                    if (idx === 0) {
-                        return <img key={idx} src={pin.imageUrl} alt={`Board ${board.title} preview ${idx + 1}`} style={{ ...style, gridRow: "1 / span 2" }} />;
-                    } else {
-                        return <img key={idx} src={pin.imageUrl} alt={`Board ${board.title} preview ${idx + 1}`} style={style} />;
-                    }
+                      const style = {
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                      };
+                      if (idx === 0) {
+                        return (
+                          <img
+                            key={idx}
+                            src={pin.imageUrl}
+                            alt={`Board ${board.title} preview ${idx + 1}`}
+                            style={{ ...style, gridRow: "1 / span 2" }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <img
+                            key={idx}
+                            src={pin.imageUrl}
+                            alt={`Board ${board.title} preview ${idx + 1}`}
+                            style={style}
+                          />
+                        );
+                      }
                     })}
-                </Box>
+                  </Box>
 
-                <Box sx={{ width: "100%", height: "100%", textAlign: "center", mt: 2, height:"100px", padding: "3%", borderRadius: "8px", backgroundColor: "#ffffff"}}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      textAlign: "center",
+                      mt: 2,
+                      height: "100px",
+                      padding: "3%",
+                      borderRadius: "8px",
+                      backgroundColor: "#ffffff",
+                    }}
+                  >
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {board.title}
+                      {board.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    by {board.ownerName ?? "Unknown"}
+                      by {board.ownerName ?? "Unknown"}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx= {{ mb: 2 }}>
-                    {board.pins.length} Pins | Updated {new Date(board.updatedAt).toLocaleDateString("en-GB").replace(/\//g, ".")}
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {board.pins.length} Pins | Updated{" "}
+                      {new Date(board.updatedAt)
+                        .toLocaleDateString("en-GB")
+                        .replace(/\//g, ".")}
                     </Typography>
+                  </Box>
                 </Box>
-                </Box>
-            ))}
+              ))}
             </Box>
           ) : (
             <Typography sx={{ mt: 4, textAlign: "center" }}>No boards found</Typography>
@@ -254,12 +287,6 @@ const SearchBoards = () => {
       <SearchFilterModal
         open={showSearchFilterModal}
         onClose={() => setShowSearchFilterModal(false)}
-      />
-
-      <BoardViewModal
-        board={selectedBoard}
-        isOpen={!!selectedBoard}
-        onClose={() => setSelectedBoard(null)}
       />
     </Box>
   );
