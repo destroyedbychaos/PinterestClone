@@ -244,7 +244,7 @@ const SearchProfile = () => {
 
           <Box sx={{ mt: 3 }}>
             {loading ? (
-              <CircularProgress />
+              "Loading..."
             ) : results.length > 0 ? (
               <Box
                 sx={{

@@ -24,6 +24,7 @@ import HistoryPage from "../pages/History/HistoryPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Notifications from "../pages/Notifications/Notifications.jsx";
 import CreateAest from "../pages/CreateAest/CreateAest.jsx";
+import SearchBoards from "../pages/Search/SearchBoards.jsx";
 
 
 
@@ -78,6 +79,9 @@ const BasicRoute = () => {
             </Route>
             <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
+            </Route>
+            <Route path="/search-boards" element={<Layout />}>
+                <Route index element={<SearchBoards/>} />
             </Route>
             <Route path="/notifications" element={<Layout />}>
                 <Route index element={<Notifications/>} />
