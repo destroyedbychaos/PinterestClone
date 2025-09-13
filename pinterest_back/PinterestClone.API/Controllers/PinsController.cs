@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -703,6 +704,503 @@ namespace PinterestClone.API.Controllers
             {
                 return BadRequest($"Error toggling pin like: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Повертає список посилань на картинки зі сторінки за заданим URL з покращеними перевірками безпеки.
+        /// </summary>
+        /// <param name="websiteUrl">Посилання на вебсайт.</param>
+        /// <returns>Список URL зображень з метаданими.</returns>
+        [HttpGet("extract-images")]
+        [AllowAnonymous]
+        public async Task<ActionResult<object>> GetImagesFromWebsite([FromQuery] string websiteUrl)
+        {
+            if (string.IsNullOrWhiteSpace(websiteUrl))
+                return BadRequest("URL is required");
+
+            if (!IsValidUrl(websiteUrl, out string normalizedUrl, out string errorMessage))
+                return BadRequest(errorMessage);
+
+            if (IsBlockedDomain(normalizedUrl))
+                return BadRequest("Access to this domain is not allowed");
+
+            using var httpClient = CreateSecureHttpClient();
+
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                var response = await httpClient.GetAsync(normalizedUrl, cts.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest($"Failed to load website. Status code: {response.StatusCode}");
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType?.ToLower();
+                if (contentType != null && !contentType.StartsWith("text/html") && !contentType.StartsWith("application/xhtml"))
+                {
+                    return BadRequest("URL does not point to an HTML page");
+                }
+
+                var contentLength = response.Content.Headers.ContentLength;
+                const long maxContentSize = 5 * 1024 * 1024;
+                if (contentLength > maxContentSize)
+                {
+                    return BadRequest("Content too large to process");
+                }
+
+                var html = await response.Content.ReadAsStringAsync(cts.Token);
+
+                if (html.Length > maxContentSize)
+                {
+                    return BadRequest("HTML content too large to process");
+                }
+
+                var doc = new HtmlDocument();
+                doc.LoadHtml(html);
+
+                var websiteUri = new Uri(normalizedUrl);
+                var images = ExtractImages(doc, websiteUri, normalizedUrl);
+
+                const int maxImages = 30;
+                if (images.Count > maxImages)
+                {
+                    images = images.Take(maxImages).ToList();
+                }
+
+                var metadata = ExtractPageMetadata(doc);
+
+                return Ok(new
+                {
+                    Url = normalizedUrl,
+                    TotalImages = images.Count,
+                    Images = images,
+                    PageMetadata = metadata
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                return BadRequest("Request timeout. The website took too long to respond.");
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"Failed to load website. Check URL or network connection: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid URL format: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting images from {normalizedUrl}: {ex}");
+                return BadRequest("An error occurred while processing the website");
+            }
+        }
+
+        /// <summary>
+        /// Валідує та нормалізує URL.
+        /// </summary>
+        private bool IsValidUrl(string url, out string normalizedUrl, out string errorMessage)
+        {
+            normalizedUrl = string.Empty;
+            errorMessage = string.Empty;
+
+            try
+            {
+                url = url.Trim();
+
+                if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+                {
+                    url = "https://" + url;
+                }
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    errorMessage = "Invalid URL format";
+                    return false;
+                }
+
+                if (uri.Scheme != "http" && uri.Scheme != "https")
+                {
+                    errorMessage = "Only HTTP and HTTPS URLs are allowed";
+                    return false;
+                }
+
+                if (IsLocalAddress(uri.Host))
+                {
+                    errorMessage = "Access to local addresses is not allowed";
+                    return false;
+                }
+
+                normalizedUrl = uri.ToString();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"URL validation error: {ex.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Перевіряє чи є домен заблокованим.
+        /// </summary>
+        private bool IsBlockedDomain(string url)
+        {
+            try
+            {
+                var uri = new Uri(url);
+                var host = uri.Host.ToLower();
+                var blockedDomains = new[]
+                {
+            "localhost",
+            "127.0.0.1",
+            "::1"
+        };
+
+                return blockedDomains.Contains(host);
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Перевіряє чи є адреса локальною.
+        /// </summary>
+        private bool IsLocalAddress(string host)
+        {
+            if (string.IsNullOrEmpty(host))
+                return true;
+
+            host = host.ToLower();
+
+            if (host == "localhost" || host == "127.0.0.1" || host == "::1")
+                return true;
+
+            if (host.StartsWith("192.168.") ||
+                host.StartsWith("10.") ||
+                host.StartsWith("172."))
+                return true;
+            if (host.StartsWith("169.254."))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Створює безпечний HTTP клієнт з обмеженнями.
+        /// </summary>
+        private HttpClient CreateSecureHttpClient()
+        {
+            var handler = new HttpClientHandler()
+            {
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 5
+            };
+
+            var client = new HttpClient(handler);
+
+            client.DefaultRequestHeaders.Add("User-Agent",
+                "PinterestClone-Bot/1.0 (Image Extractor; +https://yoursite.com/about)");
+            client.DefaultRequestHeaders.Add("Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
+            client.DefaultRequestHeaders.Add("DNT", "1");
+
+            client.Timeout = TimeSpan.FromSeconds(30);
+
+            return client;
+        }
+
+        /// <summary>
+        /// Витягує зображення з HTML документу.
+        /// </summary>
+        private List<ExtractedImageDto> ExtractImages(HtmlDocument doc, Uri websiteUri, string websiteUrl)
+        {
+            var imgNodes = doc.DocumentNode.SelectNodes("//img[@src]") ?? new HtmlNodeCollection(null);
+            var images = new List<ExtractedImageDto>();
+
+            foreach (var node in imgNodes)
+            {
+                try
+                {
+                    var src = node.GetAttributeValue("src", "");
+                    if (string.IsNullOrWhiteSpace(src))
+                        continue;
+
+                    if (!Uri.TryCreate(src, UriKind.Absolute, out var absoluteUri))
+                    {
+                        if (!Uri.TryCreate(websiteUri, src, out absoluteUri))
+                            continue;
+                    }
+
+                    if (!IsValidImageUrl(absoluteUri.ToString()))
+                        continue;
+
+                    var width = ParseIntAttribute(node, "width");
+                    var height = ParseIntAttribute(node, "height");
+                    var alt = node.GetAttributeValue("alt", "")?.Trim() ?? "";
+                    var title = node.GetAttributeValue("title", "")?.Trim() ?? "";
+                    var loading = node.GetAttributeValue("loading", "")?.Trim() ?? "";
+
+                    if ((width.HasValue && width < 50) || (height.HasValue && height < 50))
+                        continue;
+
+                    var imageDto = new ExtractedImageDto
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Url = absoluteUri.ToString(),
+                        Alt = alt,
+                        Title = title,
+                        Width = width,
+                        Height = height,
+                        Loading = loading
+                    };
+
+                    images.Add(imageDto);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing image node: {ex.Message}");
+                    continue;
+                }
+            }
+            return images
+                .GroupBy(img => img.Url)
+                .Select(g => g.First())
+                .OrderByDescending(img => (img.Width ?? 0) * (img.Height ?? 0)) // Сортуємо за розміром
+                .ToList();
+        }
+
+        /// <summary>
+        /// Перевіряє чи є URL зображення валідним.
+        /// </summary>
+        private bool IsValidImageUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return false;
+
+            var lowerUrl = url.ToLower();
+
+            // Фільтруємо небажані типи
+            var excludePatterns = new[]
+            {
+        "logo", "icon", "favicon", "sprite", "thumb", "avatar",
+        "social", "sharing", "button", "banner", "ad", "ads"
+    };
+
+            if (excludePatterns.Any(pattern => lowerUrl.Contains(pattern)))
+                return false;
+
+            // Фільтруємо за розширенням
+            var invalidExtensions = new[] { ".svg", ".gif", ".ico" };
+            if (invalidExtensions.Any(ext => lowerUrl.EndsWith(ext)))
+                return false;
+
+            // Перевіряємо на data URLs
+            if (lowerUrl.StartsWith("data:"))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Парсить цілочисельний атрибут з HTML вузла.
+        /// </summary>
+        private int? ParseIntAttribute(HtmlNode node, string attributeName)
+        {
+            var value = node.GetAttributeValue(attributeName, null);
+            if (string.IsNullOrEmpty(value))
+                return null;
+
+            // Видаляємо одиниці виміру (px, em, etc.)
+            value = System.Text.RegularExpressions.Regex.Replace(value, @"[^\d]", "");
+
+            return int.TryParse(value, out var result) && result > 0 ? result : null;
+        }
+
+        /// <summary>
+        /// Витягує метадані сторінки.
+        /// </summary>
+        private object ExtractPageMetadata(HtmlDocument doc)
+        {
+            try
+            {
+                var title = doc.DocumentNode
+                    .SelectSingleNode("//title")?.InnerText?.Trim() ?? "";
+
+                var description = doc.DocumentNode
+                    .SelectSingleNode("//meta[@name='description']")
+                    ?.GetAttributeValue("content", "")?.Trim() ?? "";
+
+                var ogTitle = doc.DocumentNode
+                    .SelectSingleNode("//meta[@property='og:title']")
+                    ?.GetAttributeValue("content", "")?.Trim() ?? "";
+
+                var ogDescription = doc.DocumentNode
+                    .SelectSingleNode("//meta[@property='og:description']")
+                    ?.GetAttributeValue("content", "")?.Trim() ?? "";
+
+                return new
+                {
+                    Title = !string.IsNullOrEmpty(ogTitle) ? ogTitle : title,
+                    Description = !string.IsNullOrEmpty(ogDescription) ? ogDescription : description,
+                    OriginalTitle = title,
+                    OriginalDescription = description
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting metadata: {ex.Message}");
+                return new { Title = "", Description = "" };
+            }
+        }
+
+        [HttpGet("proxy-image")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ProxyImage([FromQuery] string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return BadRequest("URL is required");
+
+            if (!IsValidImageProxyUrl(url, out string errorMessage))
+                return BadRequest(errorMessage);
+
+            using var httpClient = CreateSecureHttpClient();
+
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                var response = await httpClient.GetAsync(url, cts.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest($"Failed to fetch image. Status code: {response.StatusCode}");
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType;
+
+                if (!IsValidImageContentType(contentType))
+                {
+                    return BadRequest("URL does not point to a valid image");
+                }
+
+                var imageBytes = await response.Content.ReadAsByteArrayAsync(cts.Token);
+
+                const int maxImageSize = 10 * 1024 * 1024;
+                if (imageBytes.Length > maxImageSize)
+                {
+                    return BadRequest("Image is too large");
+                }
+
+                Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Headers.Add("Access-Control-Allow-Methods", "GET");
+                Response.Headers.Add("Cache-Control", "public, max-age=3600");
+
+                return File(imageBytes, contentType ?? "image/jpeg");
+            }
+            catch (OperationCanceledException)
+            {
+                return BadRequest("Request timeout while fetching image");
+            }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"Failed to fetch image: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error proxying image from {url}: {ex}");
+                return BadRequest("An error occurred while fetching the image");
+            }
+        }
+
+        /// <summary>
+        /// Validates if URL is safe for image proxying
+        /// </summary>
+        private bool IsValidImageProxyUrl(string url, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            try
+            {
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    errorMessage = "Invalid URL format";
+                    return false;
+                }
+
+                if (uri.Scheme != "http" && uri.Scheme != "https")
+                {
+                    errorMessage = "Only HTTP and HTTPS URLs are allowed";
+                    return false;
+                }
+
+                if (IsLocalAddress(uri.Host))
+                {
+                    errorMessage = "Access to local addresses is not allowed";
+                    return false;
+                }
+
+                // Additional security: check for known image hosting domains or patterns
+                var host = uri.Host.ToLower();
+                var allowedImageHosts = new[]
+                {
+            "i.pinimg.com",
+            "images.unsplash.com",
+            "cdn.pixabay.com",
+            "images.pexels.com",
+            // Add more trusted image hosting domains as needed
+        };
+
+                // For Pinterest specifically, allow pinimg.com subdomains
+                bool isAllowedHost = allowedImageHosts.Contains(host) ||
+                                   host.EndsWith(".pinimg.com") ||
+                                   host.EndsWith(".unsplash.com") ||
+                                   host.EndsWith(".pexels.com");
+
+                if (!isAllowedHost)
+                {
+                    // For other domains, do additional validation
+                    var path = uri.AbsolutePath.ToLower();
+                    var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+
+                    if (!validImageExtensions.Any(ext => path.EndsWith(ext)))
+                    {
+                        errorMessage = "URL does not appear to point to an image file";
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"URL validation error: {ex.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validates if content type is a valid image type
+        /// </summary>
+        private bool IsValidImageContentType(string contentType)
+        {
+            if (string.IsNullOrEmpty(contentType))
+                return false;
+
+            var validImageTypes = new[]
+            {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    };
+
+            return validImageTypes.Contains(contentType.ToLower());
         }
 
     }
