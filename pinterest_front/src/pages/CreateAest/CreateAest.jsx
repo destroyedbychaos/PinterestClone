@@ -6,6 +6,7 @@ import { useTheme } from '@mui/material';
 import { Icon as Iconify } from '@iconify/react';
 import { savePin, isPinSaved } from '../../utils/savedPinsStorage';
 import EnhancedToast from '../../components/ui/EnhancedToast';
+import { WebsiteScraper } from '../../utils/corsProxyService';
 
 import ImageThumbnailBar from '../../components/ui/CreateAestComponents/ImageThumbnailBar';
 import ImagePreview from '../../components/ui/CreateAestComponents/ImagePreview';
@@ -15,6 +16,9 @@ import DeleteModal from '../../components/ui/CreateAestComponents/DeleteModal';
 import BoardList from '../../components/ui/CreateAestComponents/BoardList';
 import UploadStep from '../../components/ui/CreateAestComponents/UploadStep';
 import CreateBoardModal from '../../components/modals/CreateBoardModal';
+import SaveFromUrlModal from '../../components/modals/SaveFromUrlModal';
+import SelectAestsModal from '../../components/modals/SelectAestsModal';
+import PinViewModal from '../../components/PinViewModal';
 
 import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../../store/Boards/BoardsApi';
 import { useCreatePinMutation } from '../../../store/Pins/PinApi';
@@ -39,12 +43,18 @@ const CreateAest = () => {
       hashtags: ''
     });
     const [isLoadingFiles, setIsLoadingFiles] = useState(true);
-    
-    // Toast state
+    const [showSaveFromUrlModal, setShowSaveFromUrlModal] = useState(false);
+    const [showSelectAestsModal, setShowSelectAestsModal] = useState(false);
+    const [scrapedImages, setScrapedImages] = useState([]);
+    const [currentWebsiteUrl, setCurrentWebsiteUrl] = useState('');
+    const [scraper] = useState(new WebsiteScraper());
+    const [showPinViewModal, setShowPinViewModal] = useState(false);
+    const [selectedPinForView, setSelectedPinForView] = useState(null);
+
     const [toast, setToast] = useState({
       open: false,
       message: '',
-      severity: 'info' // 'success', 'error', 'warning', 'info'
+      severity: 'info'
     });
   
     const fileInputRef = useRef(null);
@@ -68,6 +78,15 @@ const CreateAest = () => {
       }
     );
 
+    
+
+    useEffect(() => {
+      if (!showSelectAestsModal) {
+          setScrapedImages([]);
+          setCurrentWebsiteUrl('');
+      }
+  }, [showSelectAestsModal]);
+
     const [createBoard, { 
       isLoading: isCreatingBoard,
       isSuccess: isBoardCreated,
@@ -88,7 +107,6 @@ const CreateAest = () => {
       uploadedFiles[selectedImageIndex]?.link?.trim() && 
       uploadedFiles[selectedImageIndex]?.hashtags?.trim();
 
-    // Toast helper function
     const showToast = (message, severity = 'info') => {
       setToast({
         open: true,
@@ -100,6 +118,90 @@ const CreateAest = () => {
     const hideToast = () => {
       setToast(prev => ({ ...prev, open: false }));
     };
+    
+
+    const handleSaveFromUrl = () => {
+      setShowSaveFromUrlModal(true);
+  };
+  
+  const handleImagesFound = (images, websiteUrl) => {
+      console.log('Отримано зображення з сайту:', images.length);
+      setScrapedImages(images);
+      setCurrentWebsiteUrl(websiteUrl);
+      setShowSelectAestsModal(true);
+  };
+  
+
+const handleOpenSelectAests = () => {
+    setShowSelectAestsModal(true);
+};
+  
+const handleSaveAests = async (selectedFiles) => {
+  console.log('Saving selected images:', selectedFiles.length);
+
+  try {
+    const processedFiles = await Promise.all(
+      selectedFiles.map(async (fileData) => {
+        let file = null;
+        let preview = fileData.preview || null;
+
+        if (fileData.isFromWebsite && fileData.originalUrl) {
+          const response = await fetch(fileData.originalUrl);
+          const blob = await response.blob();
+          file = new File([blob], fileData.name || 'image_from_website', { type: blob.type });
+
+          preview = await fileToBase64(file);
+
+          await fileStorageRef.current.saveFile(fileData.id, file, preview);
+        }
+
+        return {
+          id: fileData.id,
+          name: fileData.name || 'image_from_website',
+          size: file ? file.size : fileData.size || 0,
+          preview: preview,
+          file: file,
+          title: fileData.title || '',
+          description: fileData.description || '',
+          link: fileData.link || '',
+          hashtags: fileData.hashtags || '',
+          hasStoredFile: !!file,
+          originalUrl: fileData.originalUrl || '',
+          isFromWebsite: !!fileData.isFromWebsite
+        };
+      })
+    );
+
+    setUploadedFiles(prev => {
+      const updatedFiles = [...prev, ...processedFiles];
+      if (prev.length === 0 && processedFiles.length > 0) {
+        setTimeout(() => setCurrentStep(1), 500);
+      }
+      return updatedFiles;
+    });
+
+    showToast(`Successfully added ${processedFiles.length} images from website`, 'success');
+  } catch (error) {
+    console.error('Error saving images:', error);
+    showToast('Error saving images', 'error');
+  } finally {
+    setShowSelectAestsModal(false);
+    setScrapedImages([]);
+    setCurrentWebsiteUrl('');
+  }
+};
+
+
+
+useEffect(() => {
+  return () => {
+      uploadedFiles.forEach(file => {
+          if (file.preview && file.preview.startsWith('blob:')) {
+              scraper.cleanupBlobUrl(file.preview);
+          }
+      });
+  };
+}, []);
   
     useEffect(() => {
       const loadSavedData = async () => {
@@ -380,10 +482,6 @@ const CreateAest = () => {
       }
     };
   
-    const handleSaveFromUrl = () => {
-      // Implementation for saving from URL
-    };
-  
     const handleBoardSelect = (board) => {
       setSelectedBoard(board);
     };
@@ -398,7 +496,6 @@ const CreateAest = () => {
 
     const handleConfirmCreateBoard = async (boardName) => {
       try {
-        // Fixed: Correct API payload structure
         const boardData = {
           name: boardName,
           description: "",
@@ -455,51 +552,74 @@ const CreateAest = () => {
     };
 
     const handlePublish = async () => {
-      const fileInfo = uploadedFiles[selectedImageIndex];
-      
-      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
+    const fileInfo = uploadedFiles[selectedImageIndex];
+    
+    if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
         showToast("Please fill all required fields", 'warning');
         setCurrentStep(1);
         return;
-      }
-    
-      let file = fileInfo.file;
-      if (!file) {
-        const storedData = await fileStorageRef.current.getFile(fileInfo.id);
-        if (!storedData) {
-          showToast("Image file is missing. Please upload the image again.", 'error');
-          return;
-        }
-        file = storedData.file;
-      }
-      
-      if (!selectedBoard) {
+    }
+
+    if (!selectedBoard) {
         showToast("Please select a board", 'warning');
         return;
-      }
+    }
+
+    const token = localStorage.getItem('authToken') || 
+                 localStorage.getItem('token') || 
+                 sessionStorage.getItem('authToken') || 
+                 sessionStorage.getItem('token');
     
-      const token = localStorage.getItem('authToken') || 
-                   localStorage.getItem('token') || 
-                   sessionStorage.getItem('authToken') || 
-                   sessionStorage.getItem('token');
-      
-      if (!token) {
+    if (!token) {
         showToast("Authentication required. Please log in first.", 'error');
         return;
-      }
-    
-      try {
+    }
+
+    try {
+        let file = fileInfo.file;
+
+
+          if (!file && fileInfo.isFromWebsite && fileInfo.originalUrl) {
+            const response = await fetch(fileInfo.originalUrl);
+            const blob = await response.blob();
+            file = new File([blob], fileInfo.name || 'image_from_website', { type: blob.type });
+          }
+        
+        if (fileInfo.isFromWebsite && fileInfo.originalUrl && !file) {
+            console.log('Converting website image to file:', fileInfo.originalUrl);
+            file = await scraper.imageToFile(fileInfo.originalUrl);
+            
+            if (!file) {
+                showToast("Failed to load image from website. Please try again.", 'error');
+                return;
+            }
+        }
+        
+        if (!file && !fileInfo.isFromWebsite) {
+            const storedData = await fileStorageRef.current.getFile(fileInfo.id);
+            if (!storedData) {
+                showToast("Image file is missing. Please upload the image again.", 'error');
+                return;
+            }
+            file = storedData.file;
+        }
+        
+        if (!file) {
+            showToast("Image file is missing. Please try again.", 'error');
+            return;
+        }
+
         if (!file.type || !file.type.startsWith('image/')) {
-          showToast("Please select a valid image file", 'error');
-          return;
+            showToast("Please select a valid image file", 'error');
+            return;
         }
-    
-        const maxFileSize = 10 * 1024 * 1024;
+
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
         if (file.size && file.size > maxFileSize) {
-          showToast("File size must be less than 10MB", 'error');
-          return;
+            showToast("File size must be less than 10MB", 'error');
+            return;
         }
-    
+
         const formData = new FormData();
         formData.append('Title', fileInfo.title.trim());
         formData.append('Description', fileInfo.description.trim());
@@ -508,50 +628,52 @@ const CreateAest = () => {
         formData.append('ImageFile', file, file.name);
         
         if (!selectedBoard.isProfile && selectedBoard.id) {
-          formData.append('BoardId', selectedBoard.id.toString());
+            formData.append('BoardId', selectedBoard.id.toString());
         }
-    
+
         const result = await createPin(formData).unwrap();
         
         await handleAutoSavePin(result, fileInfo);
         
         setCurrentStep(3);
         showToast('Pin created successfully!', 'success');
-      } catch (error) {
+    } catch (error) {
         console.error('Pin creation error:', error);
         let errorMessage = "Failed to create pin. Please try again.";
         
         if (error.status === 401) {
-          errorMessage = "Authentication failed. Please log in again.";
+            errorMessage = "Authentication failed. Please log in again.";
         } else if (error.status === 400) {
-          if (error.data && error.data.errors) {
-            const validationErrors = error.data.errors;
-            const errorMessages = [];
-            
-            Object.keys(validationErrors).forEach(field => {
-              const fieldErrors = validationErrors[field];
-              if (Array.isArray(fieldErrors)) {
-                fieldErrors.forEach(err => {
-                  errorMessages.push(`${field}: ${err}`);
+            if (error.data && error.data.errors) {
+                const validationErrors = error.data.errors;
+                const errorMessages = [];
+                
+                Object.keys(validationErrors).forEach(field => {
+                    const fieldErrors = validationErrors[field];
+                    if (Array.isArray(fieldErrors)) {
+                        fieldErrors.forEach(err => {
+                            errorMessages.push(`${field}: ${err}`);
+                        });
+                    }
                 });
-              }
-            });
-            
-            if (errorMessages.length > 0) {
-              errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
+                
+                if (errorMessages.length > 0) {
+                    errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
+                }
             }
-          }
         } else if (error.status === 413) {
-          errorMessage = "File is too large. Please select a smaller image.";
+            errorMessage = "File is too large. Please select a smaller image.";
         } else if (error.status === 415) {
-          errorMessage = "Unsupported file type. Please select a valid image file.";
+            errorMessage = "Unsupported file type. Please select a valid image file.";
         } else if (error.status === 403) {
-          errorMessage = "You don't have permission to create pins.";
+            errorMessage = "You don't have permission to create pins.";
         }
         
         showToast(errorMessage, 'error');
-      }
-    };
+    }
+};
+
+  
     
     const handleAutoSavePin = async (createdPin, fileInfo) => {
       try {
@@ -629,9 +751,21 @@ const CreateAest = () => {
     };
   
     const handleView = () => {
-      // Implementation for view functionality
+      const fileInfo = uploadedFiles[selectedImageIndex];
+      if (!fileInfo) return;
+    
+      const pinObject = {
+        Id: fileInfo.id,
+        ImageUrl: fileInfo.preview,
+        Title: fileInfo.title,
+        Description: fileInfo.description,
+        UserName: user?.username || user?.email || 'Current User',
+        Tags: fileInfo.hashtags ? fileInfo.hashtags.split(',').map(t => t.trim()) : []
+      };
+    
+      setSelectedPinForView(pinObject);
+      setShowPinViewModal(true);
     };
-
     if (isLoadingFiles) {
       return (
         <>
@@ -978,8 +1112,36 @@ const CreateAest = () => {
             anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           />
         </Box>
+
+        <SaveFromUrlModal
+            open={showSaveFromUrlModal}
+            onClose={() => setShowSaveFromUrlModal(false)}
+            onImagesFound={handleImagesFound}
+        />
+
+        <SelectAestsModal
+            open={showSelectAestsModal}
+            onClose={() => {
+                setShowSelectAestsModal(false);
+                setScrapedImages([]);
+                setCurrentWebsiteUrl('');
+            }}
+            onSave={handleSaveAests}
+            scrapedImages={scrapedImages}
+            websiteUrl={currentWebsiteUrl}
+        />
+        <PinViewModal
+        pin={selectedPinForView}
+          isOpen={showPinViewModal}
+          onClose={() => setShowPinViewModal(false)}
+          source="createAest"
+          onLike={(pinId, isLiked) => console.log('Liked pin', pinId, isLiked)}
+          onComment={(pinId, comment) => console.log('Commented pin', pinId, comment)}
+          onSave={(pinId) => console.log('Saved pin', pinId)}
+        />
       </>
     );
   };
   
   export default CreateAest;
+
