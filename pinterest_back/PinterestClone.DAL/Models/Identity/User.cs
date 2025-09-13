@@ -30,8 +30,6 @@ namespace PinterestClone.DAL.Models.Identity
         public DateTime? PhoneNumberVerifiedAt { get; set; }
 
         public string? GoogleId { get; set; }
-        public string? MagicLinkToken { get; set; }
-        public DateTime? MagicLinkExpiration { get; set; }
 
         public virtual ICollection<Board> Boards { get; set; } = [];
         public virtual ICollection<Pin> Pins { get; set; } = [];
