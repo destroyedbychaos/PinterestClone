@@ -21,7 +21,7 @@ export const boardsApi = createApi({
     endpoints: (builder) => ({
         getUserBoards: builder.query({
             query: ({ 
-                username, 
+                userId, // Changed from username to userId
                 pageNumber = 1, 
                 pageSize = 20, 
                 sortBy = 'createdAt', 
@@ -29,7 +29,7 @@ export const boardsApi = createApi({
                 isArchived = null,
                 groupBy = null
             }) => ({
-                url: `/Boards/user/username/${username}`,
+                url: `/Boards/user/${userId}`, // Use userId directly
                 params: {
                     pageNumber,
                     pageSize,
