@@ -108,7 +108,7 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
             </Box>
             
             {type === 'date' && (
-                <style jsx>{`
+                <style>{`
                     input[type="date"]::-webkit-calendar-picker-indicator { 
                         opacity: 0; 
                         cursor: pointer; 
@@ -150,7 +150,8 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
             )}
             
             {/* Додаткові глобальні стилі для всіх плейсхолдерів */}
-            <style jsx global>{`
+            {/* <style jsx global>{` */}
+            <style>{`
                 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
                     color: #7B8D9B !important;
                     opacity: 1 !important;
