@@ -95,6 +95,30 @@ const ProfileBoards = () => {
     };
   }, [profile?.id]);
 
+  const normalizedCreatedPins = useMemo(() => {
+      return pins.map((pin) => {
+        let image = pin.ImageUrl || pin.imageUrl || pin.image;
+        if (image && !/^https?:\/\//.test(image)) {
+          if (!image.startsWith("/")) image = "/images/" + image.replace(/^.*[\\/]/, "");
+        }
+        const rawTags = pin.Tags ?? pin.tags ?? '';
+        const tags = Array.isArray(rawTags)
+          ? rawTags.map((t) => String(t).trim()).filter(Boolean)
+          : String(rawTags || "")
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean);
+        return {
+          id: pin.Id || pin.id,
+          image,
+          title: pin.Title || pin.title,
+          description: pin.Description || pin.description,
+          author: pin.UserName || pin.userName || profile?.displayName || profile?.userName,
+          tags,
+        };
+      });
+    }, [pins, profile]);
+
   useEffect(() => {
     let isMounted = true;
     const loadBoards = async (userId) => {
@@ -151,6 +175,7 @@ const ProfileBoards = () => {
         .then(setSavedPins)
         .catch(() => {});
     };
+
     window.addEventListener('savedPinsChanged', onChanged);
     return () => window.removeEventListener('savedPinsChanged', onChanged);
   }, [activeTab, profile?.displayName, profile?.userName]);
@@ -343,7 +368,8 @@ const ProfileBoards = () => {
                   } else if (tab === "Aests") {
                     setActiveTab("Aests");
                   } else if (tab === "Created") {
-                    navigate("/profile-created");
+                    // navigate("/profile-created");
+                    setActiveTab("Created");
                   }
                 }}
                 variant="text"
@@ -450,6 +476,20 @@ const ProfileBoards = () => {
                  )}
                </>
              )}
+             
+             {
+              activeTab === 'Created' && (<>
+                {loadingPins ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
+                                 ) : normalizedCreatedPins.length === 0 ? (
+                   <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
+                     There are no created pins yet, let's create the first one!
+                   </Box>
+                ) : (
+                  <MasonryGrid pins={normalizedCreatedPins} limitedMenu />
+                )}
+              </>)
+             }
           </Box>
         </Box>
       </Box>

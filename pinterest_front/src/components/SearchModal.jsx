@@ -4,8 +4,10 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import ClearIcon from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../env';
 
-const API_BASE = '/api';
+const API_BASE = apiUrl;
+const token = localStorage.getItem("token");
 
 const highlightMatch = (text, query) => {
   const regex = new RegExp(`(${query})`, 'gi');
@@ -59,7 +61,9 @@ const SearchModal = ({
 
   const fetchRecommendations = async () => {
     try {
-      const res = await fetch(`${API_BASE}/Pins/recommendations`);
+      const res = await fetch(`${API_BASE}/Pins/recommendations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await res.json();
       if (data?.mightLike || data?.popular) {
         setRecommendations([...data.mightLike || [], ...data.popular || []].slice(0, 8));

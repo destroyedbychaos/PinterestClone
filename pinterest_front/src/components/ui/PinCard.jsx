@@ -7,6 +7,9 @@ import NotificationToast from "./NotificationToast";
 import SaveToProfileModal from "./SaveToProfileModal";
 import { savePin as persistSavePin, unsavePin as persistUnsavePin, isPinSaved } from "../../utils/savedPinsStorage";
 import historyApiService from "../../services/historyApi";
+import { apiUrl } from "../../env";
+
+const API_BASE = apiUrl;
 
 const PinCard = ({ image, title, description, author, tags, height, pinId, onPinHidden, limitedMenu = false, hideSaveButton = false, disableUnsave = false, onPinClick }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -88,7 +91,7 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       if (boardId) {
 
         console.log('Saving pin to board:', pinId, boardId);
-        const response = await fetch(`/api/pins/${pinId}/boards/${boardId}`, {
+        const response = await fetch(`${API_BASE}/pins/${pinId}/boards/${boardId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -169,7 +172,7 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       console.log('Hiding pin with pinId:', pinId);
       console.log('Token:', token.substring(0, 20) + '...');
 
-      const response = await fetch('/api/HiddenPins/hide', {
+      const response = await fetch(`${API_BASE}/HiddenPins/hide`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +273,7 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       };
       console.log('Request body:', requestBody);
 
-      const response = await fetch('/api/PinReports/report', {
+      const response = await fetch(`${API_BASE}/PinReports/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

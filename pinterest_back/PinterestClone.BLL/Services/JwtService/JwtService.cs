@@ -96,7 +96,7 @@ namespace PinterestClone.BLL.Services.JwtService
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
+                expires: DateTime.UtcNow.AddDays(30),
                 signingCredentials: new SigningCredentials(symmetricKey, SecurityAlgorithms.HmacSha256)
                 );
 

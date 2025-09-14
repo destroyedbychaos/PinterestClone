@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './SaveToProfileModal.css';
+import { useNavigate } from 'react-router-dom';
 
 const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, onMouseEnter, onMouseLeave }) => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen) {
@@ -71,6 +73,7 @@ const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, 
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        navigate("/login");
         console.error('No token found');
         return;
       }
