@@ -14,6 +14,7 @@ import {
   getUserAvatarUrl
 } from "../../utils/userUtils";
 import "./HistoryPage.css";
+import SimpleHeader from "../../components/layout/SimpleHeader";
 
 const HistoryContainer = styled.div`
   width: 100%;
@@ -391,11 +392,11 @@ const HistoryPage = () => {
       <HistoryContainer className="history-container">
         <UserBox className="user-box" onClick={handleUserBoxClick} ref={profileRef}>
           <Avatar 
-            src={user?.avatarUrl || "https://placehold.co/42x42"} 
+            src={user?.avatarUrl} 
             alt="User avatar"
           />
           <UserName>
-            {user?.displayName || "Vita Didovets"}
+            {user?.displayName || "Unknown"}
           </UserName>
           {showMenu && (
             <div className="profile-dropdown-menu" ref={menuRef} tabIndex={-1}>
@@ -439,44 +440,11 @@ const HistoryPage = () => {
   const olderGrouped = groupOlderByDate(historyData.older);
 
   return (
-     <HistoryContainer className="history-container">
-       <UserBox className="user-box" onClick={handleUserBoxClick} ref={profileRef}>
-         <Avatar 
-           src={user?.avatarUrl || "https://placehold.co/42x42"} 
-           alt="User avatar"
-         />
-         <UserName>
-           {user?.displayName || "Vita Didovets"}
-         </UserName>
-         {showMenu && (
-           <div className="profile-dropdown-menu" ref={menuRef} tabIndex={-1}>
-             <div className="profile-dropdown-menu__current">Currently in</div>
-             <div className="profile-dropdown-menu__user">
-               {hasUserAvatar(user) ? (
-                 <img src={getUserAvatarUrl(user)} alt="avatar" className="profile-dropdown-menu__avatar" />
-               ) : (
-                 <span className="profile-dropdown-menu__avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 56, height: 56, color: '#6b7280', fontSize: '18px', fontWeight: 600 }}>
-                   {getUserAvatarInitial(user)}
-                 </span>
-               )}
-               <div className="profile-dropdown-menu__info">
-                 <div className="profile-dropdown-menu__name">{getUserDisplayName(user)}</div>
-                 <div className="profile-dropdown-menu__username">@{getUserUsername(user)}</div>
-               </div>
-             </div>
-             <div className="profile-dropdown-menu__accounts">Your accounts</div>
-             <button className="profile-dropdown-menu__btn" onClick={() => { setShowMenu(false); navigate('/register'); }}>Add account</button>
-             <button className="profile-dropdown-menu__btn profile-dropdown-menu__btn--logout" onClick={() => { 
-               dispatch(logout()); 
-               setShowMenu(false); 
-               window.location.reload(); 
-             }}>Log out</button>
-           </div>
-         )}
-       </UserBox>
+    <>
+        <SimpleHeader
+          title="History"
 
-      <HistoryTitle className="history-title">History</HistoryTitle>
-
+        />
       <CenteredContent className="centered-content">
         <RecentlyViewedTitle className="recently-viewed-title">Recently viewed</RecentlyViewedTitle>
         <RecentlyViewedDescription className="recently-viewed-description">
@@ -561,7 +529,7 @@ const HistoryPage = () => {
           console.log('Pin saved:', pinId);
         }}
       />
-    </HistoryContainer>
+    </>
   );
 };
 

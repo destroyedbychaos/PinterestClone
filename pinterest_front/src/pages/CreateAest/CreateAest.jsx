@@ -398,7 +398,6 @@ const CreateAest = () => {
 
     const handleConfirmCreateBoard = async (boardName) => {
       try {
-        // Fixed: Correct API payload structure
         const boardData = {
           name: boardName,
           description: "",
@@ -457,7 +456,7 @@ const CreateAest = () => {
     const handlePublish = async () => {
       const fileInfo = uploadedFiles[selectedImageIndex];
       
-      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
+      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.hashtags) {
         showToast("Please fill all required fields", 'warning');
         setCurrentStep(1);
         return;

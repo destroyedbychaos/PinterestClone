@@ -4,6 +4,7 @@ import "./DiscoverHeader.css";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../../store/slices/AuthSlice";
+import { getUserAvatarInitial } from "../../utils/userUtils";
 
 const SearchHeader = ({ onSearch, onFocusSearch, searchRef, title }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -74,7 +75,9 @@ const SearchHeader = ({ onSearch, onFocusSearch, searchRef, title }) => {
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="avatar" className="discover-header__avatar-img" />
             ) : (
-              <span className="discover-header__avatar-img" style={{ background: '#eaeff9', borderRadius: '50%', width: 48, height: 48 }} />
+              <span className="img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
+                {getUserAvatarInitial(user)}
+              </span>
             )}
             <span className="discover-header__profile-name">{user.displayName || user.userName || user.email}</span>
             {showMenu && (

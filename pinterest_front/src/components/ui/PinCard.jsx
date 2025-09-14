@@ -89,9 +89,9 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       }
 
       if (boardId) {
-
+        pinId = pinData.id;
         console.log('Saving pin to board:', pinId, boardId);
-        const response = await fetch(`${API_BASE}/pins/${pinId}/boards/${boardId}`, {
+        const response = await fetch(`${API_BASE}/Pins/${pinId}/Boards/${boardId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -170,7 +170,6 @@ const PinCard = ({ image, title, description, author, tags, height, pinId, onPin
       }
 
       console.log('Hiding pin with pinId:', pinId);
-      console.log('Token:', token.substring(0, 20) + '...');
 
       const response = await fetch(`${API_BASE}/HiddenPins/hide`, {
         method: 'POST',

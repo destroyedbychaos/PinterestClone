@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './SaveToProfileModal.css';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../env';
 
 const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, onMouseEnter, onMouseLeave }) => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const navigate = useNavigate();
+
+  const API_BASE = apiUrl;
 
   useEffect(() => {
     if (isOpen) {
@@ -33,7 +36,7 @@ const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, 
         return;
       }
 
-      const response = await fetch(`/api/boards/user/${userId}`, {
+      const response = await fetch(`${API_BASE}/boards/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -83,7 +86,7 @@ const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, 
         return;
       }
 
-      const response = await fetch('/api/boards', {
+      const response = await fetch('${API_BASE}/boards', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

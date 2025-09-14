@@ -29,6 +29,7 @@ import { logout, updateUser } from '../../../store/slices/AuthSlice';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { interestCategories } from '../../components/data/interestCategories.js';
+import { getUserAvatarInitial } from '../../utils/userUtils.js';
 
 
 const getUserAvatar = (user) => {
@@ -585,8 +586,9 @@ const SettingsPage = () => {
           {user?.avatarUrl ? (
             <img src={user.avatarUrl} alt="avatar" className="discover-header__avatar-img" />
           ) : (
-            <span className="discover-header__avatar-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48 }}>
-            </span>
+              <span className="" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
+                {getUserAvatarInitial(user)}
+              </span>
           )}
           <span className="discover-header__profile-name">
             {user?.displayName || user?.userName || user?.email}
