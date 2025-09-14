@@ -75,7 +75,7 @@ const SimpleHeader = ({ title }) => {
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <span className="" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
                 {getUserAvatarInitial(currentUser)}
               </span>
             )}

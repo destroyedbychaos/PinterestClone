@@ -75,7 +75,7 @@ const SearchHeader = ({ onSearch, onFocusSearch, searchRef, title }) => {
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="avatar" className="discover-header__avatar-img" />
             ) : (
-              <span className="img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
                 {getUserAvatarInitial(user)}
               </span>
             )}
