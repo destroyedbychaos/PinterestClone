@@ -505,13 +505,13 @@ namespace PinterestClone.API.Controllers
         /// <summary>
         /// Завантажує аватарку користувача.
         /// </summary>
-        /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
+        /// <param name="fileService">Сервіс для роботи з файлами в хмарному сховищі.</param>
         /// <param name="model"><see cref="FileUploadDto"/> з файлом зображення.</param>
         /// <returns><see cref="IActionResult"/> з URL нового аватара або повідомленням про помилку.</returns>
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(
-        [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+        [FromServices] PinterestClone.BLL.Services.FileBlobService.IFileService fileService,
         [FromForm] FileUploadDto model)
         {
             try
@@ -528,17 +528,25 @@ namespace PinterestClone.API.Controllers
                 Console.WriteLine($"Uploading avatar for user: {user.Email}");
 
                 if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
-                    await imageService.DeleteImageAsync(user.AvatarUrl);
+                {
+                    var oldFileName = Path.GetFileName(new Uri(user.AvatarUrl).LocalPath);
+                    await fileService.DeleteAsync(oldFileName);
+                }
 
-                var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
-                var url = imageService.GetImageUrl(fileName);
-                user.AvatarUrl = url;
+                var avatarId = $"avatar_{user.Id}_{Guid.NewGuid()}";
+                var uploadResult = await fileService.UploadAsync(model.File, avatarId);
+                
+                if (uploadResult.Error)
+                {
+                    return BadRequest($"Upload failed: {uploadResult.Status}");
+                }
 
+                user.AvatarUrl = uploadResult.Blob.Uri;
                 var result = await _userManager.UpdateAsync(user);
                 if (!result.Succeeded) return BadRequest(result.Errors);
 
-                Console.WriteLine($"Avatar uploaded successfully: {url}");
-                return Ok(new { url });
+                Console.WriteLine($"Avatar uploaded successfully: {uploadResult.Blob.Uri}");
+                return Ok(new { url = uploadResult.Blob.Uri });
             }
             catch (Exception ex)
             {
@@ -550,13 +558,13 @@ namespace PinterestClone.API.Controllers
         /// <summary>
         /// Завантажує банер користувача.
         /// </summary>
-        /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
+        /// <param name="fileService">Сервіс для роботи з файлами в хмарному сховищі.</param>
         /// <param name="model"><see cref="FileUploadDto"/> з файлом зображення.</param>
         /// <returns><see cref="IActionResult"/> з URL нового банера або повідомленням про помилку.</returns>
         [HttpPost("upload-banner")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadBanner(
-            [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService,
+            [FromServices] PinterestClone.BLL.Services.FileBlobService.IFileService fileService,
             [FromForm] FileUploadDto model)
         {
             try
@@ -574,18 +582,26 @@ namespace PinterestClone.API.Controllers
                 Console.WriteLine($"Uploading banner for user: {user.Email}");
 
                 if (!string.IsNullOrWhiteSpace(user.BannerUrl))
-                    await imageService.DeleteImageAsync(user.BannerUrl);
+                {
+                    var oldFileName = Path.GetFileName(new Uri(user.BannerUrl).LocalPath);
+                    await fileService.DeleteAsync(oldFileName);
+                }
 
-                var (_, fileName, _, _) = await imageService.SaveImageAsync(model.File);
-                var url = imageService.GetImageUrl(fileName);
-                user.BannerUrl = url;
+                var bannerId = $"banner_{user.Id}_{Guid.NewGuid()}";
+                var uploadResult = await fileService.UploadAsync(model.File, bannerId);
+                
+                if (uploadResult.Error)
+                {
+                    return BadRequest($"Upload failed: {uploadResult.Status}");
+                }
 
+                user.BannerUrl = uploadResult.Blob.Uri;
                 var result = await _userManager.UpdateAsync(user);
                 if (!result.Succeeded)
                     return BadRequest(result.Errors);
 
-                Console.WriteLine($"Banner uploaded successfully: {url}");
-                return Ok(new { url });
+                Console.WriteLine($"Banner uploaded successfully: {uploadResult.Blob.Uri}");
+                return Ok(new { url = uploadResult.Blob.Uri });
             }
             catch (Exception ex)
             {
@@ -1249,6 +1265,28 @@ namespace PinterestClone.API.Controllers
             {
                 Console.WriteLine($"Exception in GetBlockStatus: {ex.Message}");
                 return StatusCode(500, "Internal server error");
+            }
+        }
+
+        [HttpGet("test-image/{fileName}")]
+        public IActionResult TestImage(string fileName)
+        {
+            try
+            {
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+                Console.WriteLine($"Testing image path: {imagePath}");
+                Console.WriteLine($"File exists: {System.IO.File.Exists(imagePath)}");
+                
+                if (System.IO.File.Exists(imagePath))
+                {
+                    return Ok(new { exists = true, path = imagePath, url = $"/images/{fileName}" });
+                }
+                return NotFound(new { exists = false, path = imagePath });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error testing image: {ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
     }

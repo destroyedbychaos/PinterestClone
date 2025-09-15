@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5228/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003/api';
 
 const similarPinsApi = {
 
