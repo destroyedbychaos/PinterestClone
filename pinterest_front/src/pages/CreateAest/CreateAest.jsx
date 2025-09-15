@@ -604,6 +604,8 @@ useEffect(() => {
           showToast("Image file is missing. Please upload the image again.", 'error');
           return;
       }
+    }
+      
   
       if (!selectedBoard) {
           showToast("Please select a board", 'warning');
@@ -1185,6 +1187,5 @@ useEffect(() => {
       </>
     );
   };
-  
-  export default CreateAest;
+export default CreateAest;
 
