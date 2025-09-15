@@ -146,18 +146,29 @@ const handleSaveAests = async (selectedFiles) => {
         let preview = fileData.preview || null;
 
         if (fileData.isFromWebsite && fileData.originalUrl) {
-          const response = await fetch(fileData.originalUrl);
-          const blob = await response.blob();
-          file = new File([blob], fileData.name || 'image_from_website', { type: blob.type });
+          try {
+            console.log('Converting website image via proxy:', fileData.originalUrl);
+            file = await scraper.imageToFile(fileData.originalUrl);
+            
+            if (!file) {
+              console.error('Failed to convert image via proxy:', fileData.originalUrl);
+              throw new Error(`Failed to load image from ${fileData.originalUrl}`);
+            }
 
-          preview = await fileToBase64(file);
+            preview = await fileToBase64(file);
 
-          await fileStorageRef.current.saveFile(fileData.id, file, preview);
+            await fileStorageRef.current.saveFile(fileData.id, file, preview);
+            
+            console.log('Successfully processed website image:', fileData.originalUrl, file.size, 'bytes');
+          } catch (error) {
+            console.error('Error processing website image:', fileData.originalUrl, error);
+            return null;
+          }
         }
 
         return {
           id: fileData.id,
-          name: fileData.name || 'image_from_website',
+          name: fileData.name || file?.name || 'image_from_website',
           size: file ? file.size : fileData.size || 0,
           preview: preview,
           file: file,
@@ -172,18 +183,30 @@ const handleSaveAests = async (selectedFiles) => {
       })
     );
 
+    const validFiles = processedFiles.filter(file => file !== null);
+
+    if (validFiles.length === 0) {
+      showToast('No images could be processed successfully', 'error');
+      return;
+    }
+
     setUploadedFiles(prev => {
-      const updatedFiles = [...prev, ...processedFiles];
-      if (prev.length === 0 && processedFiles.length > 0) {
+      const updatedFiles = [...prev, ...validFiles];
+      if (prev.length === 0 && validFiles.length > 0) {
         setTimeout(() => setCurrentStep(1), 500);
       }
       return updatedFiles;
     });
 
-    showToast(`Successfully added ${processedFiles.length} images from website`, 'success');
+    const failedCount = selectedFiles.length - validFiles.length;
+    if (failedCount > 0) {
+      showToast(`${validFiles.length} images saved successfully, ${failedCount} failed to load`, 'warning');
+    } else {
+      showToast(`Successfully added ${validFiles.length} images from website`, 'success');
+    }
   } catch (error) {
     console.error('Error saving images:', error);
-    showToast('Error saving images', 'error');
+    showToast('Error saving images: ' + error.message, 'error');
   } finally {
     setShowSelectAestsModal(false);
     setScrapedImages([]);
@@ -552,126 +575,119 @@ useEffect(() => {
     };
 
     const handlePublish = async () => {
-    const fileInfo = uploadedFiles[selectedImageIndex];
-    
-    if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
-        showToast("Please fill all required fields", 'warning');
-        setCurrentStep(1);
-        return;
-    }
+      const fileInfo = uploadedFiles[selectedImageIndex];
+      
+      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.link || !fileInfo.hashtags) {
+          showToast("Please fill all required fields", 'warning');
+          setCurrentStep(1);
+          return;
+      }
+  
+      if (!selectedBoard) {
+          showToast("Please select a board", 'warning');
+          return;
+      }
+  
+      const token = localStorage.getItem('authToken') || 
+                   localStorage.getItem('token') || 
+                   sessionStorage.getItem('authToken') || 
+                   sessionStorage.getItem('token');
+      
+      if (!token) {
+          showToast("Authentication required. Please log in first.", 'error');
+          return;
+      }
+  
+      try {
+          let file = fileInfo.file;
 
-    if (!selectedBoard) {
-        showToast("Please select a board", 'warning');
-        return;
-    }
-
-    const token = localStorage.getItem('authToken') || 
-                 localStorage.getItem('token') || 
-                 sessionStorage.getItem('authToken') || 
-                 sessionStorage.getItem('token');
-    
-    if (!token) {
-        showToast("Authentication required. Please log in first.", 'error');
-        return;
-    }
-
-    try {
-        let file = fileInfo.file;
-
-
-          if (!file && fileInfo.isFromWebsite && fileInfo.originalUrl) {
-            const response = await fetch(fileInfo.originalUrl);
-            const blob = await response.blob();
-            file = new File([blob], fileInfo.name || 'image_from_website', { type: blob.type });
+          if (fileInfo.isFromWebsite && fileInfo.originalUrl && !file) {
+              console.log('Converting website image to file for publish:', fileInfo.originalUrl);
+              file = await scraper.imageToFile(fileInfo.originalUrl);
+              
+              if (!file) {
+                  showToast("Failed to load image from website. Please try again.", 'error');
+                  return;
+              }
           }
-        
-        if (fileInfo.isFromWebsite && fileInfo.originalUrl && !file) {
-            console.log('Converting website image to file:', fileInfo.originalUrl);
-            file = await scraper.imageToFile(fileInfo.originalUrl);
-            
-            if (!file) {
-                showToast("Failed to load image from website. Please try again.", 'error');
-                return;
-            }
-        }
-        
-        if (!file && !fileInfo.isFromWebsite) {
-            const storedData = await fileStorageRef.current.getFile(fileInfo.id);
-            if (!storedData) {
-                showToast("Image file is missing. Please upload the image again.", 'error');
-                return;
-            }
-            file = storedData.file;
-        }
-        
-        if (!file) {
-            showToast("Image file is missing. Please try again.", 'error');
-            return;
-        }
-
-        if (!file.type || !file.type.startsWith('image/')) {
-            showToast("Please select a valid image file", 'error');
-            return;
-        }
-
-        const maxFileSize = 10 * 1024 * 1024; // 10MB
-        if (file.size && file.size > maxFileSize) {
-            showToast("File size must be less than 10MB", 'error');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('Title', fileInfo.title.trim());
-        formData.append('Description', fileInfo.description.trim());
-        formData.append('Link', fileInfo.link.trim());
-        formData.append('Tags', fileInfo.hashtags.trim());
-        formData.append('ImageFile', file, file.name);
-        
-        if (!selectedBoard.isProfile && selectedBoard.id) {
-            formData.append('BoardId', selectedBoard.id.toString());
-        }
-
-        const result = await createPin(formData).unwrap();
-        
-        await handleAutoSavePin(result, fileInfo);
-        
-        setCurrentStep(3);
-        showToast('Pin created successfully!', 'success');
-    } catch (error) {
-        console.error('Pin creation error:', error);
-        let errorMessage = "Failed to create pin. Please try again.";
-        
-        if (error.status === 401) {
-            errorMessage = "Authentication failed. Please log in again.";
-        } else if (error.status === 400) {
-            if (error.data && error.data.errors) {
-                const validationErrors = error.data.errors;
-                const errorMessages = [];
-                
-                Object.keys(validationErrors).forEach(field => {
-                    const fieldErrors = validationErrors[field];
-                    if (Array.isArray(fieldErrors)) {
-                        fieldErrors.forEach(err => {
-                            errorMessages.push(`${field}: ${err}`);
-                        });
-                    }
-                });
-                
-                if (errorMessages.length > 0) {
-                    errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
-                }
-            }
-        } else if (error.status === 413) {
-            errorMessage = "File is too large. Please select a smaller image.";
-        } else if (error.status === 415) {
-            errorMessage = "Unsupported file type. Please select a valid image file.";
-        } else if (error.status === 403) {
-            errorMessage = "You don't have permission to create pins.";
-        }
-        
-        showToast(errorMessage, 'error');
-    }
-};
+          
+          if (!file && !fileInfo.isFromWebsite) {
+              const storedData = await fileStorageRef.current.getFile(fileInfo.id);
+              if (!storedData) {
+                  showToast("Image file is missing. Please upload the image again.", 'error');
+                  return;
+              }
+              file = storedData.file;
+          }
+          
+          if (!file) {
+              showToast("Image file is missing. Please try again.", 'error');
+              return;
+          }
+  
+          if (!file.type || !file.type.startsWith('image/')) {
+              showToast("Please select a valid image file", 'error');
+              return;
+          }
+  
+          const maxFileSize = 10 * 1024 * 1024; // 10MB
+          if (file.size && file.size > maxFileSize) {
+              showToast("File size must be less than 10MB", 'error');
+              return;
+          }
+  
+          const formData = new FormData();
+          formData.append('Title', fileInfo.title.trim());
+          formData.append('Description', fileInfo.description.trim());
+          formData.append('Link', fileInfo.link.trim());
+          formData.append('Tags', fileInfo.hashtags.trim());
+          formData.append('ImageFile', file, file.name);
+          
+          if (!selectedBoard.isProfile && selectedBoard.id) {
+              formData.append('BoardId', selectedBoard.id.toString());
+          }
+  
+          const result = await createPin(formData).unwrap();
+          
+          await handleAutoSavePin(result, fileInfo);
+          
+          setCurrentStep(3);
+          showToast('Pin created successfully!', 'success');
+      } catch (error) {
+          console.error('Pin creation error:', error);
+          let errorMessage = "Failed to create pin. Please try again.";
+          
+          if (error.status === 401) {
+              errorMessage = "Authentication failed. Please log in again.";
+          } else if (error.status === 400) {
+              if (error.data && error.data.errors) {
+                  const validationErrors = error.data.errors;
+                  const errorMessages = [];
+                  
+                  Object.keys(validationErrors).forEach(field => {
+                      const fieldErrors = validationErrors[field];
+                      if (Array.isArray(fieldErrors)) {
+                          fieldErrors.forEach(err => {
+                              errorMessages.push(`${field}: ${err}`);
+                          });
+                      }
+                  });
+                  
+                  if (errorMessages.length > 0) {
+                      errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
+                  }
+              }
+          } else if (error.status === 413) {
+              errorMessage = "File is too large. Please select a smaller image.";
+          } else if (error.status === 415) {
+              errorMessage = "Unsupported file type. Please select a valid image file.";
+          } else if (error.status === 403) {
+              errorMessage = "You don't have permission to create pins.";
+          }
+          
+          showToast(errorMessage, 'error');
+      }
+  };
 
   
     
@@ -755,12 +771,12 @@ useEffect(() => {
       if (!fileInfo) return;
     
       const pinObject = {
-        Id: fileInfo.id,
-        ImageUrl: fileInfo.preview,
-        Title: fileInfo.title,
-        Description: fileInfo.description,
-        UserName: user?.username || user?.email || 'Current User',
-        Tags: fileInfo.hashtags ? fileInfo.hashtags.split(',').map(t => t.trim()) : []
+        id: fileInfo.id,
+        image: fileInfo.preview,
+        title: fileInfo.title,
+        description: fileInfo.description,
+        author: user?.username || user?.email || 'Current User',
+        tags: fileInfo.hashtags ? fileInfo.hashtags.split(',').map(t => t.trim()).filter(Boolean) : []
       };
     
       setSelectedPinForView(pinObject);
@@ -1117,6 +1133,7 @@ useEffect(() => {
             open={showSaveFromUrlModal}
             onClose={() => setShowSaveFromUrlModal(false)}
             onImagesFound={handleImagesFound}
+            onOpenSelectAests={handleOpenSelectAests}
         />
 
         <SelectAestsModal
@@ -1126,13 +1143,17 @@ useEffect(() => {
                 setScrapedImages([]);
                 setCurrentWebsiteUrl('');
             }}
+            onBack={() => {
+                setShowSelectAestsModal(false);
+                setShowSaveFromUrlModal(true);
+            }}
             onSave={handleSaveAests}
             scrapedImages={scrapedImages}
             websiteUrl={currentWebsiteUrl}
         />
         <PinViewModal
         pin={selectedPinForView}
-          isOpen={showPinViewModal}
+          isOpen={showPinViewModal} 
           onClose={() => setShowPinViewModal(false)}
           source="createAest"
           onLike={(pinId, isLiked) => console.log('Liked pin', pinId, isLiked)}

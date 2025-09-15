@@ -32,7 +32,13 @@ const SaveFromUrlModal = ({
         }
     };
 
-    // SaveFromUrlModal.jsx
+    const handleClose = () => {
+        // Очищуємо поле пошуку при закритті модалки
+        setUrl('');
+        setError('');
+        onClose();
+    };
+
     const handleSave = async () => {
         if (!url.trim()) {
             setError('Please enter a website URL');
@@ -67,7 +73,7 @@ const SaveFromUrlModal = ({
                 onImagesFound(images, processedUrl);
             }
     
-            setUrl(''); // Clear the input
+            setUrl('');
             onClose();
             onOpenSelectAests();
         } catch (err) {
@@ -93,7 +99,7 @@ const SaveFromUrlModal = ({
     return (
         <StyledDialog
             open={open}
-            onClose={onClose}
+            onClose={handleClose}
             maxWidth="sm"
             fullWidth
         >
@@ -108,7 +114,7 @@ const SaveFromUrlModal = ({
                     position: 'relative',
                 }}>
                     <IconButton
-                        onClick={onClose}
+                        onClick={handleClose}
                         sx={{ 
                             position: 'absolute',
                             top: '20px',

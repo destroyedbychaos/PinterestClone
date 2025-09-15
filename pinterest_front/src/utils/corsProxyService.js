@@ -80,18 +80,27 @@ export class WebsiteScraper {
             console.log('Converting image URL to file:', imageUrl);
             
             let response;
+            
+            // Always use backend proxy for external images to avoid CORS issues
             try {
+                console.log('Using backend proxy for image:', imageUrl);
+                response = await fetch(`/api/pins/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Proxy failed with status: ${response.status}`);
+                }
+            } catch (proxyError) {
+                console.error('Backend proxy failed:', proxyError);
+                // Try direct fetch as last resort (will likely fail for external images)
+                console.log('Attempting direct fetch as fallback');
                 response = await fetch(imageUrl, {
                     mode: 'cors',
                     credentials: 'omit'
                 });
-            } catch (corsError) {
-                console.log('Direct fetch failed, using backend proxy');
-                response = await fetch(`/api/proxy/image?url=${encodeURIComponent(imageUrl)}`);
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Direct fetch failed with status: ${response.status}`);
+                }
             }
 
             const blob = await response.blob();

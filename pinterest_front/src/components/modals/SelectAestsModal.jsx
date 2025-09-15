@@ -19,6 +19,7 @@ import { WebsiteScraper } from '../../utils/corsProxyService';
 const SelectAestsModal = ({ 
     open = false, 
     onClose = () => {}, 
+    onBack = () => {},
     onSave = () => {},
     scrapedImages = [],
     websiteUrl = ''
@@ -26,16 +27,18 @@ const SelectAestsModal = ({
     const [selectedAests, setSelectedAests] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [scraper] = useState(new WebsiteScraper());
-    const [imagesWithHeights, setImagesWithHeights] = useState([]);
 
-    const calculateImageHeight = (image, baseHeight = 200) => {
-        if (image.width && image.height && image.width > 0 && image.height > 0) {
-            const aspectRatio = image.height / image.width;
-            return Math.max(150, Math.min(400, baseHeight + (aspectRatio - 1) * 100));
-        }
-        return baseHeight + Math.floor(Math.random() * 150); // Random height for variety
+    const handleClose = () => {
+        setSelectedAests([]);
+        onClose();
     };
-    
+
+    const handleBack = () => {
+        setSelectedAests([]);
+        if (onBack) {
+            onBack();
+        }
+    };
 
     const handleAestToggle = (aestId) => {
         setSelectedAests(prev => {
@@ -43,13 +46,12 @@ const SelectAestsModal = ({
                 return prev.filter(id => id !== aestId);
             }
             if (prev.length >= 10) {
-                return prev; // Limit to 10 images
+                return prev;
             }
             return [...prev, aestId];
         });
     };
-
-    // SelectAestsModal.jsx
+    
     const handleSave = async () => {
         if (selectedAests.length === 0) return;
     
@@ -61,23 +63,22 @@ const SelectAestsModal = ({
             
             const fileConversions = selectedImagesData.map(async (img) => {
                 try {
-                    // Create a preview URL for immediate display
                     const previewUrl = await scraper.createPreviewUrl(img.url);
                     const domain = websiteUrl.replace(/https?:\/\/(www\.)?/, '').split('/')[0];
                     
                     return {
                         id: img.id,
                         name: `image_${img.id}`,
-                        size: 0, // Will be determined when file is actually created
+                        size: 0,
                         preview: previewUrl,
-                        file: null, // Will be created later when needed
+                        file: null,
                         title: '',
                         description: img.alt || `Image from ${domain}`,
                         link: websiteUrl,
                         hashtags: `${domain.split('.')[0]}`,
                         hasStoredFile: false,
-                        originalUrl: img.url, // Keep original URL for backend processing
-                        isFromWebsite: true // Flag to identify website images
+                        originalUrl: img.url,
+                        isFromWebsite: true
                     };
                 } catch (error) {
                     console.error(`Failed to process image ${img.id}:`, error);
@@ -97,7 +98,6 @@ const SelectAestsModal = ({
             
         } catch (err) {
             console.error('Error saving images:', err);
-            // Handle error appropriately in your UI
         } finally {
             setIsLoading(false);
         }
@@ -113,7 +113,7 @@ const SelectAestsModal = ({
         onClose={onClose}
         maxWidth="sm"
         fullWidth
-        dialogwidth={'1050px'}
+        dialogwidth={'1000px'}
         >
             <DialogContent sx={{ p: 0, textAlign: 'center', width: '100%' }}>
                 <Box sx={{ 
@@ -122,13 +122,13 @@ const SelectAestsModal = ({
                     alignItems: 'center', 
                     gap: '24px',
                     width: '100%',
-                    padding: '40px',
+                    padding: '30px',
                     position: 'relative',
                     maxHeight: '80vh',
                     overflow: 'hidden'
                 }}>
                     <IconButton
-                        onClick={onClose}
+                        onClick={handleClose}
                         sx={{ 
                             position: 'absolute',
                             top: '20px',
@@ -143,14 +143,18 @@ const SelectAestsModal = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        paddingRight:'55%'
+                        paddingRight:'50%',
+                        paddingBottom:'10px',
                     }}>
                         <Button 
-                            onClick={onClose}
+                            onClick={handleBack}
                             sx={{ 
                                 minWidth: 'auto', 
                                 pr: 3, 
-                                color: '#000D17', 
+                                color: '#000D17',
+                                '& .MuiSvgIcon-root': {
+                                    fontSize: '32px'
+                                }
                             }}
                         >
                             <ArrowBackIcon/>
@@ -229,6 +233,10 @@ const SelectAestsModal = ({
                     <ContinueButton
                         onClick={handleSave}
                         disabled={!isStepValid || isLoading}
+                        sx={{
+                            width: '460px',
+                            height: '58px',
+                        }}
                     >
                         {isLoading ? (
                             <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />

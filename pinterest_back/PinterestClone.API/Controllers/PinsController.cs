@@ -1078,22 +1078,148 @@ namespace PinterestClone.API.Controllers
         }
 
         [HttpGet("proxy-image")]
+        [AllowAnonymous]
         public async Task<IActionResult> ProxyImage([FromQuery] string url)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return BadRequest("URL is required");
 
-            using var httpClient = new HttpClient();
+            if (!IsValidImageProxyUrl(url, out string errorMessage))
+                return BadRequest(errorMessage);
+
+            using var httpClient = CreateSecureHttpClient();
+
             try
             {
-                var bytes = await httpClient.GetByteArrayAsync(url);
-                var contentType = "image/jpeg";
-                return File(bytes, contentType);
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                var response = await httpClient.GetAsync(url, cts.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest($"Failed to fetch image. Status code: {response.StatusCode}");
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType;
+
+                if (!IsValidImageContentType(contentType))
+                {
+                    return BadRequest("URL does not point to a valid image");
+                }
+
+                var imageBytes = await response.Content.ReadAsByteArrayAsync(cts.Token);
+
+                const int maxImageSize = 10 * 1024 * 1024;
+                if (imageBytes.Length > maxImageSize)
+                {
+                    return BadRequest("Image is too large");
+                }
+
+                Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                Response.Headers.Add("Access-Control-Allow-Methods", "GET");
+                Response.Headers.Add("Cache-Control", "public, max-age=3600");
+
+                return File(imageBytes, contentType ?? "image/jpeg");
             }
-            catch
+            catch (OperationCanceledException)
             {
-                return BadRequest("Failed to fetch image");
+                return BadRequest("Request timeout while fetching image");
             }
+            catch (HttpRequestException ex)
+            {
+                return BadRequest($"Failed to fetch image: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error proxying image from {url}: {ex}");
+                return BadRequest("An error occurred while fetching the image");
+            }
+        }
+
+        /// <summary>
+        /// Validates if URL is safe for image proxying
+        /// </summary>
+        private bool IsValidImageProxyUrl(string url, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            try
+            {
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    errorMessage = "Invalid URL format";
+                    return false;
+                }
+
+                if (uri.Scheme != "http" && uri.Scheme != "https")
+                {
+                    errorMessage = "Only HTTP and HTTPS URLs are allowed";
+                    return false;
+                }
+
+                if (IsLocalAddress(uri.Host))
+                {
+                    errorMessage = "Access to local addresses is not allowed";
+                    return false;
+                }
+
+                // Additional security: check for known image hosting domains or patterns
+                var host = uri.Host.ToLower();
+                var allowedImageHosts = new[]
+                {
+            "i.pinimg.com",
+            "images.unsplash.com",
+            "cdn.pixabay.com",
+            "images.pexels.com",
+            // Add more trusted image hosting domains as needed
+        };
+
+                // For Pinterest specifically, allow pinimg.com subdomains
+                bool isAllowedHost = allowedImageHosts.Contains(host) ||
+                                   host.EndsWith(".pinimg.com") ||
+                                   host.EndsWith(".unsplash.com") ||
+                                   host.EndsWith(".pexels.com");
+
+                if (!isAllowedHost)
+                {
+                    // For other domains, do additional validation
+                    var path = uri.AbsolutePath.ToLower();
+                    var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+
+                    if (!validImageExtensions.Any(ext => path.EndsWith(ext)))
+                    {
+                        errorMessage = "URL does not appear to point to an image file";
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"URL validation error: {ex.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validates if content type is a valid image type
+        /// </summary>
+        private bool IsValidImageContentType(string contentType)
+        {
+            if (string.IsNullOrEmpty(contentType))
+                return false;
+
+            var validImageTypes = new[]
+            {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    };
+
+            return validImageTypes.Contains(contentType.ToLower());
         }
 
     }
