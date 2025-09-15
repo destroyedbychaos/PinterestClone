@@ -60,14 +60,13 @@ const CreateAest = () => {
       refetch: refetchBoards
     } = useGetUserBoardsQuery(
       {
-        username: user?.username || user?.email,
+        userId: user?.id || user?.userId, // Use user ID instead of username
       },
       {
-        skip: !user || (!user.username && !user.email),
+        skip: !user || (!user.id && !user.userId), // Skip if no user ID
         refetchOnMountOrArgChange: true
       }
     );
-
     const [createBoard, { 
       isLoading: isCreatingBoard,
       isSuccess: isBoardCreated,
@@ -84,9 +83,22 @@ const CreateAest = () => {
   
     const isFormValid = uploadedFiles.length > 0 && 
       uploadedFiles[selectedImageIndex]?.title?.trim() && 
-      uploadedFiles[selectedImageIndex]?.description?.trim() && 
-      uploadedFiles[selectedImageIndex]?.link?.trim() && 
       uploadedFiles[selectedImageIndex]?.hashtags?.trim();
+
+      useEffect(() => {
+        console.log('Boards Debug Info:', {
+          user,
+          username: user?.username,
+          email: user?.email,
+          boardsLoading,
+          boardsError,
+          boardsErrorDetails,
+          boardsData,
+          boards: boards?.length
+        });
+      }, [user, boardsLoading, boardsError, boardsData, boards]);
+      
+
 
     // Toast helper function
     const showToast = (message, severity = 'info') => {
@@ -353,7 +365,7 @@ const CreateAest = () => {
       setSelectedImageIndex(index);
       if (currentStep === 2) {
         const file = uploadedFiles[index];
-        if (!file.title || !file.description || !file.link || !file.hashtags) {
+        if (!file.title || !file.hashtags) {
           setCurrentStep(1);
         }
       }
@@ -375,7 +387,10 @@ const CreateAest = () => {
     };
   
     const handleNext = () => {
-      if (isFormValid) {
+      const currentFile = uploadedFiles[selectedImageIndex];
+      const isValid = currentFile?.title?.trim() && currentFile?.hashtags?.trim();
+      
+      if (isValid) {
         setCurrentStep(2);
       }
     };
@@ -455,9 +470,9 @@ const CreateAest = () => {
 
     const handlePublish = async () => {
       const fileInfo = uploadedFiles[selectedImageIndex];
-      
-      if (!fileInfo || !fileInfo.title || !fileInfo.description || !fileInfo.hashtags) {
-        showToast("Please fill all required fields", 'warning');
+  
+      if (!fileInfo || !fileInfo.title || !fileInfo.hashtags) {
+        showToast("Please fill all required fields (title and hashtags)", 'warning');
         setCurrentStep(1);
         return;
       }
