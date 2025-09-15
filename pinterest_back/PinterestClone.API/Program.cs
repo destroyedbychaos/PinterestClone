@@ -38,6 +38,7 @@ using System.Text;
 using System;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using PinterestClone.BLL.MappingProfiles;
 using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.FileBlobService;
@@ -132,7 +133,6 @@ builder.Services.AddAuthentication(options =>
     
 });
 
-//Add services and repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
@@ -195,9 +195,32 @@ if (app.Environment.IsDevelopment())
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()
-    .AllowAnyHeader());
+    .AllowAnyHeader()
+    .SetIsOriginAllowed(_ => true));
 
-app.UseStaticFiles();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    await next();
+});
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+       
+        ctx.Context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        ctx.Context.Response.Headers.Add("Access-Control-Allow-Headers", "*");
+        
+        if (ctx.File.Name.EndsWith(".png") || ctx.File.Name.EndsWith(".jpg") || 
+            ctx.File.Name.EndsWith(".jpeg") || ctx.File.Name.EndsWith(".gif") || 
+            ctx.File.Name.EndsWith(".webp"))
+        {
+            ctx.Context.Response.Headers.Add("Cache-Control", "public, max-age=86400");
+        }
+    }
+});
 
 app.UseHttpsRedirection();
 

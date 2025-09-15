@@ -40,12 +40,20 @@ const SimpleHeader = ({ title }) => {
   return (
     <div className="flex items-center justify-between w-full pt-8 bg-transparent md:flex-col md:items-stretch md:pt-6 md:gap-3">
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", paddingRight:'40px',paddingTop:'10px' }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", paddingRight:'40px',paddingTop:'10px'  }}>
 
-            <Box sx={{paddingLeft:'10px' }}>
+            <Box sx={{paddingLeft:'85px' }}>
             <h1
                 className="text-black font-bold text-5xl leading-normal md:text-center"
-                style={{ fontFamily: "Geologica, sans-serif" }}
+                style={{ fontFamily: "Geologica, sans-serif",
+            color: "var(--Dark-900, #000D17)",
+            textAlign: "center",
+            fontFamily: "Geologica, sans-serif",
+            fontSize: "51px",
+            fontStyle: "normal",
+            fontWeight: 700,
+            lineHeight: "normal",
+          }}
             >
                 {title || "Create Aest"}
             </h1>
@@ -67,7 +75,7 @@ const SimpleHeader = ({ title }) => {
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <span className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-50 text-gray-500 text-base font-semibold flex-shrink-0">
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eaeff9', borderRadius: '50%', width: 48, height: 48, color: '#6b7280', fontSize: '16px', fontWeight: 600 }}>
                 {getUserAvatarInitial(currentUser)}
               </span>
             )}

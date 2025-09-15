@@ -106,6 +106,7 @@ const SearchFilter = () => {
       <Box sx={{ flex: 1 }}>
         <SearchHeader
           user={user}
+          title="Search"
           onSearch={setSearch}
           searchRef={searchRef}
           onFocusSearch={() => setShowSearchModal(true)}

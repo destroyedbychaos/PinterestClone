@@ -11,6 +11,10 @@ namespace PinterestClone.API.Controllers
 {
     /// <summary>
     /// Контролер для операцій зі сповіщеннями.
+    /// ---------------------------------------
+    /// Методи:
+    ///     -- Отримати всі сповіщення для користувача
+    ///     -- Позначити всі сповіщення користувача як прочитані
     /// </summary>
     [Authorize]
     [Route("api/[controller]")]
@@ -63,9 +67,6 @@ namespace PinterestClone.API.Controllers
             var notifications = await notificationsQuery.ToListAsync();
             return Ok(notifications);
         }
-
-
-
 
         /// <summary>
         /// Позначає всі сповіщення користувача як прочитані.

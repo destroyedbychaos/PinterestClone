@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import "./DiscoverHeader.css";
 import ProfileHeader from "./ProfileHeader";
 
-const DiscoverHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch }) => {
+const DiscoverHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searchRef, onImageSearch, title }) => {
 
   return (
     <ProfileHeader
@@ -14,7 +14,7 @@ const DiscoverHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, sear
       onFocusSearch={onFocusSearch}
       searchRef={searchRef}
       onImageSearch={onImageSearch}
-      title="Discover"
+      title={title || "Discover"}
     />
   );
 };

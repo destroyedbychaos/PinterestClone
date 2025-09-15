@@ -198,8 +198,8 @@ const UserProfile = () => {
           setBoards([]);
         }
       } else if (activeTab === 'Created') {
-
-        const response = await fetch(`${API_BASE}/pins/user/${username}?pageNumber=1&pageSize=20`, {
+        const targetUserId = userProfile?.id;
+        const response = await fetch(`${API_BASE}/pins/user/${targetUserId}?pageNumber=1&pageSize=20`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (response.ok && isMounted) {
@@ -918,7 +918,7 @@ const UserProfile = () => {
             {["Aests", "Boards", "Created"].map((tab) => (
               <Button
                 key={tab}
-                onClick={() => !isBlocked && handleTabChange(tab)}
+                onClick={() => !isBlocked && handleTabChange(tab) }
                 variant="text"
                 disabled={isBlocked}
                 sx={{
@@ -1063,7 +1063,7 @@ const UserProfile = () => {
                 )}
               </>
             )}
-                     </Box>
+              </Box>
          </Box>
        </Box>
 

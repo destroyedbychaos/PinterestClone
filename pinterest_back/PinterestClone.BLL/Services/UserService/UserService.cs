@@ -39,6 +39,17 @@ namespace PinterestClone.BLL.Services.UserService
             _mapper = mapper;
         }
 
+        public async Task<ServiceResponse> GetAllUsers()
+        {
+            var users = _userManager.Users.ToList();
+
+            if (users == null || users.Count == 0)
+                return ServiceResponse.BadRequestResponse("No users found.");
+
+            var userDtos = _mapper.Map<List<UserProfileDto>>(users);
+
+            return ServiceResponse.OkResponse("Users found.", userDtos);
+        }
         public async Task<ServiceResponse> GetByIdAsync(string id, bool includeRoles = false)
         {
             var user = await _userRepository.GetByIdAsync(id);

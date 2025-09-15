@@ -24,6 +24,8 @@ import HistoryPage from "../pages/History/HistoryPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Notifications from "../pages/Notifications/Notifications.jsx";
 import CreateAest from "../pages/CreateAest/CreateAest.jsx";
+import SearchBoards from "../pages/Search/SearchBoards.jsx";
+import BoardPage from "../pages/Board/BoardPage.jsx";
 
 
 
@@ -79,6 +81,9 @@ const BasicRoute = () => {
             <Route path="/search-profile" element={<Layout />}>
                 <Route index element={<SearchProfile/>} />
             </Route>
+            <Route path="/search-boards" element={<Layout />}>
+                <Route index element={<SearchBoards/>} />
+            </Route>
             <Route path="/notifications" element={<Layout />}>
                 <Route index element={<Notifications/>} />
             </Route>
@@ -92,6 +97,10 @@ const BasicRoute = () => {
                 <Route index element={<UserProfile/>} />
             </Route>
             
+            <Route path="/board/:boardId" element={<Layout />}>
+                <Route index element={<BoardPage/>} />
+            </Route>
+
             <Route path="/settings" element={
                 <ProtectedRoute>
                     <LayoutSettings />
