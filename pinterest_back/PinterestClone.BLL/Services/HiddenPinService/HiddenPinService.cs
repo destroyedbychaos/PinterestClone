@@ -86,6 +86,42 @@ namespace PinterestClone.BLL.Services.HiddenPinService
             }
         }
 
+
+        public async Task<ServiceResponse> UnhidePinAsync(string pinId, string userId)
+        {
+            try
+            {
+                Console.WriteLine($"UnhidePinAsync called with pinId: '{pinId}', userId: '{userId}'");
+                
+                if (!Guid.TryParse(pinId, out var pinGuid))
+                {
+                    Console.WriteLine($"Failed to parse pinId as GUID: '{pinId}'");
+                    return ServiceResponse.BadRequestResponse("Invalid pin ID format");
+                }
+
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return ServiceResponse.BadRequestResponse("User not found");
+                }
+
+                var result = await _hiddenPinRepository.DeleteByPinAndUserAsync(pinGuid, userId);
+                
+                if (result)
+                {
+                    return ServiceResponse.OkResponse("Pin unhidden successfully");
+                }
+                else
+                {
+                    return ServiceResponse.BadRequestResponse("Pin was not hidden for this user");
+                }
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse.InternalServerErrorResponse($"Error unhiding pin: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Отримує список усіх прихованих пінів для користувача.
         /// </summary>

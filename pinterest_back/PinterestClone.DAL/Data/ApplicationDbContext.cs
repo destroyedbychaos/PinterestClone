@@ -25,6 +25,9 @@ namespace PinterestClone.DAL.Data
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<HiddenPin> HiddenPins { get; set; }
+        public DbSet<SocialPermissions> SocialPermissions { get; set; }
+        public DbSet<BlockedUser> BlockedUsers { get; set; }
+        public DbSet<KeywordFilter> KeywordFilters { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<PinViewHistory> PinViewHistories { get; set; }
@@ -251,6 +254,47 @@ namespace PinterestClone.DAL.Data
 
             builder.Entity<PinViewHistory>()
                 .HasIndex(pvh => pvh.ViewedAt);
+
+            builder.Entity<SocialPermissions>(entity =>
+            {
+                entity.HasKey(sp => sp.Id);
+                entity.HasOne(sp => sp.User)
+                    .WithMany()
+                    .HasForeignKey(sp => sp.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(sp => sp.UserId)
+                    .IsUnique();
+            });
+
+            builder.Entity<BlockedUser>(entity =>
+            {
+                entity.HasKey(bu => bu.Id);
+                
+                entity.HasOne(bu => bu.Blocker)
+                    .WithMany()
+                    .HasForeignKey(bu => bu.BlockerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(bu => bu.Blocked)
+                    .WithMany()
+                    .HasForeignKey(bu => bu.BlockedId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(bu => new { bu.BlockerId, bu.BlockedId })
+                    .IsUnique();
+            });
+
+            builder.Entity<KeywordFilter>(entity =>
+            {
+                entity.HasKey(kf => kf.Id);
+                entity.HasOne(kf => kf.User)
+                    .WithMany()
+                    .HasForeignKey(kf => kf.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(kf => kf.UserId);
+            });
         }
     }
 } 

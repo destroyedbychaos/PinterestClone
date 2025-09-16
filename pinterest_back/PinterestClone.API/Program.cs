@@ -34,9 +34,12 @@ using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
 using PinterestClone.DAL.Repositories.HiddenPinRepository;
 using PinterestClone.DAL.Repositories.PinViewHistoryRepository;
+using PinterestClone.BLL.Services.SocialPermissionsService;
+using PinterestClone.DAL.Repositories.SocialPermissionsRepository;
 using System.Text;
 using System;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using PinterestClone.BLL.MappingProfiles;
@@ -45,7 +48,12 @@ using PinterestClone.BLL.Services.FileBlobService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors();
@@ -158,6 +166,8 @@ builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
 builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
+builder.Services.AddScoped<ISocialPermissionsRepository, SocialPermissionsRepository>();
+builder.Services.AddScoped<ISocialPermissionsService, SocialPermissionsService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddScoped<IUserService, UserService>();

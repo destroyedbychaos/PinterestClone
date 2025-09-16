@@ -37,6 +37,19 @@ namespace PinterestClone.DAL.Repositories.HiddenPinRepository
             return result > 0;
         }
 
+        public async Task<bool> DeleteByPinAndUserAsync(Guid pinId, string userId)
+        {
+            var hiddenPin = await _context.HiddenPins
+                .FirstOrDefaultAsync(hp => hp.PinId == pinId && hp.UserId == userId);
+            
+            if (hiddenPin == null)
+                return false;
+
+            _context.HiddenPins.Remove(hiddenPin);
+            var result = await _context.SaveChangesAsync();
+            return result > 0;
+        }
+
         public async Task<IEnumerable<Guid>> GetHiddenPinIdsForUserAsync(string userId)
         {
             return await _context.HiddenPins

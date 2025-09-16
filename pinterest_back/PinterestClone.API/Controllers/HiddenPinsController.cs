@@ -41,10 +41,19 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
-        /// <summary>
-        /// Отримує список ID прихованих пінів для користувача.
-        /// </summary>
-        /// <returns><see cref="IActionResult"/> з колекцією ідентифікаторів прихованих пінів або повідомленням про помилку.</returns>
+        [HttpDelete("unhide/{pinId}")]
+        public async Task<IActionResult> UnhidePin(string pinId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _hiddenPinService.UnhidePinAsync(pinId, userId);
+            return GetResult(result);
+        }
+
         [HttpGet("hidden-ids")]
         public async Task<IActionResult> GetHiddenPinIds()
         {
