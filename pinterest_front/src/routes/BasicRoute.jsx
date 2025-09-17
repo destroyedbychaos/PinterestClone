@@ -16,7 +16,6 @@ import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
 import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
 import SearchFilter from "../pages/Search/SearchFilter.jsx";
 import SearchProfile from "../pages/Search/SearchProfile.jsx";
-import UserProfile from "../pages/Profile/UserProfile.jsx";
 import SettingsPage from "../pages/Settings/SettingsPage.jsx";
 import AccountDeactivation from "../pages/Settings/AccountDeactivation.jsx";
 import AccountDeletion from "../pages/Settings/AccountDeletion.jsx";
@@ -91,10 +90,6 @@ const BasicRoute = () => {
 
             <Route path="/create-aest" element={<Layout />}>
                 <Route index element={<CreateAest/>} />
-            </Route>
-
-            <Route path="/user/:username" element={<LayoutWithoutFooter />}>
-                <Route index element={<UserProfile/>} />
             </Route>
             
             <Route path="/board/:boardId" element={<Layout />}>

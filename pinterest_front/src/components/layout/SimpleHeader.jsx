@@ -79,7 +79,7 @@ const SimpleHeader = ({ title }) => {
                 {getUserAvatarInitial(currentUser)}
               </span>
             )}
-            <span className="text-lg font-bold text-gray-900 ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
+            <span className="text-lg font-bold text-gray-900 ml-2 whitespace-nowrap overflow-hidden text-ellipsis" >
               {getUserDisplayName(currentUser)}
             </span>
 

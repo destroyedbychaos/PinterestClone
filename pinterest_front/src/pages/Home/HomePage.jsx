@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -33,6 +33,9 @@ const HomePage = () => {
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [showPinViewModal, setShowPinViewModal] = useState(false);
   const [selectedPin, setSelectedPin] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -45,24 +48,68 @@ const HomePage = () => {
     }
   }, []);
 
+  const displayedPins = (searchResults.length > 0 ? searchResults : pins).filter((pin) => {
+    const pinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
+    return !hiddenPinIds.includes(pinId);
+  });
 
+  const mappedPins = useMemo(() => {
+    return displayedPins.map((pin) => {
+      let image = pin.ImageUrl || pin.imageUrl || pin.image;
+      if (image && !/^https?:\/\//.test(image)) {
+        if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\/]/, '');
+      }
+      return {
+        id: pin.Id || pin.id,
+        image,
+        title: pin.Title || pin.title,
+        description: pin.Description || pin.description,
+        author: pin.UserName || pin.userName || pin.author,
+        tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
+      };
+    });
+  }, [displayedPins]);
 
-  useEffect(() => {
+  const fetchPins = async (page, reset = false) => {
+    const scrollY = window.scrollY;
     setLoading(true);
-    let url = `${API_BASE}/pins?pageNumber=1&pageSize=40`;
+    let url = `${API_BASE}/pins?pageNumber=${page}&pageSize=100`;
     const tagParam = activeTag ? activeTag.trim().toLowerCase() : '';
     if (tagParam) url += `&tags=${encodeURIComponent(tagParam)}`;
     if (search) url += `&searchTerm=${encodeURIComponent(search)}`;
-    
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        const foundPins = data.Pins || data.pins || [];
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const foundPins = data.Pins || data.pins || [];
+
+      if (reset) window.scrollTo(0, scrollY);
+      if (reset) {
         setPins(foundPins);
-      })
-      .catch(() => setPins([]))
-      .finally(() => setLoading(false));
+      } else {
+        setPins((prev) => [...prev, ...foundPins]);
+      }
+
+      setHasMore(foundPins.length >= 40);
+    } catch (e) {
+      console.error(e);
+      if (reset) setPins([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    setPageNumber(1);
+    fetchPins(1, true);
   }, [activeTag, search]);
+
+  useEffect(() => {
+    if (pageNumber > 1) {
+      fetchPins(pageNumber);
+    }
+  }, [pageNumber]);
 
   useEffect(() => {
     fetch(`${API_BASE}/pins/all-tags`)
@@ -128,11 +175,6 @@ const HomePage = () => {
       })
     );
   };
-
-  const displayedPins = (searchResults.length > 0 ? searchResults : pins).filter((pin) => {
-    const pinId = pin.Id || pin.id || pin.Id?.toString() || pin.id?.toString();
-    return !hiddenPinIds.includes(pinId);
-  });
 
   return (
     <Container maxWidth={false} sx={{ padding: 0 }}>
@@ -204,26 +246,20 @@ const HomePage = () => {
             </div>
           ) : (
             <MasonryGrid
-              pins={displayedPins.map((pin) => {
-                let image = pin.ImageUrl || pin.imageUrl || pin.image;
-                if (image && !/^https?:\/\//.test(image)) {
-                  if (!image.startsWith('/')) image = '/images/' + image.replace(/^.*[\\/]/, '');
-                }
-                return {
-                  id: pin.Id || pin.id,
-                  image,
-                  title: pin.Title || pin.title,
-                  description: pin.Description || pin.description,
-                  author: pin.UserName || pin.userName || pin.author,
-                  tags: (pin.Tags || pin.tags || '').split(',').map((t) => t.trim()).filter(Boolean),
-                };
-              })}
+              pins={mappedPins}
               onPinHidden={handlePinHidden}
               onPinClick={handlePinClick}
             />
           )}
+
+          {refreshing && (
+            <div style={{ textAlign: 'center', margin: '20px 0' }}>
+              <span>Refreshing...</span>
+            </div>
+          )}
         </Box>
       </Box>
+
 
       <PinViewModal
         pin={selectedPin}
