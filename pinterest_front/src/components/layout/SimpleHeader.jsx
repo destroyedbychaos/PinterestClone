@@ -94,7 +94,8 @@ const SimpleHeader = ({ title }) => {
                   Currently in
                 </div>
 
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-4 w-full"
+                onClick={() => navigate("/profile-boards")}>
                   {hasUserAvatar(currentUser) ? (
                     <img
                       src={getUserAvatarUrl(currentUser)}

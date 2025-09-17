@@ -113,7 +113,8 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
             {showMenu && (
               <div className="profile-dropdown-menu" ref={menuRef} tabIndex={-1}>
                 <div className="profile-dropdown-menu__current">Currently in</div>
-                <div className="profile-dropdown-menu__user">
+                <div className="profile-dropdown-menu__user"
+                onClick={() => navigate("/profile-boards")}>
                   {hasUserAvatar(currentUser) ? (
                     <img src={getUserAvatarUrl(currentUser)} alt="avatar" className="profile-dropdown-menu__avatar" />
                   ) : (
