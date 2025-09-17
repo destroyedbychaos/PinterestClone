@@ -20,6 +20,7 @@
     </PackageReference>
 >>>>>>> dd25c31 (configuring entity)
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Nethereum.Signer" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

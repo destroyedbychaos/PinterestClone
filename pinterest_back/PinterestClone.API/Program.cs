@@ -32,10 +32,11 @@ using PinterestClone.DAL.Repositories.PinReportRepository;
 using PinterestClone.DAL.Repositories.ProfileReportRepository;
 using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
-using PinterestClone.DAL.Repositories.HiddenPinRepository;
-using PinterestClone.DAL.Repositories.PinViewHistoryRepository;
-using PinterestClone.BLL.Services.SocialPermissionsService;
-using PinterestClone.DAL.Repositories.SocialPermissionsRepository;
+using PinterestClone.BLL.Services.Web3AuthService;
+using PinterestClone.BLL.Services.UserService;
+using PinterestClone.BLL.Services.NFTService;
+using PinterestClone.DAL.Repositories.NFTRepository;
+using PinterestClone.DAL.Repositories.UserFavoritesRepository;
 using System.Text;
 using System;
 using System.Reflection;
@@ -164,24 +165,11 @@ builder.Services.AddScoped<IUserBlockService, UserBlockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
-builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
-builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
-builder.Services.AddScoped<ISocialPermissionsRepository, SocialPermissionsRepository>();
-builder.Services.AddScoped<ISocialPermissionsService, SocialPermissionsService>();
-builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
-builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
+builder.Services.AddScoped<IWeb3AuthService, Web3AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddSingleton<IFileService, FileService>();
-
-//AutoMapper
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddMaps(typeof(PinMappingProfile).Assembly);
-    cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
-    cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
-    cfg.AddMaps(typeof(UserMappingProfile).Assembly);
-    cfg.AddMaps(typeof(PinViewHistoryMappingProfile).Assembly);
-});
+builder.Services.AddScoped<INFTService, NFTService>();
+builder.Services.AddScoped<INFTRepository, NFTRepository>();
+builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
 
 var app = builder.Build();
 

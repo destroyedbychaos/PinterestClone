@@ -3,118 +3,134 @@ using PinterestClone.DAL.Models;
 
 namespace PinterestClone.BLL.DTOs
 {
-    /// <summary>
-    /// Data Transfer Object для сповіщення.
-    /// </summary>
+
     public class NotificationDto
     {
-        /// <summary>
-        /// ID сповіщення.
-        /// </summary>
+
         public int Id { get; set; }
         
-        /// <summary>
-        /// Контент сповіщення.
-        /// </summary>
+
         [Required]
         public string Message { get; set; } = null!;
-        
-        /// <summary>
-        /// Тип сповіщення.
-        /// </summary>
+
         [Required]
         public NotificationType Type { get; set; }
-        
-        /// <summary>
-        /// Коли створене сповіщення.
-        /// </summary>
+
         public DateTime CreatedAt { get; set; }
         
-        /// <summary>
-        /// Статус сповіщення.
-        /// </summary>
+
         public NotificationStatus Status { get; set; }
     }
 
-    /// <summary>
-    /// Data Transfer Object для створення сповіщення.
-    /// </summary>
+
     public class CreateNotificationDto
     {
-        /// <summary>
-        /// ID користувача.
-        /// </summary>
+
         public string UserId { get; set; } = null!;
 
-        /// <summary>
-        /// Вміст сповіщення.
-        /// </summary>
+
         public string Message { get; set; } = null!;
 
-        /// <summary>
-        /// Назва сповіщення.
-        /// </summary>
         public string? Title { get; set; }
 
-        /// <summary>
-        /// Тип сповіщення.
-        /// </summary>
+
         public NotificationType Type { get; set; }
 
-        /// <summary>
-        /// Коли надіслати сповіщення.
-        /// </summary>
+
         public DateTime? ScheduledAt { get; set; }
 
-        /// <summary>
-        /// Чи ввімкнені СМС-сповіщення у користувача.
-        /// </summary>
+
         public bool IsSmsEnabled { get; set; } = true;
 
-        /// <summary>
-        /// Чи ввімкнені email-сповіщення у користувача.
-        /// </summary>
+
         public bool IsEmailEnabled { get; set; } = false;
 
-        /// <summary>
-        /// Чи ввімкнені in-app сповіщення у користувача.
-        /// </summary>
         public bool IsInAppEnabled { get; set; } = true;
 
-        /// <summary>
-        /// ID піна, про який є сповіщення.
-        /// </summary>
         public Guid? PinId { get; set; }
 
-        /// <summary>
-        /// ID дошки, про яку є сповіщення.
-        /// </summary>
         public Guid? BoardId { get; set; }
 
-        /// <summary>
-        /// ID коментаря, про який є сповіщення.
-        /// </summary>
         public Guid? CommentId { get; set; }
     }
 
-    /// <summary>
-    /// Data Transfer Object для налаштувань сповіщень.
-    /// </summary>
     public class NotificationSettingsDto
     {
-        /// <summary>
-        /// Чи ввімкнені СМС-сповіщення у користувача.
-        /// </summary>
+
+        public bool SavesPush { get; set; } = true;
+        public bool SavesInApp { get; set; } = true;
+        
+        public bool LikesPush { get; set; } = true;
+        public bool LikesInApp { get; set; } = true;
+        
+        public bool CommentsPush { get; set; } = true;
+        public bool CommentsInApp { get; set; } = true;
+
+        public bool CommentInteractionsPush { get; set; } = true;
+        public bool CommentInteractionsInApp { get; set; } = true;
+        
+        public bool MentionsPush { get; set; } = true;
+        public bool MentionsInApp { get; set; } = true;
+        
+        public bool RemindersPush { get; set; } = false;
+        public bool RemindersInApp { get; set; } = false;
+
+        public bool NewAestsFromFollowedPush { get; set; } = true;
+        public bool NewAestsFromFollowedInApp { get; set; } = false;
+        
+        public bool NewAestsFromSuggestedPush { get; set; } = false;
+        public bool NewAestsFromSuggestedInApp { get; set; } = false;
+
+        public bool BoardRecommendationsPush { get; set; } = true;
+        public bool BoardRecommendationsInApp { get; set; } = true;
+        public bool BoardRecommendationsEmail { get; set; } = false;
+        
+        public bool SearchRecommendationsPush { get; set; } = true;
+        public bool SearchRecommendationsInApp { get; set; } = true;
+        public bool SearchRecommendationsEmail { get; set; } = false;
+
+        public bool AestsInspiredByActivityPush { get; set; } = false;
+        public bool AestsInspiredByActivityInApp { get; set; } = false;
+        public bool AestsInspiredByActivityEmail { get; set; } = false;
+        
+        public bool AestsPickedForYouPush { get; set; } = true;
+        public bool AestsPickedForYouInApp { get; set; } = true;
+        public bool AestsPickedForYouEmail { get; set; } = true;
+        
+        public bool PopularAestsPush { get; set; } = false;
+        public bool PopularAestsInApp { get; set; } = false;
+        public bool PopularAestsEmail { get; set; } = true;
+
+        public bool GroupBoardUpdatesPush { get; set; } = false;
+        public bool GroupBoardUpdatesInApp { get; set; } = false;
+        public bool GroupBoardUpdatesEmail { get; set; } = true;
+        
+        public bool GroupBoardInvitationsPush { get; set; } = true;
+        public bool GroupBoardInvitationsInApp { get; set; } = true;
+        public bool GroupBoardInvitationsEmail { get; set; } = false;
+        
+        public bool MessagesPush { get; set; } = true;
+        public bool MessagesInApp { get; set; } = true;
+
+        public bool AestifyAnnouncementsEmail { get; set; } = true;
+        public bool SurveysAndQuizzesEmail { get; set; } = true;
+        public bool ReportsAndViolationsEmail { get; set; } = true;
+
+        public bool PushEnabled { get; set; } = true;
+        public bool BrowserPushEnabled { get; set; } = true;
+        public bool InAppEnabled { get; set; } = true;
+        public bool EmailEnabled { get; set; } = false;
+
+
+        [Obsolete("Use PushEnabled instead")]
         public bool SmsNotificationsEnabled { get; set; }
 
-        /// <summary>
-        /// Чи ввімкнені email-сповіщення у користувача.
-        /// </summary>
+ 
+        [Obsolete("Use EmailEnabled instead")]
         public bool EmailNotificationsEnabled { get; set; }
 
-        /// <summary>
-        /// Чи ввімкнені In-App сповіщення у користувача.
-        /// </summary>
+
+        [Obsolete("Use InAppEnabled instead")]
         public bool InAppNotificationsEnabled { get; set; }
     }
-} 
+}       

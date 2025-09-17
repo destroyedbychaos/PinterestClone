@@ -58,25 +58,14 @@ const SearchBoards = () => {
             } catch {
               pins = [];
             }
-
             const previewPins = [...pins.slice(0, 4)];
-            while (previewPins.length < 4) {
-              previewPins.push({
-                id: `empty-${previewPins.length}`,
-                title: "",
-                description: "",
-                imageUrl: "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=",
-                author: "",
-                tags: "",
-              });
-            }
-
+            
             return {
               id: b.id,
               title: b.name || "Untitled Board",
               description: b.description || "",
               ownerName: usersMap[b.userId] || "Unknown",
-              pins: previewPins,
+              pins: pins,
               updatedAt: b.updatedAt || Date.now(),
             };
           })

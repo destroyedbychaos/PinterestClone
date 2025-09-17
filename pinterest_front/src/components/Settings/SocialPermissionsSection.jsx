@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import socialPermissionsApi from '../../services/socialPermissionsApi';
 import KeywordFilterModal from './KeywordFilterModal';
 import BlacklistModal from './BlacklistModal';
-import SocialPermissionsTest from './SocialPermissionsTest';
 
 const RadioIcon = ({ selected }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -908,9 +907,6 @@ const SocialPermissionsSection = () => {
         open={showBlacklistModal} 
         onClose={() => setShowBlacklistModal(false)} 
       />
-      
-      {/* Тестовий компонент - видалити після тестування */}
-      <SocialPermissionsTest />
     </Box>
   );
 };

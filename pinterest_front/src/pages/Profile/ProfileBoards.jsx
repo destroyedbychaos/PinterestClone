@@ -1,23 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Box, Avatar, Button } from "@mui/material";
+import { Box, Avatar, Button, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+
 import ProfileHeader from "../../components/layout/ProfileHeader";
 import SideMenu from "../../components/layout/SideMenu";
 import MasonryGrid from "../../components/ui/MasonryGrid";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useNavigate } from "react-router-dom";
 import SavedPins from "../Saved/SavedPins.jsx";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { fetchSavedPins } from "../../utils/fetchSavedPins";
-import {apiUrl} from "../../env.js"
+import { apiUrl } from "../../env.js";
+
 const defaultBannerSvg = (
   <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
-  </svg>
-);
-
-const defaultAvatarSvg = (
-  <svg width="217" height="217" viewBox="0 0 217 217" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="209" height="209" rx="104.5" fill="#EAEFF9" stroke="white" strokeWidth="8"/>
   </svg>
 );
 
@@ -27,26 +23,22 @@ const ProfileBoards = () => {
   const authState = useSelector((state) => state.auth);
   const currentUser = useCurrentUser();
   const searchRef = useRef(null);
+  const navigate = useNavigate();
+  const token = useMemo(() => localStorage.getItem("token"), [authState?.token]);
 
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState("Boards");
-  const [pins, setPins] = useState([]);
-  const [loadingPins, setLoadingPins] = useState(false);
   const [boards, setBoards] = useState([]);
   const [loadingBoards, setLoadingBoards] = useState(false);
+  const [pins, setPins] = useState([]);
+  const [loadingPins, setLoadingPins] = useState(false);
   const [savedPins, setSavedPins] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [savedError, setSavedError] = useState("");
   const [showSavedOverlay, setShowSavedOverlay] = useState(false);
-
-  const navigate = useNavigate();
-  const token = useMemo(() => localStorage.getItem("token"), [authState?.token]);
-
-  const handleSearch = () => {
-    setShowSavedOverlay(true);
-  };
-
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
 
   useEffect(() => {
     if (currentUser) {
@@ -74,11 +66,84 @@ const ProfileBoards = () => {
   };
 
   useEffect(() => {
-    let isMounted = true;
-    const loadPins = async (userId) => {
+    const onProfileUpdate = () => refreshProfile();
+    window.addEventListener('profileUpdated', onProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', onProfileUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const fetchBoards = async (userId) => {
+      setLoadingBoards(true);
       try {
-        setLoadingPins(true);
-        const res = await fetch(`${API_BASE}/Pins/user/${userId}?pageNumber=1&pageSize=60`);
+        const boardsRes = await fetch(`${API_BASE}/Boards/user/${userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!boardsRes.ok) throw new Error("Failed to fetch boards");
+        const boardsData = await boardsRes.json();
+        const boardsRaw = boardsData.boards || boardsData.Boards || [];
+
+        const boardsWithPins = await Promise.all(
+          boardsRaw.map(async (b) => {
+            let pinsBoard = [];
+            try {
+              const pinsRes = await fetch(`${API_BASE}/Pins/board/${b.id}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (pinsRes.ok) {
+                const pinsData = await pinsRes.json();
+                pinsBoard = pinsData.pins || [];
+              }
+            } catch {}
+            return {
+              id: b.id,
+              title: b.name || "Untitled Board",
+              description: b.description || "",
+              pinsBoard,
+              updatedAt: b.updatedAt || Date.now(),
+            };
+          })
+        );
+
+        setBoards(boardsWithPins);
+        setResults(boardsWithPins);
+      } catch (err) {
+        console.error(err);
+        setBoards([]);
+        setResults([]);
+      } finally {
+        setLoadingBoards(false);
+      }
+    };
+
+    fetchBoards(profile.id);
+  }, [profile?.id, token]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults(boards);
+    } else {
+      setResults(
+        boards.filter(
+          (b) =>
+            b.title.toLowerCase().includes(query.toLowerCase()) ||
+            b.description.toLowerCase().includes(query.toLowerCase())
+        )
+      );
+    }
+  }, [query, boards]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    let isMounted = true;
+
+    const loadPins = async (userId) => {
+      setLoadingPins(true);
+      try {
+        const res = await fetch(`${API_BASE}/Pins/user/${userId}?pageNumber=1&pageSize=60`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error("Failed to load pins");
         const data = await res.json();
         const list = data?.Pins || data?.pins || [];
@@ -89,107 +154,12 @@ const ProfileBoards = () => {
         if (isMounted) setLoadingPins(false);
       }
     };
-    if (profile?.id) loadPins(profile.id);
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.id]);
+
+    loadPins(profile.id);
+    return () => { isMounted = false; };
+  }, [profile?.id, token]);
 
   const normalizedCreatedPins = useMemo(() => {
-      return pins.map((pin) => {
-        let image = pin.ImageUrl || pin.imageUrl || pin.image;
-        if (image && !/^https?:\/\//.test(image)) {
-          if (!image.startsWith("/")) image = "/images/" + image.replace(/^.*[\\/]/, "");
-        }
-        const rawTags = pin.Tags ?? pin.tags ?? '';
-        const tags = Array.isArray(rawTags)
-          ? rawTags.map((t) => String(t).trim()).filter(Boolean)
-          : String(rawTags || "")
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean);
-        return {
-          id: pin.Id || pin.id,
-          image,
-          title: pin.Title || pin.title,
-          description: pin.Description || pin.description,
-          author: pin.UserName || pin.userName || profile?.displayName || profile?.userName,
-          tags,
-        };
-      });
-    }, [pins, profile]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadBoards = async (userId) => {
-      try {
-        setLoadingBoards(true);
-        const res = await fetch(`${API_BASE}/Boards/user/${userId}?pageNumber=1&pageSize=50`);
-        if (!res.ok) throw new Error("Failed to load boards");
-        const data = await res.json();
-        const list = data?.Boards || data?.boards || [];
-        if (isMounted) setBoards(list);
-      } catch {
-        if (isMounted) setBoards([]);
-      } finally {
-        if (isMounted) setLoadingBoards(false);
-      }
-    };
-    if (profile?.id) loadBoards(profile.id);
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.id]);
-
-
-  useEffect(() => {
-    let active = true;
-    const run = async () => {
-      if (activeTab !== 'Aests') return;
-      try {
-        setLoadingSaved(true);
-        setSavedError('');
-        const token = localStorage.getItem('token');
-
-        const list = await fetchSavedPins(token, profile?.displayName || profile?.userName);
-        if (active) setSavedPins(list);
-      } catch (e) {
-        if (active) {
-          setSavedPins([]);
-          setSavedError(e.message || 'Error');
-        }
-      } finally {
-        if (active) setLoadingSaved(false);
-      }
-    };
-    run();
-    return () => { active = false; };
-  }, [activeTab, profile?.displayName, profile?.userName]);
-
-
-  useEffect(() => {
-    const onChanged = () => {
-      if (activeTab !== 'Aests') return;
-      const token = localStorage.getItem('token');
-      fetchSavedPins(token, profile?.displayName || profile?.userName)
-        .then(setSavedPins)
-        .catch(() => {});
-    };
-
-    window.addEventListener('savedPinsChanged', onChanged);
-    return () => window.removeEventListener('savedPinsChanged', onChanged);
-  }, [activeTab, profile?.displayName, profile?.userName]);
-
- 
-  useEffect(() => {
-    const onProfileUpdate = () => {
-      refreshProfile();
-    };
-    window.addEventListener('profileUpdated', onProfileUpdate);
-    return () => window.removeEventListener('profileUpdated', onProfileUpdate);
-  }, []);
-
-  const normalizedPins = useMemo(() => {
     return pins.map((pin) => {
       let image = pin.ImageUrl || pin.imageUrl || pin.image;
       if (image && !/^https?:\/\//.test(image)) {
@@ -213,15 +183,53 @@ const ProfileBoards = () => {
     });
   }, [pins, profile]);
 
+  useEffect(() => {
+    if (!profile) return;
+    if (activeTab !== 'Aests') return;
+
+    let active = true;
+
+    const loadSaved = async () => {
+      setLoadingSaved(true);
+      setSavedError('');
+      try {
+        const list = await fetchSavedPins(token, profile.displayName || profile.userName);
+        if (active) setSavedPins(list);
+      } catch (e) {
+        if (active) {
+          setSavedPins([]);
+          setSavedError(e.message || 'Error');
+        }
+      } finally {
+        if (active) setLoadingSaved(false);
+      }
+    };
+
+    loadSaved();
+    return () => { active = false; };
+  }, [activeTab, profile, token]);
+
+  useEffect(() => {
+    const onSavedChanged = () => {
+      if (activeTab !== 'Aests') return;
+      fetchSavedPins(token, profile?.displayName || profile?.userName)
+        .then(setSavedPins)
+        .catch(() => {});
+    };
+    window.addEventListener('savedPinsChanged', onSavedChanged);
+    return () => window.removeEventListener('savedPinsChanged', onSavedChanged);
+  }, [activeTab, profile, token]);
+
+  const handleBoardClick = (board) => navigate(`/board/${board.id}`);
+  const handleSearch = () => setShowSavedOverlay(true);
+
   const bannerUrl = profile?.bannerUrl;
   const avatarUrl = profile?.avatarUrl;
   const displayName = profile?.displayName || profile?.userName || "User";
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
-      <Box>
-        <SideMenu />
-      </Box>
+      <SideMenu />
 
       <Box sx={{ flex: 1 }}>
         <ProfileHeader
@@ -232,35 +240,29 @@ const ProfileBoards = () => {
         />
 
         <Box sx={{ bgcolor: "#fff", borderRadius: "16px", overflow: "hidden", mt: "30px" }}>
-                     <Box
-             sx={{
-               width: "98%",
-               height: 180,
-               borderTopLeftRadius: "40px",
-               borderTopRightRadius: "40px",
-               overflow: "hidden",
-               display: "flex",
-               alignItems: "center",
-               justifyContent: "center",
-               bgcolor: "#EAEFF9",
-             }}
-           >
-             {bannerUrl ? (
-               <Box
-                 component="img"
-                 src={bannerUrl}
-                 sx={{
-                   width: "100%",
-                   height: "100%",
-                   objectFit: "cover",
-                 }}
-               />
-             ) : (
-               <Box sx={{ transform: "scale(0.1)" }}>
-                 {defaultBannerSvg}
-               </Box>
-             )}
-           </Box>
+          <Box
+            sx={{
+              width: "98%",
+              height: 180,
+              borderTopLeftRadius: "40px",
+              borderTopRightRadius: "40px",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "#EAEFF9",
+            }}
+          >
+            {bannerUrl ? (
+              <Box
+                component="img"
+                src={bannerUrl}
+                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <Box sx={{ transform: "scale(0.1)" }}>{defaultBannerSvg}</Box>
+            )}
+          </Box>
 
           <Box sx={{ position: "relative", px: 3, pb: 2, mt: -10 }}>
             <Box
@@ -273,24 +275,24 @@ const ProfileBoards = () => {
                 boxShadow: 1,
               }}
             >
-                             {avatarUrl ? (
-                 <Avatar
-                   src={avatarUrl}
-                   alt="avatar"
-                   sx={{ width: 140, height: 140, borderRadius: "50%" }}
-                 />
-               ) : (
-                 <Box 
-                   sx={{ 
-                     width: 140, 
-                     height: 140, 
-                     borderRadius: "50%",
-                     bgcolor: "#EAEFF9",
-                     border: "4px solid white",
-                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-                   }}
-                 />
-               )}
+              {avatarUrl ? (
+                <Avatar
+                  src={avatarUrl}
+                  alt="avatar"
+                  sx={{ width: 140, height: 140, borderRadius: "50%" }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: 140,
+                    height: 140,
+                    borderRadius: "50%",
+                    bgcolor: "#EAEFF9",
+                    border: "4px solid white",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
+                />
+              )}
             </Box>
 
             <Box
@@ -305,21 +307,23 @@ const ProfileBoards = () => {
                 p: 2,
               }}
             >
-                             <Box sx={{ ml: 24, flex: 1 }}>
-                 <Box sx={{ fontSize: 20, fontWeight: 700 }}>{profile?.userName || displayName}</Box>
-                 <Box sx={{ color: "#6b7280", fontSize: 14, mt: 0.5, maxWidth: "400px" }}>
-                   {profile?.bio || "Looking for inspiration..."}
-                 </Box>
-                 <Box sx={{ color: "#111827", fontSize: 14, mt: 0.5 }}>
-                   <Box component="span" sx={{ fontWeight: 600 }}>
-                     {profile?.followersCount ?? 0} followers
-                   </Box>{" "}
-                   ·{" "}
-                   <Box component="span" sx={{ fontWeight: 600 }}>
-                     {profile?.followingCount ?? 0} following
-                   </Box>
-                 </Box>
-               </Box>
+              <Box sx={{ ml: 24, flex: 1 }}>
+                <Typography sx={{ fontSize: 20, fontWeight: 700 }}>
+                  {profile?.userName || displayName}
+                </Typography>
+                <Typography sx={{ color: "#6b7280", fontSize: 14, mt: 0.5, maxWidth: "400px" }}>
+                  {profile?.bio || "Looking for inspiration..."}
+                </Typography>
+                <Typography sx={{ color: "#111827", fontSize: 14, mt: 0.5 }}>
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    {profile?.followersCount ?? 0} followers
+                  </Box>{" "}
+                  ·{" "}
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    {profile?.followingCount ?? 0} following
+                  </Box>
+                </Typography>
+              </Box>
 
               <Button
                 variant="outlined"
@@ -341,18 +345,6 @@ const ProfileBoards = () => {
                 }}
                 onClick={() => navigate('/profile-edit')}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M17.263 2.17717C17.5912 1.84924 18.0361 1.66504 18.5 1.66504C18.9639 1.66504 19.4089 1.84924 19.737 2.17717L22.323 4.76317C22.6509 5.09132 22.8351 5.53625 22.8351 6.00017C22.8351 6.46408 22.6509 6.90901 22.323 7.23717L19.53 10.0302L19.518 10.0432L8.69001 20.3782C8.49219 20.5673 8.25278 20.7074 7.99101 20.7872L2.46801 22.4672C2.33813 22.5063 2.20007 22.5095 2.06853 22.4764C1.93698 22.4433 1.81688 22.3751 1.72101 22.2792C1.62505 22.1833 1.55689 22.0632 1.52378 21.9316C1.49067 21.8001 1.49386 21.662 1.53301 21.5322L3.20601 16.0322C3.29375 15.7443 3.45425 15.4839 3.67201 15.2762L14.476 4.96317L17.263 2.17717ZM4.70801 16.3612C4.67708 16.3911 4.65406 16.4282 4.64101 16.4692L3.37701 20.6232L7.55401 19.3522C7.59151 19.3406 7.62576 19.3204 7.65401 19.2932L17.927 9.48717L14.987 6.54817L4.70801 16.3612ZM19 8.44017L21.263 6.17817C21.2863 6.15494 21.3048 6.12736 21.3174 6.09698C21.33 6.06661 21.3365 6.03405 21.3365 6.00117C21.3365 5.96828 21.33 5.93572 21.3174 5.90535C21.3048 5.87498 21.2863 5.84739 21.263 5.82417L18.677 3.23817C18.6538 3.21488 18.6262 3.19641 18.5958 3.18381C18.5655 3.17121 18.5329 3.16472 18.5 3.16472C18.4671 3.16472 18.4346 3.17121 18.4042 3.18381C18.3738 3.19641 18.3462 3.21488 18.323 3.23817L16.061 5.50017L19 8.44017Z"
-                    fill="#000D17"
-                  />
-                </svg>
                 Edit profile
               </Button>
             </Box>
@@ -362,16 +354,7 @@ const ProfileBoards = () => {
             {["Aests", "Boards", "Created"].map((tab) => (
               <Button
                 key={tab}
-                onClick={() => {
-                  if (tab === "Boards") {
-                    setActiveTab("Boards");
-                  } else if (tab === "Aests") {
-                    setActiveTab("Aests");
-                  } else if (tab === "Created") {
-                    // navigate("/profile-created");
-                    setActiveTab("Created");
-                  }
-                }}
+                onClick={() => setActiveTab(tab)}
                 variant="text"
                 sx={{
                   textTransform: "none",
@@ -382,10 +365,7 @@ const ProfileBoards = () => {
                   bgcolor: activeTab === tab ? "#FFFFFF" : "#EAEFF9",
                   color: "#111827",
                   border: activeTab === tab ? "1px solid #EAEFF9" : "none",
-                  "&:hover": {
-                    bgcolor: "#EAEFF9",
-                    borderColor: "#CBD7F1",
-                  },
+                  "&:hover": { bgcolor: "#EAEFF9", borderColor: "#CBD7F1" },
                 }}
               >
                 {tab}
@@ -396,116 +376,126 @@ const ProfileBoards = () => {
           <Box sx={{ mt: 2, pb: 6 }}>
             {activeTab === "Boards" && (
               <>
-                {loadingProfile || loadingBoards ? (
+                {(loadingProfile || loadingBoards) ? (
                   <Box sx={{ textAlign: "center", mt: 4, color: "#7B8D9B" }}>Loading...</Box>
-                ) : (
+                ) : boards.length > 0 ? (
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                      gap: 2,
+                      gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                      gap: 1,
+                      mt: 3,
                     }}
                   >
-                    {boards.map((b) => (
+                    {results.map((board) => (
                       <Box
-                        key={b.Id || b.id}
-                        sx={{ p: 2, border: "1px solid #eee", borderRadius: 2 }}
+                        key={board.id}
+                        onClick={() => handleBoardClick(board)}
+                        sx={{
+                          backgroundColor: "#ffffff",
+                          borderRadius: "16px",
+                          height: "400px",
+                          padding: 2,
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "all 0.2s ease",
+                          "&:hover": { backgroundColor: "#EAEFF9", transform: "translateY(-1px)" },
+                          "&:active": { transform: "translateY(0)" },
+                        }}
                       >
-                        <Box sx={{ fontWeight: 600 }}>{b.Name || b.name}</Box>
-                        <Box sx={{ color: "#6b7280", fontSize: 13 }}>
-                          {b.Description || b.description || ""}
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: "2fr 1fr",
+                            gridTemplateRows: "1fr 1fr",
+                            gap: 1,
+                            width: "100%",
+                            height: "calc(100% - 110px)",
+                          }}
+                        >
+                          {(board.pinsBoard || []).slice(0, 3).map((pin, idx) => {
+                            const imgSrc = pin.imageUrl || pin.ImageUrl || pin.image;
+                            const style = { width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" };
+                            return idx === 0 ? (
+                              <img key={idx} src={imgSrc} alt={`Board ${board.title} preview ${idx + 1}`} style={{ ...style, gridRow: "1 / span 2" }} />
+                            ) : (
+                              <img key={idx} src={imgSrc} alt={`Board ${board.title} preview ${idx + 1}`} style={style} />
+                            );
+                          })}
+                        </Box>
+
+                        <Box sx={{ width: "100%", textAlign: "center", mt: 2, height: "100px", padding: "3%", borderRadius: "8px", backgroundColor: "#ffffff" }}>
+                          <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>{board.title}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                            by {currentUser?.userName || displayName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {(board.pinsBoard || []).length} Pins | Updated{" "}
+                            {new Date(board.updatedAt).toLocaleDateString("en-GB").replace(/\//g, ".")}
+                          </Typography>
                         </Box>
                       </Box>
                     ))}
-                                         {boards.length === 0 && (
-                       <Box sx={{ 
-                         textAlign: "center", 
-                         color: "#6b7280", 
-                         py: 6,
-                         gridColumn: "1 / -1",
-                         display: "flex",
-                         justifyContent: "center",
-                         alignItems: "center"
-                       }}>
-                         There are no boards yet...
-                       </Box>
-                     )}
                   </Box>
+                ) : (
+                  <Typography sx={{ mt: 4, textAlign: "center" }}>No boards found</Typography>
                 )}
               </>
             )}
 
-                         {activeTab === 'Aests' && (
-               <>
-                 {loadingSaved ? (
-                   <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
-                 ) : savedError ? (
-                   <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
-                                   ) : savedPins.length === 0 ? (
-                                         <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
-                       <Box sx={{ mb: 4 }}>
-                         There are no Aests saved yet, let's save the first one!
-                       </Box>
-                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                         <Button
-                           variant="contained"
-                           onClick={() => navigate('/')}
-                           sx={{
-                             display: "flex",
-                             width: "200px",
-                             padding: "12px 20px",
-                             alignItems: "center",
-                             gap: "12px",
-                             borderRadius: "100px",
-                             background: "#6F91D9",
-                             color: "white",
-                             textTransform: "none",
-                             fontWeight: 500,
-                             fontSize: "0.9rem",
-                             "&:hover": {
-                               background: "#5A7BC4"
-                             }
-                           }}
-                         >
-                           Go explore
-                         </Button>
-                       </Box>
-                     </Box>
-                  ) : (
-                   <MasonryGrid pins={savedPins} limitedMenu />
-                 )}
-               </>
-             )}
-             
-             {
-              activeTab === 'Created' && (<>
-                {loadingPins ? (
+            {activeTab === 'Aests' && (
+              <>
+                {loadingSaved ? (
                   <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
-                                 ) : normalizedCreatedPins.length === 0 ? (
-                   <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
-                     There are no created pins yet, let's create the first one!
-                   </Box>
+                ) : savedError ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
+                ) : savedPins.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
+                    <Box sx={{ mb: 4 }}>There are no Aests saved yet, let's save the first one!</Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                      <Button
+                        variant="contained"
+                        onClick={() => navigate('/')}
+                        sx={{
+                          display: "flex",
+                          width: "200px",
+                          padding: "12px 20px",
+                          alignItems: "center",
+                          gap: "12px",
+                          borderRadius: "100px",
+                          background: "#6F91D9",
+                          color: "white",
+                          textTransform: "none",
+                          fontWeight: 500,
+                          fontSize: "0.9rem",
+                          "&:hover": { background: "#5A7BC4" }
+                        }}
+                      >
+                        Go explore
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <MasonryGrid pins={savedPins} limitedMenu />
+                )}
+              </>
+            )}
+
+            {activeTab === 'Created' && (
+              <>
+                {loadingPins ? (
+                  <Box sx={{ textAlign: "center", mt: 4, color: "#7B8D9B" }}>Loading...</Box>
+                ) : normalizedCreatedPins.length === 0 ? (
+                  <Typography sx={{ mt: 4, textAlign: "center" }}>No created pins</Typography>
                 ) : (
                   <MasonryGrid pins={normalizedCreatedPins} limitedMenu />
                 )}
-              </>)
-             }
+              </>
+            )}
           </Box>
         </Box>
       </Box>
-      {showSavedOverlay && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000 }}
-          onClick={() => setShowSavedOverlay(false)}
-        >
-          <div
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#fff', overflow: 'auto' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SavedPins />
-          </div>
-        </div>
-      )}
     </Box>
   );
 };

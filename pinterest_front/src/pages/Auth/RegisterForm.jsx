@@ -44,26 +44,34 @@ const RegisterForm = () => {
 
     const handleGoogleSuccess = async (tokenResponse) => {
         try {
-            // Якщо користувач вводив дату народження, передаємо її
-            const googleData = {
-                accessToken: tokenResponse.access_token
-            };
-
-            if (dateOfBirth) {
-                googleData.birthDate = tokenResponse.birthDate;
-            }
-
-            const response = await googleAuth(googleData).unwrap();
+            // First, try to authenticate (for existing users)
+            const response = await googleAuth({ 
+                accessToken: tokenResponse.access_token 
+            }).unwrap();
+            console.log('Google auth response:', response);
+            
+            // ВИПРАВЛЕННЯ: правильно отримуємо токен з відповіді
+            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
             
             dispatch(setCredentials({
-                user: { email: response.payload.user?.email || '' },
-                accessToken: response.payload.accessToken
+                user: response.payload.user || { email: response.payload.user?.email || '' },
+                accessToken: accessToken
             }));
             
-            localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {
-            console.error('Google auth error:', err);
+            // If authentication fails, it might be a new user needing registration
+            if (err.status === 400) {
+                // Fetch user info from Google
+                const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
+                if (userInfo) {
+                    setGoogleToken(tokenResponse.access_token);
+                    setGoogleUserInfo(userInfo);
+                    setShowGoogleDialog(true);
+                }
+            } else {
+                console.error('Google auth error:', err);
+            }
         }
     };
 

@@ -332,6 +332,9 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("BannerUrl")
                         .HasColumnType("text");
 
+                    b.Property<string>("BannerUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("Bio")
                         .HasColumnType("text");
 
@@ -344,6 +347,12 @@ namespace PinterestClone.DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Country")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Discord")
                         .HasColumnType("text");
 
                     b.Property<string>("DisplayName")
@@ -359,10 +368,7 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("text");
 
-                    b.Property<string>("GoogleId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Interests")
+                    b.Property<string>("Instagram")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsPhoneNumberVerified")
@@ -415,14 +421,23 @@ namespace PinterestClone.DAL.Migrations
                     b.Property<bool>("SmsNotificationsEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Twitter")
+                        .HasColumnType("text");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<string>("Vibes")
+                    b.Property<string>("WalletAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Website")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -487,6 +502,88 @@ namespace PinterestClone.DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Likes");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.NFT", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChainId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContractAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsForSale")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OwnerWalletAddress")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("TokenId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OwnerWalletAddress");
+
+                    b.ToTable("NFTs");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.Nonce", b =>
+                {
+                    b.Property<string>("WalletAddress")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NonceValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("WalletAddress");
+
+                    b.ToTable("Nonces");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Notification", b =>
@@ -959,51 +1056,34 @@ namespace PinterestClone.DAL.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
+            modelBuilder.Entity("PinterestClone.DAL.Models.UserFavorite", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("BlockedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("BlockedUserId")
+                    b.Property<string>("NFTId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("BlockerId")
+                    b.Property<string>("UserWalletAddress")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Reason")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BlockedUserId");
+                    b.HasIndex("CreatedAt");
 
-                    b.HasIndex("BlockerId", "BlockedUserId")
+                    b.HasIndex("NFTId");
+
+                    b.HasIndex("UserWalletAddress");
+
+                    b.HasIndex("UserWalletAddress", "NFTId")
                         .IsUnique();
 
-                    b.ToTable("UserBlocks");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>
-                {
-                    b.Property<string>("FollowerId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FollowingId")
-                        .HasColumnType("text");
-
-                    b.HasKey("FollowerId", "FollowingId");
-
-                    b.HasIndex("FollowingId");
-
-                    b.ToTable("UserFollows");
+                    b.ToTable("UserFavorites");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Identity.UserClaim", b =>
@@ -1359,53 +1439,15 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PinterestClone.DAL.Models.SocialPermissions", b =>
+            modelBuilder.Entity("PinterestClone.DAL.Models.UserFavorite", b =>
                 {
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                    b.HasOne("PinterestClone.DAL.Models.NFT", "NFT")
+                        .WithMany("UserFavorites")
+                        .HasForeignKey("NFTId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserBlock", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "BlockedUser")
-                        .WithMany()
-                        .HasForeignKey("BlockedUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Blocker")
-                        .WithMany()
-                        .HasForeignKey("BlockerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BlockedUser");
-
-                    b.Navigation("Blocker");
-                });
-
-            modelBuilder.Entity("PinterestClone.DAL.Models.UserFollow", b =>
-                {
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Follower")
-                        .WithMany("FollowingRelations")
-                        .HasForeignKey("FollowerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PinterestClone.DAL.Models.Identity.User", "Following")
-                        .WithMany("FollowerRelations")
-                        .HasForeignKey("FollowingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Follower");
-
-                    b.Navigation("Following");
+                    b.Navigation("NFT");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Identity.UserClaim", b =>
@@ -1459,6 +1501,11 @@ namespace PinterestClone.DAL.Migrations
                     b.Navigation("Pins");
 
                     b.Navigation("Tokens");
+                });
+
+            modelBuilder.Entity("PinterestClone.DAL.Models.NFT", b =>
+                {
+                    b.Navigation("UserFavorites");
                 });
 
             modelBuilder.Entity("PinterestClone.DAL.Models.Pin", b =>

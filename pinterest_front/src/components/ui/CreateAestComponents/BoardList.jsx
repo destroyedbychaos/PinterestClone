@@ -89,18 +89,6 @@ const BoardList = ({
           >
             {board.name}
           </Typography>
-          {board.count && (
-            <Typography
-              sx={{
-                fontWeight: 400,
-                color: theme.palette.text.secondary,
-                fontSize: '14px',
-                lineHeight: 1.2,
-              }}
-            >
-              {board.count}
-            </Typography>
-          )}
         </Box>
 
         {board.isPrivate && (

@@ -539,7 +539,6 @@ useEffect(() => {
         const newBoard = {
           id: result.id,
           name: result.name,
-          count: "0 Assets",
           image: null,
           isPrivate: result.isPrivate || false
         };
@@ -1073,13 +1072,6 @@ useEffect(() => {
                       fontFamily: "Geologica, sans-serif"
                     }}>
                       {selectedBoard?.name || "Selected board"}
-                    </Typography>
-                    <Typography sx={{
-                      fontWeight: 400, color: theme.palette.text.secondary,
-                      fontSize: "14px", lineHeight: 1.2,
-                      fontFamily: "Geologica, sans-serif"
-                    }}>
-                      {selectedBoard?.count || "Aests"}
                     </Typography>
                   </Box>
                 </Box>

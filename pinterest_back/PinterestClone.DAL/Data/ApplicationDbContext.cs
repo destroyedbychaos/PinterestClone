@@ -24,13 +24,9 @@ namespace PinterestClone.DAL.Data
         public DbSet<ProfileReport> ProfileReports { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<Tag> Tags { get; set; }
-        public DbSet<HiddenPin> HiddenPins { get; set; }
-        public DbSet<SocialPermissions> SocialPermissions { get; set; }
-        public DbSet<BlockedUser> BlockedUsers { get; set; }
-        public DbSet<KeywordFilter> KeywordFilters { get; set; }
-        public DbSet<UserFollow> UserFollows { get; set; }
-        public DbSet<UserBlock> UserBlocks { get; set; }
-        public DbSet<PinViewHistory> PinViewHistories { get; set; }
+        public DbSet<Nonce> Nonces { get; set; }
+        public DbSet<NFT> NFTs { get; set; }
+        public DbSet<UserFavorite> UserFavorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -187,114 +183,28 @@ namespace PinterestClone.DAL.Data
             builder.Entity<PasswordResetCode>()
                 .HasIndex(prc => prc.CreatedAt);
 
-            builder.Entity<HiddenPin>()
-                .HasOne(hp => hp.Pin)
-                .WithMany()
-                .HasForeignKey(hp => hp.PinId)
+            builder.Entity<NFT>()
+                .HasIndex(n => n.OwnerWalletAddress);
+
+            builder.Entity<NFT>()
+                .HasIndex(n => n.CreatedAt);
+
+
+            builder.Entity<UserFavorite>()
+                .HasOne(uf => uf.NFT)
+                .WithMany(n => n.UserFavorites)
+                .HasForeignKey(uf => uf.NFTId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<HiddenPin>()
-                .HasOne(hp => hp.User)
-                .WithMany()
-                .HasForeignKey(hp => hp.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<HiddenPin>()
-                .HasIndex(hp => new { hp.PinId, hp.UserId })
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => new { uf.UserWalletAddress, uf.NFTId })
                 .IsUnique();
 
-            builder.Entity<UserFollow>()
-                .HasKey(uf => new { uf.FollowerId, uf.FollowingId });
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => uf.UserWalletAddress);
 
-            builder.Entity<UserFollow>()
-                .HasOne(uf => uf.Follower)
-                .WithMany(u => u.FollowingRelations)
-                .HasForeignKey(uf => uf.FollowerId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserFollow>()
-                .HasOne(uf => uf.Following)
-                .WithMany(u => u.FollowerRelations)
-                .HasForeignKey(uf => uf.FollowingId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserBlock>()
-                .HasOne(ub => ub.Blocker)
-                .WithMany()
-                .HasForeignKey(ub => ub.BlockerId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserBlock>()
-                .HasOne(ub => ub.BlockedUser)
-                .WithMany()
-                .HasForeignKey(ub => ub.BlockedUserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserBlock>()
-                .HasIndex(ub => new { ub.BlockerId, ub.BlockedUserId })
-                .IsUnique();
-
-            builder.Entity<PinViewHistory>()
-                .HasOne(pvh => pvh.Pin)
-                .WithMany()
-                .HasForeignKey(pvh => pvh.PinId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<PinViewHistory>()
-                .HasOne(pvh => pvh.User)
-                .WithMany()
-                .HasForeignKey(pvh => pvh.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<PinViewHistory>()
-                .HasIndex(pvh => new { pvh.UserId, pvh.ViewedAt });
-
-            builder.Entity<PinViewHistory>()
-                .HasIndex(pvh => pvh.PinId);
-
-            builder.Entity<PinViewHistory>()
-                .HasIndex(pvh => pvh.ViewedAt);
-
-            builder.Entity<SocialPermissions>(entity =>
-            {
-                entity.HasKey(sp => sp.Id);
-                entity.HasOne(sp => sp.User)
-                    .WithMany()
-                    .HasForeignKey(sp => sp.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasIndex(sp => sp.UserId)
-                    .IsUnique();
-            });
-
-            builder.Entity<BlockedUser>(entity =>
-            {
-                entity.HasKey(bu => bu.Id);
-                
-                entity.HasOne(bu => bu.Blocker)
-                    .WithMany()
-                    .HasForeignKey(bu => bu.BlockerId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(bu => bu.Blocked)
-                    .WithMany()
-                    .HasForeignKey(bu => bu.BlockedId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasIndex(bu => new { bu.BlockerId, bu.BlockedId })
-                    .IsUnique();
-            });
-
-            builder.Entity<KeywordFilter>(entity =>
-            {
-                entity.HasKey(kf => kf.Id);
-                entity.HasOne(kf => kf.User)
-                    .WithMany()
-                    .HasForeignKey(kf => kf.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasIndex(kf => kf.UserId);
-            });
+            builder.Entity<UserFavorite>()
+                .HasIndex(uf => uf.CreatedAt);
         }
     }
 } 

@@ -79,7 +79,7 @@ const SimpleHeader = ({ title }) => {
                 {getUserAvatarInitial(currentUser)}
               </span>
             )}
-            <span className="text-lg font-bold text-gray-900 ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
+            <span className="text-lg font-bold text-gray-900 ml-2 whitespace-nowrap overflow-hidden text-ellipsis" >
               {getUserDisplayName(currentUser)}
             </span>
 
@@ -94,7 +94,8 @@ const SimpleHeader = ({ title }) => {
                   Currently in
                 </div>
 
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-4 w-full"
+                onClick={() => navigate("/profile-boards")}>
                   {hasUserAvatar(currentUser) ? (
                     <img
                       src={getUserAvatarUrl(currentUser)}

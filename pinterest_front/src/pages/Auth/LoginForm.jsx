@@ -20,7 +20,6 @@ const LoginForm = () => {
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
     
-    // New state for Google auth additional info
     const [showGoogleDialog, setShowGoogleDialog] = useState(false);
     const [googleToken, setGoogleToken] = useState('');
     const [googleUserInfo, setGoogleUserInfo] = useState(null);
@@ -43,7 +42,6 @@ const LoginForm = () => {
         }
     };
 
-    // Fetch Google user info
     const fetchGoogleUserInfo = async (accessToken) => {
         try {
             const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
@@ -57,21 +55,21 @@ const LoginForm = () => {
 
     const handleGoogleSuccess = async (tokenResponse) => {
         try {
-            // First, try to authenticate (for existing users)
             const response = await googleAuth({ 
                 accessToken: tokenResponse.access_token 
             }).unwrap();
             console.log('Google auth response:', response);
+            
+            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
+            
             dispatch(setCredentials({
-                user: { email: response.payload.user?.email || '' },
-                accessToken: response.payload.accessToken
+                user: response.payload.user || { email: response.payload.user?.email || '' },
+                accessToken: accessToken
             }));
             
             navigate('/');
         } catch (err) {
-            // If authentication fails, it might be a new user needing registration
             if (err.status === 400) {
-                // Fetch user info from Google
                 const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
                 if (userInfo) {
                     setGoogleToken(tokenResponse.access_token);
@@ -96,13 +94,15 @@ const LoginForm = () => {
                 email: googleUserInfo.email,
                 firstName: googleUserInfo.given_name,
                 lastName: googleUserInfo.family_name,
-                birthDate: googleUserInfo.birthDate,
+                birthDate: birthDate,
                 profilePicture: googleUserInfo.picture
             }).unwrap();
 
+            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
+
             dispatch(setCredentials({
-                user: { email: response.payload.user?.email || '' },
-                accessToken: response.payload.accessToken
+                user: response.payload.user || { email: response.payload.user?.email || '' },
+                accessToken: accessToken
             }));
 
             setShowGoogleDialog(false);
@@ -255,7 +255,6 @@ const LoginForm = () => {
                 </Typography>
             </Box>
 
-            {/* Google Registration Dialog */}
             <Dialog open={showGoogleDialog} onClose={() => setShowGoogleDialog(false)}>
                 <DialogTitle>Complete Your Registration</DialogTitle>
                 <DialogContent>

@@ -239,7 +239,6 @@ const SaveToProfileModal = ({ isOpen, onClose, onSave, pinData, buttonPosition, 
                   </div>
                                      <div className="save-option-text">
                      <span className="save-option-title">{board.Name || board.name}</span>
-                     <span className="save-option-count">{board.BoardPins?.length || board.boardPins?.length || 0} Aests</span>
                    </div>
                 </div>
               ))}

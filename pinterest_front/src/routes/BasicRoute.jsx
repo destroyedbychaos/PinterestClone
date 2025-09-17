@@ -12,15 +12,7 @@ import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
 import VerifyCode from "../pages/ForgotPassword/VerifyCode.jsx";
 import ResetPassword from "../pages/ForgotPassword/ResetPassword.jsx";
 import PasswordResetSuccess from "../pages/ForgotPassword/PasswordResetSuccess.jsx";
-import ProfileBoards from "../pages/Profile/ProfileBoards.jsx";
-import ProfileEdit from "../pages/Profile/ProfileEdit.jsx";
-import SearchFilter from "../pages/Search/SearchFilter.jsx";
-import SearchProfile from "../pages/Search/SearchProfile.jsx";
-import UserProfile from "../pages/Profile/UserProfile.jsx";
-import CreateAest from "../pages/CreateAest/CreateAest.jsx";
-import SearchBoards from "../pages/Search/SearchBoards.jsx";
-import BoardPage from "../pages/Board/BoardPage.jsx";
-
+import NFTMarketApp from "../pages/nft-market/NFTMarketApp.jsx";
 
 
 const BasicRoute = () => {
@@ -55,75 +47,12 @@ const BasicRoute = () => {
             <Route path="/password-reset-success" element={<Layout />}>
                 <Route index element={<PasswordResetSuccess/>} />
             </Route>
-            <Route path="/profile-boards" element={
-                <ProtectedRoute>
-                    <Layout />
-                </ProtectedRoute>
-            }>
-                <Route index element={<ProfileBoards/>} />
-            </Route>
-            <Route path="/profile-edit" element={
-                <ProtectedRoute>
-                    <Layout />
-                </ProtectedRoute>
-            }>
-                <Route index element={<ProfileEdit/>} />
-            </Route>
-            <Route path="/search-filter" element={<Layout />}>
-                <Route index element={<SearchFilter/>} />
-            </Route>
-            <Route path="/search-profile" element={<Layout />}>
-                <Route index element={<SearchProfile/>} />
-            </Route>
-            <Route path="/search-boards" element={<Layout />}>
-                <Route index element={<SearchBoards/>} />
-            </Route>
-            <Route path="/notifications" element={<Layout />}>
-                <Route index element={<Notifications/>} />
-            </Route>
-
-
-            <Route path="/create-aest" element={<Layout />}>
-                <Route index element={<CreateAest/>} />
-            </Route>
-
-            <Route path="/user/:username" element={<LayoutWithoutFooter />}>
-                <Route index element={<UserProfile/>} />
-            </Route>
             
-            <Route path="/board/:boardId" element={<Layout />}>
-                <Route index element={<BoardPage/>} />
-            </Route>
-
-            <Route path="/settings" element={
-                <ProtectedRoute>
-                    <LayoutSettings />
-                </ProtectedRoute>
-            }>
-                <Route index element={<SettingsPage/>} />
-            </Route>
-            <Route path="/account-deactivation" element={
-                <ProtectedRoute>
-                    <Layout />
-                </ProtectedRoute>
-            }>
-                <Route index element={<AccountDeactivation/>} />
-            </Route>
-            <Route path="/account-deletion" element={
-                <ProtectedRoute>
-                    <Layout />
-                </ProtectedRoute>
-            }>
-                <Route index element={<AccountDeletion/>} />
-            </Route>
+            {/* NFT Market Routes */}
+            <Route path="/nft-market/*" element={<NFTMarketApp />} />
             
-            <Route path="/history" element={
-                <ProtectedRoute>
-                    <Layout />
-                </ProtectedRoute>
-            }>
-                <Route index element={<HistoryPage/>} />
-            </Route>
+            {/* Catch all route */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

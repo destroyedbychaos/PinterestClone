@@ -84,10 +84,11 @@ namespace PinterestClone.BLL.Services.JwtService
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email ?? throw new InvalidOperationException("User email is null")),
+                new Claim(ClaimTypes.NameIdentifier, user.WalletAddress ?? user.Id),
+                new Claim(ClaimTypes.Email, user.Email ?? "web3@user.com"),
                 new Claim("id", user.Id),
-                new Claim("email", user.Email ?? throw new InvalidOperationException("User email is null")),
+                new Claim("email", user.Email ?? "web3@user.com"),
+                new Claim("walletAddress", user.WalletAddress ?? ""),
             };
 
             

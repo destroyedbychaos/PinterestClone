@@ -12,14 +12,9 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         Task<bool> CheckPasswordAsync(User user, string password);
         Task<bool> IsUniqueUserNameAsync(string userName);
         Task<User?> GetByIdAsync(string id, bool includeRoles = false);
-        Task<User?> GetUserAsync(string userId, bool includes = false, bool loadFollowing = false, bool loadFollowers = false);
-        Task<List<User?>> GetFollowersAsync(string id);
-        Task<List<User?>> GetFollowingAsync(string id);
-        Task<bool> FollowUserAsync(string followerId, string targetId);
-        Task<bool> UnfollowUserAsync(string followerId, string targetId);
-        Task<bool> IsFollowingAsync(string followerId, string targetId);
-        Task<int> GetFollowersCountAsync(string userId);
-        Task<int> GetFollowingCountAsync(string userId);
-        Task<bool> IsBlockedAsync(string blockerId, string blockedUserId);
+        Task<User?> GetUserAsync(Expression<Func<User, bool>> predicate, bool includes = false);
+        Task<User?> GetByWalletAddressAsync(string walletAddress);
+        Task<User?> CreateAsync(User user);
+        Task<User?> UpdateAsync(User user);
     }
 }
