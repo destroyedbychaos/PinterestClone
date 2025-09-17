@@ -29,14 +29,7 @@ namespace PinterestClone.BLL.Services.NotificationService
             _mapper = mapper;
         }
 
-        /// <summary>
-        /// Отримує всі сповіщення користувача, що доступні в додатку.
-        /// </summary>
-        /// <param name="userId">Ідентифікатор користувача.</param>
-        /// <returns>
-        /// Об’єкт <see cref="ServiceResponse"/> зі списком <see cref="NotificationDto"/> або повідомленням про помилку.
-        /// </returns>
-        /// <exception cref="System.Exception">Викидається у разі помилки доступу до бази даних.</exception>
+
         public async Task<ServiceResponse> GetUserNotificationsAsync(string userId)
         {
             try

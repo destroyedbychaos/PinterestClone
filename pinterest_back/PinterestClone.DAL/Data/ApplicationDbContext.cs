@@ -28,6 +28,7 @@ namespace PinterestClone.DAL.Data
         public DbSet<SocialPermissions> SocialPermissions { get; set; }
         public DbSet<BlockedUser> BlockedUsers { get; set; }
         public DbSet<KeywordFilter> KeywordFilters { get; set; }
+        public DbSet<NotificationSettings> NotificationSettings { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<PinViewHistory> PinViewHistories { get; set; }
@@ -294,6 +295,18 @@ namespace PinterestClone.DAL.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(kf => kf.UserId);
+            });
+
+            builder.Entity<NotificationSettings>(entity =>
+            {
+                entity.HasKey(ns => ns.Id);
+                entity.HasOne(ns => ns.User)
+                    .WithMany()
+                    .HasForeignKey(ns => ns.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(ns => ns.UserId)
+                    .IsUnique();
             });
         }
     }

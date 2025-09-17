@@ -32,6 +32,7 @@ import { interestCategories } from '../../components/data/interestCategories.js'
 import { getUserAvatarInitial } from '../../utils/userUtils.js';
 import HomeFeedHistorySection from '../../components/HomeFeed/HomeFeedHistorySection.jsx';
 import SocialPermissionsSection from '../../components/Settings/SocialPermissionsSection.jsx';
+import NotificationsSection from '../../components/Settings/NotificationsSection.jsx';
 
 
 const getUserAvatar = (user) => {
@@ -1432,6 +1433,8 @@ const SettingsPage = () => {
             </Box>
           ) : activeTab === 'Social permissions' ? (
             <SocialPermissionsSection />
+          ) : activeTab === 'Notifications' ? (
+            <NotificationsSection />
           ) : (
             <Box className="settings-coming-soon">
               <Typography variant="h5">

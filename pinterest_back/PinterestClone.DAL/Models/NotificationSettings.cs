@@ -1,61 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using PinterestClone.DAL.Models;
+using System.ComponentModel.DataAnnotations;
+using PinterestClone.DAL.Models.Identity;
 
-namespace PinterestClone.BLL.DTOs
+namespace PinterestClone.DAL.Models
 {
-
-    public class NotificationDto
+    public class NotificationSettings
     {
-
+        [Key]
         public int Id { get; set; }
-        
 
         [Required]
-        public string Message { get; set; } = null!;
+        public required string UserId { get; set; }
 
-        [Required]
-        public NotificationType Type { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        
-
-        public NotificationStatus Status { get; set; }
-    }
-
-
-    public class CreateNotificationDto
-    {
-
-        public string UserId { get; set; } = null!;
-
-
-        public string Message { get; set; } = null!;
-
-        public string? Title { get; set; }
-
-
-        public NotificationType Type { get; set; }
-
-
-        public DateTime? ScheduledAt { get; set; }
-
-
-        public bool IsSmsEnabled { get; set; } = true;
-
-
-        public bool IsEmailEnabled { get; set; } = false;
-
-        public bool IsInAppEnabled { get; set; } = true;
-
-        public Guid? PinId { get; set; }
-
-        public Guid? BoardId { get; set; }
-
-        public Guid? CommentId { get; set; }
-    }
-
-    public class NotificationSettingsDto
-    {
+        public User? User { get; set; }
 
         public bool SavesPush { get; set; } = true;
         public bool SavesInApp { get; set; } = true;
@@ -121,16 +77,7 @@ namespace PinterestClone.BLL.DTOs
         public bool InAppEnabled { get; set; } = true;
         public bool EmailEnabled { get; set; } = false;
 
-
-        [Obsolete("Use PushEnabled instead")]
-        public bool SmsNotificationsEnabled { get; set; }
-
- 
-        [Obsolete("Use EmailEnabled instead")]
-        public bool EmailNotificationsEnabled { get; set; }
-
-
-        [Obsolete("Use InAppEnabled instead")]
-        public bool InAppNotificationsEnabled { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
-} 
+}
