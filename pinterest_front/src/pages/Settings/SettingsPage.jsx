@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { interestCategories } from '../../components/data/interestCategories.js';
 import { getUserAvatarInitial } from '../../utils/userUtils.js';
 import HomeFeedHistorySection from '../../components/HomeFeed/HomeFeedHistorySection.jsx';
+import SocialPermissionsSection from '../../components/Settings/SocialPermissionsSection.jsx';
 
 
 const getUserAvatar = (user) => {
@@ -1429,6 +1430,8 @@ const SettingsPage = () => {
               {/* Історія перегляду з новим дизайном */}
               <HomeFeedHistorySection />
             </Box>
+          ) : activeTab === 'Social permissions' ? (
+            <SocialPermissionsSection />
           ) : (
             <Box className="settings-coming-soon">
               <Typography variant="h5">
