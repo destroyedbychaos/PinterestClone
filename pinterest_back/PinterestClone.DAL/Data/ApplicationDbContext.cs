@@ -29,6 +29,8 @@ namespace PinterestClone.DAL.Data
         public DbSet<BlockedUser> BlockedUsers { get; set; }
         public DbSet<KeywordFilter> KeywordFilters { get; set; }
         public DbSet<NotificationSettings> NotificationSettings { get; set; }
+        public DbSet<SecuritySettings> SecuritySettings { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<PinViewHistory> PinViewHistories { get; set; }
@@ -307,6 +309,32 @@ namespace PinterestClone.DAL.Data
 
                 entity.HasIndex(ns => ns.UserId)
                     .IsUnique();
+            });
+
+            builder.Entity<SecuritySettings>(entity =>
+            {
+                entity.HasKey(ss => ss.Id);
+                entity.HasOne(ss => ss.User)
+                    .WithMany()
+                    .HasForeignKey(ss => ss.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(ss => ss.UserId)
+                    .IsUnique();
+            });
+
+            builder.Entity<UserSession>(entity =>
+            {
+                entity.HasKey(us => us.Id);
+                entity.HasOne(us => us.User)
+                    .WithMany()
+                    .HasForeignKey(us => us.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(us => us.UserId);
+                entity.HasIndex(us => us.SessionId)
+                    .IsUnique();
+                entity.HasIndex(us => us.IsActive);
             });
         }
     }

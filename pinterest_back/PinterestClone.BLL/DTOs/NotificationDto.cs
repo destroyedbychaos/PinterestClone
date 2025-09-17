@@ -133,4 +133,4 @@ namespace PinterestClone.BLL.DTOs
         [Obsolete("Use InAppEnabled instead")]
         public bool InAppNotificationsEnabled { get; set; }
     }
-} 
+}       

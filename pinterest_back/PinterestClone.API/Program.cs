@@ -38,6 +38,8 @@ using PinterestClone.BLL.Services.SocialPermissionsService;
 using PinterestClone.DAL.Repositories.SocialPermissionsRepository;
 using PinterestClone.BLL.Services.NotificationSettingsService;
 using PinterestClone.DAL.Repositories.NotificationSettingsRepository;
+using PinterestClone.BLL.Services.SecurityService;
+using PinterestClone.DAL.Repositories.SecurityRepository;
 using System.Text;
 using System;
 using System.Reflection;
@@ -171,6 +173,8 @@ builder.Services.AddScoped<ISocialPermissionsRepository, SocialPermissionsReposi
 builder.Services.AddScoped<ISocialPermissionsService, SocialPermissionsService>();
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
 builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
+builder.Services.AddScoped<ISecurityRepository, SecurityRepository>();
+builder.Services.AddScoped<ISecurityService, SecurityService>();
 builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
 builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddScoped<IUserService, UserService>();
