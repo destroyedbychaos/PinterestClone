@@ -40,6 +40,14 @@ using PinterestClone.BLL.Services.NotificationSettingsService;
 using PinterestClone.DAL.Repositories.NotificationSettingsRepository;
 using PinterestClone.BLL.Services.SecurityService;
 using PinterestClone.DAL.Repositories.SecurityRepository;
+using PinterestClone.BLL.Services.Web3AuthService;
+using PinterestClone.BLL.Services.NFTService;
+using PinterestClone.DAL.Repositories.NFTRepository;
+using PinterestClone.DAL.Repositories.UserFavoritesRepository;
+using PinterestClone.BLL.Services.BlockchainService;
+using PinterestClone.BLL.Services.MarketplaceService;
+using PinterestClone.DAL.Repositories.MarketplaceRepository;
+using PinterestClone.BLL.Services.IPFSService;
 using System.Text;
 using System;
 using System.Reflection;
@@ -47,7 +55,6 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using PinterestClone.BLL.MappingProfiles;
-using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.FileBlobService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -181,6 +188,14 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPinViewHistoryRepository, PinViewHistoryRepository>();
 builder.Services.AddScoped<IPinViewHistoryService, PinViewHistoryService>();
 builder.Services.AddSingleton<IFileService, FileService>();
+builder.Services.AddScoped<IWeb3AuthService, Web3AuthService>();
+builder.Services.AddScoped<INFTService, NFTService>();
+builder.Services.AddScoped<INFTRepository, NFTRepository>();
+builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
+builder.Services.AddScoped<IBlockchainService, BlockchainService>();
+builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
+builder.Services.AddScoped<IMarketplaceRepository, MarketplaceRepository>();
+builder.Services.AddScoped<IIPFSService, IPFSService>();
 
 //AutoMapper
 builder.Services.AddAutoMapper(cfg =>

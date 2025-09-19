@@ -107,7 +107,7 @@
   color: #666;
 }
 
-/* Responsive design */
+
 @media (max-width: 1800px) {
   .gallery-columns {
     flex-wrap: wrap;

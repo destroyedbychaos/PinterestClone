@@ -253,6 +253,23 @@ namespace PinterestClone.BLL.Services.AuthService
         }
 
 
+        
+        public async Task<object?> GetUserByIdAsync(string userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new
+            {
+                id = user.Id,
+                email = user.Email,
+                displayName = user.DisplayName,
+                userName = user.UserName
+            };
+        }
     }
 
     /// <summary>

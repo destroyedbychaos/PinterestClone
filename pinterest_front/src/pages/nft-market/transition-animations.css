@@ -1,0 +1,350 @@
+/* Анімації для переходу на NFT маркетплейс */
+
+@keyframes slideInFromBottom {
+  0% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.1); 
+  }
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.5); 
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(147, 51, 234, 0.8); 
+  }
+}
+
+@keyframes expand {
+  0% { 
+    clip-path: circle(0% at 50% 50%);
+    opacity: 1;
+  }
+  100% { 
+    clip-path: circle(150% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+
+@keyframes rotate {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+@keyframes logo-appear {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+@keyframes energy-ring-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes typing-animation {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes logo-glow-intense {
+  0%, 100% { 
+    box-shadow: 
+      0 0 20px rgba(147, 51, 234, 0.6),
+      0 0 40px rgba(236, 72, 153, 0.4),
+      0 0 60px rgba(59, 130, 246, 0.3);
+  }
+  50% { 
+    box-shadow: 
+      0 0 30px rgba(147, 51, 234, 0.8),
+      0 0 60px rgba(236, 72, 153, 0.6),
+      0 0 90px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInFromBottom 1s ease-out;
+}
+
+.animate-fade-scale {
+  animation: fadeInScale 0.8s ease-out;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-logo-appear {
+  animation: logo-appear 1.5s ease-out forwards;
+}
+
+.animate-energy-ring {
+  animation: energy-ring-pulse 2s ease-in-out infinite;
+}
+
+.typing-animation {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing-animation 2s ease-out forwards;
+}
+
+.animate-logo-glow-intense {
+  animation: logo-glow-intense 2s ease-in-out infinite;
+}
+
+@keyframes minimal-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes minimal-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes minimal-rotate-reverse {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+@keyframes minimal-glow {
+  0%, 100% { 
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.8);
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+@keyframes minimal-expand {
+  0% { 
+    clip-path: circle(0% at 50% 50%);
+    opacity: 1;
+  }
+  100% { 
+    clip-path: circle(150% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+@keyframes minimal-expand-smooth {
+  0% { 
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% { 
+    clip-path: circle(150% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+@keyframes minimal-expand-fast {
+  0% { 
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  100% { 
+    clip-path: circle(150% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+@keyframes minimal-float {
+  0%, 100% { 
+    transform: translateY(0px) scale(1);
+    opacity: 0.3;
+  }
+  50% { 
+    transform: translateY(-8px) scale(1.2);
+    opacity: 0.6;
+  }
+}
+
+
+@keyframes exit-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes exit-fade {
+  0% { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% { 
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+
+@keyframes dynamic-rotate-1 {
+  0% { 
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: rotate(180deg) scale(1.2);
+    opacity: 1;
+  }
+  100% { 
+    transform: rotate(360deg) scale(1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes dynamic-rotate--1 {
+  0% { 
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: rotate(-180deg) scale(1.2);
+    opacity: 1;
+  }
+  100% { 
+    transform: rotate(-360deg) scale(1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes dynamic-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dynamic-spin-reverse {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+@keyframes dynamic-pulse {
+  0%, 100% { 
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes dynamic-glow {
+  0%, 100% { 
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(147, 51, 234, 0.8);
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+@keyframes dynamic-expand {
+  0% { 
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  100% { 
+    clip-path: circle(150% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+
+.nft-market-content.show-immediately {
+  transition: none !important;
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}

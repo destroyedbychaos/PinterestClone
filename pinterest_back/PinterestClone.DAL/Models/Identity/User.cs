@@ -23,6 +23,18 @@ namespace PinterestClone.DAL.Models.Identity
         public bool IsProfilePublic { get; set; } = true;
         public bool IsSearchPrivate { get; set; } = false;
 
+
+
+
+        public string? WalletAddress { get; set; }
+        public string? BannerUrl { get; set; }
+        public string? Website { get; set; }
+        public string? Twitter { get; set; }
+        public string? Instagram { get; set; }
+        public string? Discord { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public new string? PhoneNumber { get; set; }
         public bool IsPhoneNumberVerified { get; set; } = false;
         public bool SmsNotificationsEnabled { get; set; } = true;
