@@ -89,9 +89,6 @@ const ProfileHeader = ({ user, onSearch, onLogin, onSignup, onFocusSearch, searc
           )}
         </div>
 
-
-
-
         {currentUser ? (
           <div
             className="discover-header__profile"

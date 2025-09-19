@@ -28,7 +28,7 @@ const EditProfile = () => {
   const [bannerFile, setBannerFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Завантаження даних користувача
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -37,7 +37,7 @@ const EditProfile = () => {
         avatarUrl: user.avatarUrl || "",
         bannerUrl: user.bannerUrl || ""
       });
-      // Очищення попередніх переглядів при завантаженні нових даних
+
       setPreviewAvatar(null);
       setPreviewBanner(null);
       setAvatarFile(null);
@@ -55,14 +55,13 @@ const EditProfile = () => {
   const handleAvatarChange = (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Перевірка типу файлу
+
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         toast.error('Підтримуються тільки зображення (JPEG, PNG, GIF, WebP)');
         return;
       }
 
-      // Перевірка розміру файлу (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Розмір файлу не повинен перевищувати 5MB');
         return;
@@ -71,7 +70,7 @@ const EditProfile = () => {
       setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setPreviewAvatar(url);
-      // Очищення попереднього перегляду банера при завантаженні аватара
+
       setPreviewBanner(null);
       setBannerFile(null);
     }
@@ -83,14 +82,14 @@ const EditProfile = () => {
     if (file) {
       console.log('File selected:', file.name, file.type, file.size);
       
-      // Перевірка типу файлу
+
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         toast.error('Підтримуються тільки зображення (JPEG, PNG, GIF, WebP)');
         return;
       }
 
-      // Перевірка розміру файлу (max 10MB)
+
       if (file.size > 10 * 1024 * 1024) {
         toast.error('Розмір файлу не повинен перевищувати 10MB');
         return;
@@ -101,7 +100,7 @@ const EditProfile = () => {
       setPreviewBanner(url);
       console.log('Banner preview set:', url);
       
-      // Очищення попереднього перегляду аватара при завантаженні банера
+
       setPreviewAvatar(null);
       setAvatarFile(null);
     }
@@ -117,7 +116,7 @@ const EditProfile = () => {
       setIsSaving(true);
       let updatedData = { ...formData };
 
-      // Завантаження аватара
+
       if (avatarFile) {
         const avatarUrl = await uploadAvatar(account, avatarFile);
         updatedData.avatarUrl = avatarUrl;
@@ -125,7 +124,6 @@ const EditProfile = () => {
         toast.success('Аватар завантажено успішно');
       }
 
-      // Завантаження банера
       if (bannerFile) {
         console.log('Uploading banner file:', bannerFile.name);
         const bannerUrl = await uploadBanner(account, bannerFile);
@@ -135,27 +133,25 @@ const EditProfile = () => {
         toast.success('Банер завантажено успішно');
       }
 
-      // Оновлення профілю (тільки nickname та bio, аватар та банер оновлюються окремо)
+
       const updatedUser = await updateProfile(account, {
         nickname: updatedData.nickname,
         bio: updatedData.bio
       });
 
-      // Оновлення локального стану
       updateUserProfile({
         ...updatedUser,
         avatarUrl: updatedData.avatarUrl || user?.avatarUrl,
         bannerUrl: updatedData.bannerUrl || user?.bannerUrl
       });
 
-      // Очищення попередніх переглядів після успішного збереження
       setPreviewAvatar(null);
       setPreviewBanner(null);
       setAvatarFile(null);
       setBannerFile(null);
       
       toast.success('Профіль оновлено успішно!');
-      navigate('/nft-market/profile');
+      navigate('/nft-marketplace/profile');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error(error.message || 'Помилка оновлення профілю');
@@ -165,13 +161,13 @@ const EditProfile = () => {
   };
 
   const handleCancel = () => {
-    // Скидання попередніх переглядів
+
     setPreviewAvatar(null);
     setPreviewBanner(null);
     setAvatarFile(null);
     setBannerFile(null);
     
-    // Повернення до початкових даних
+
     if (user) {
       setFormData({
         nickname: user.nickname || "",
@@ -181,7 +177,7 @@ const EditProfile = () => {
       });
     }
     
-    navigate('/nft-market/profile');
+    navigate('/nft-marketplace/profile');
   };
 
   if (!isConnected || !isAuthenticated) {
@@ -212,7 +208,7 @@ const EditProfile = () => {
               <h1 className="text-3xl font-bold text-white mb-2">Редагувати профіль</h1>
               <p className="text-gray-400">Оновіть інформацію про ваш профіль</p>
             </div>
-            <Link to="/nft-market/profile">
+            <Link to="/nft-marketplace/profile">
               <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-700">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -224,7 +220,7 @@ const EditProfile = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Banner */}
+
           <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
             <CardHeader>
               <CardTitle className="text-white">Банер профілю</CardTitle>
@@ -280,13 +276,12 @@ const EditProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Avatar and Basic Info */}
           <Card className="bg-gray-800/80 backdrop-blur-sm border border-gray-700">
             <CardHeader>
               <CardTitle className="text-white">Основна інформація</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-3">
                   Аватар
@@ -323,7 +318,6 @@ const EditProfile = () => {
                 </div>
               </div>
 
-              {/* Nickname */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Нікнейм
@@ -339,7 +333,6 @@ const EditProfile = () => {
                 </p>
               </div>
 
-              {/* Bio */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Біографія
@@ -357,7 +350,6 @@ const EditProfile = () => {
                 </p>
               </div>
 
-              {/* Wallet Address (Read-only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Адреса гаманця
@@ -386,7 +378,6 @@ const EditProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex gap-4 justify-end">
             <Button
               variant="outline"

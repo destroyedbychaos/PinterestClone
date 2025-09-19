@@ -5,15 +5,14 @@ import { useNFT } from "../../hooks/useNFT.js";
 import { useNFTAuth } from "@/hooks/useNFTAuth";
 import { useWeb3 } from "../../contexts/Web3Context.jsx";
 import MarketplaceNFTCard from "../../components/nft-market/MarketplaceNFTCard.jsx";
-import NFTIntroAnimation from "../../components/nft-market/NFTIntroAnimation.jsx";
-import { useIntroAnimation } from "../../hooks/useIntroAnimation.js";
+// Removed NFTIntroAnimation and useIntroAnimation imports - handled by NFTMarketApp
 import { toast } from "react-toastify";
 
 const Index = () => {
   const { getAllNFTs, isLoading } = useNFT();
   const { isAuthenticated } = useNFTAuth();
   const { account } = useWeb3();
-  const { showIntro, isLoading: introLoading, completeIntro } = useIntroAnimation();
+  // Removed useIntroAnimation hook - handled by NFTMarketApp
   const [nfts, setNfts] = useState([]);
   const [loadingNFTs, setLoadingNFTs] = useState(true);
   const [stats, setStats] = useState({
@@ -65,18 +64,7 @@ const Index = () => {
   };
 
 
-  if (introLoading || showIntro) {
-    return (
-      <div className="min-h-screen">
-        {showIntro && <NFTIntroAnimation onComplete={completeIntro} />}
-        {introLoading && (
-          <div className="fixed inset-0 bg-black z-40 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  // Removed intro animation logic - handled by NFTMarketApp
 
   return (
     <div className="min-h-screen">
@@ -102,7 +90,7 @@ const Index = () => {
               Створюйте, купуйте та продавайте унікальні цифрові активи на найсучаснішому маркетплейсі
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Link to="/nft-market/create">
+              <Link to="/nft-marketplace/create">
                 <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg px-10 py-4 rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 neon-glow">
                   <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -110,7 +98,7 @@ const Index = () => {
                   Почати створювати
                 </Button>
               </Link>
-              <Link to="/nft-market/marketplace">
+              <Link to="/nft-marketplace/marketplace">
                 <Button size="lg" variant="outline" className="text-lg px-10 py-4 rounded-xl border-gray-600 hover:bg-gray-800/50 text-white hover:border-purple-500 transition-all duration-300">
                   Переглянути маркетплейс
                 </Button>
@@ -129,7 +117,7 @@ const Index = () => {
               </svg>
               Щойно додані
             </h2>
-            <Link to="/nft-market/marketplace">
+            <Link to="/nft-marketplace/marketplace">
               <Button variant="ghost" className="text-white hover:bg-gray-800/50">
                 Переглянути всі
               </Button>
@@ -171,7 +159,7 @@ const Index = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Поки що немає NFT</h3>
                 <p className="text-gray-400">Станьте першим хто створить NFT на нашому маркетплейсі!</p>
               </div>
-              <Link to="/nft-market/create">
+              <Link to="/nft-marketplace/create">
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3">
                   Створити NFT
                 </Button>

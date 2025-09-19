@@ -264,7 +264,7 @@ const Profile = () => {
                   
                   {isOwnProfile && (
                     <div className="flex items-center gap-3 mt-4 md:mt-0 flex-wrap">
-                      <Link to="/nft-market/profile/edit">
+                      <Link to="/nft-marketplace/edit-profile">
                         <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -379,7 +379,7 @@ const Profile = () => {
                       />
                     ) : (
 
-                      <Link key={nft.id} to={`/nft-market/nft/${nft.id}`}>
+                      <Link key={nft.id} to={`/nft-marketplace/nft/${nft.id}`}>
                         <Card className="group relative bg-[#0f0f12] border border-gray-800 rounded-xl overflow-hidden hover:border-purple-500/40 transition-colors">
                           <CardContent className="p-0">
                             <div className="relative">
@@ -425,7 +425,7 @@ const Profile = () => {
                       {isOwnProfile ? 'Почніть створювати унікальні цифрові активи!' : 'Цей користувач ще не створив жодного NFT.'}
                     </p>
                     {isOwnProfile && (
-                      <Link to="/nft-market/create" className="mt-4 inline-block">
+                      <Link to="/nft-marketplace/create" className="mt-4 inline-block">
                         <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3">
                           Створити NFT
                         </Button>
@@ -456,7 +456,7 @@ const Profile = () => {
               ) : userFavorites.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userFavorites.map((nft) => (
-                    <Link key={nft.id} to={`/nft-market/nft/${nft.id}`}>
+                    <Link key={nft.id} to={`/nft-marketplace/nft/${nft.id}`}>
                       <Card className="group relative bg-[#0f0f12]/95 border border-gray-800 rounded-2xl overflow-hidden hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
                         <CardContent className="p-0">
                           <div className="relative">
@@ -511,7 +511,7 @@ const Profile = () => {
                     <p className="text-gray-400">
                       {isOwnProfile ? 'Ви ще не додали жодного NFT до улюблених' : 'Цей користувач ще не має улюблених NFT'}
                     </p>
-                    <Link to="/nft-market" className="mt-4 inline-block">
+                    <Link to="/nft-marketplace" className="mt-4 inline-block">
                       <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 shadow-lg hover:shadow-purple-500/25 transition-all duration-300">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

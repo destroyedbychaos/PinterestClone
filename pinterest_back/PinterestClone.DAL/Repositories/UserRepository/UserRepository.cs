@@ -152,5 +152,15 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         {
             return await _context.UserBlocks.AnyAsync(ub => ub.BlockerId == blockerId && ub.BlockedUserId == blockedUserId);
         }
+
+        public async Task<User?> GetByWalletAddressAsync(string walletAddress)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == walletAddress);
+        }
+
+        public async Task<IdentityResult> UpdateAsync(User user)
+        {
+            return await _userManager.UpdateAsync(user);
+        }
     }
 }

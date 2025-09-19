@@ -119,7 +119,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
 
           <div className="flex items-center space-x-3">
-            <Link to="/nft-market" className="flex items-center space-x-3 group">
+            <Link to="/nft-marketplaceplace" className="flex items-center space-x-3 group">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -165,9 +165,9 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center space-x-6">
             <Link 
-              to="/nft-market" 
+              to="/nft-marketplace" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/nft-market') 
+                isActive('/nft-marketplace') 
                   ? 'text-purple-400 bg-purple-400/10' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-900'
               }`}
@@ -175,9 +175,9 @@ const Navbar = () => {
               Головна
             </Link>
             <Link 
-              to="/nft-market/marketplace" 
+              to="/nft-marketplace/marketplace" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/nft-market/marketplace') 
+                isActive('/nft-marketplace/marketplace') 
                   ? 'text-purple-400 bg-purple-400/10' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-900'
               }`}
@@ -185,9 +185,9 @@ const Navbar = () => {
               Маркетплейс
             </Link>
             <Link 
-              to="/nft-market/create" 
+              to="/nft-marketplace/create" 
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/nft-market/create') 
+                isActive('/nft-marketplace/create') 
                   ? 'text-purple-400 bg-purple-400/10' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-900'
               }`}
@@ -196,9 +196,9 @@ const Navbar = () => {
             </Link>
             {isAuthenticated && (
               <Link 
-                to="/nft-market/profile" 
+                to="/nft-marketplace/profile" 
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/nft-market/profile') 
+                  isActive('/nft-marketplace/profile') 
                     ? 'text-purple-400 bg-purple-400/10' 
                     : 'text-gray-300 hover:text-white hover:bg-gray-900'
                 }`}
@@ -283,7 +283,7 @@ const Navbar = () => {
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-lg shadow-lg border border-gray-800 py-1 z-50">
                     <Link 
-                      to="/nft-market/profile"
+                      to="/nft-marketplace/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
@@ -293,7 +293,7 @@ const Navbar = () => {
                       Мій профіль
                     </Link>
                     <Link 
-                      to="/nft-market/profile/edit"
+                      to="/nft-marketplace/profile/edit"
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
@@ -332,9 +332,9 @@ const Navbar = () => {
           </button>
           
           <Link 
-            to="/nft-market"
+            to="/nft-marketplace"
             className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-              isActive('/nft-market') 
+              isActive('/nft-marketplace') 
                 ? 'text-purple-400 bg-purple-400/10' 
                 : 'text-gray-300 hover:text-white hover:bg-gray-700'
             }`}
@@ -342,9 +342,9 @@ const Navbar = () => {
             NFT Marketplace
           </Link>
           <Link 
-            to="/nft-market/create"
+            to="/nft-marketplace/create"
             className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-              isActive('/nft-market/create') 
+              isActive('/nft-marketplace/create') 
                 ? 'text-purple-400 bg-purple-400/10' 
                 : 'text-gray-300 hover:text-white hover:bg-gray-700'
             }`}
@@ -353,9 +353,9 @@ const Navbar = () => {
           </Link>
           {isAuthenticated && (
             <Link 
-              to="/nft-market/profile"
+              to="/nft-marketplace/profile"
               className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                isActive('/nft-market/profile') 
+                isActive('/nft-marketplace/profile') 
                   ? 'text-purple-400 bg-purple-400/10' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-700'
               }`}

@@ -21,5 +21,9 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         Task<int> GetFollowersCountAsync(string userId);
         Task<int> GetFollowingCountAsync(string userId);
         Task<bool> IsBlockedAsync(string blockerId, string blockedUserId);
+        
+        
+        Task<User?> GetByWalletAddressAsync(string walletAddress);
+        Task<IdentityResult> UpdateAsync(User user);
     }
 }

@@ -4,6 +4,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link, useLocation } from "react-router-dom";
 import { Icon as Iconify } from '@iconify/react';
 import icon from '../../assets/images/logo.png';
+import '../../pages/nft-market/transition-animations.css';
 
 const SideMenu = memo(({ isUnverified = false, flush = false }) => {
     const theme = useTheme();
@@ -24,6 +25,8 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
             setActiveIcon('profile');
         } else if (path === '/history') {
             setActiveIcon('history');
+        } else if (path.startsWith('/nft-marketplace')) {
+            setActiveIcon('nft-market');
         } else if (path === '/settings') {
             setActiveIcon('settings');
         } else if (path === '/info') {
@@ -45,6 +48,7 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
             comments: isActive ? 'octicon:comment-discussion-24' : 'octicon:comment-discussion-24',
             profile: isActive ? 'octicon:person-fill-24' : 'octicon:person-24',
             history: isActive ? 'octicon:clock-fill-24' : 'octicon:clock-24',
+            'nft-market': isActive ? 'mdi:ethereum' : 'mdi:ethereum',
             settings: isActive ? 'octicon:gear-24' : 'octicon:gear-24',
             info: isActive ? 'octicon:unverified-24' : 'octicon:unverified-24'
         };
@@ -190,6 +194,32 @@ const SideMenu = memo(({ isUnverified = false, flush = false }) => {
                                         height={35} 
                                         color={getIconColor('history')} 
                                     />
+                                </Link>
+                                <Link 
+                                    to="/nft-marketplace"
+                                    onClick={() => {
+                                        // Встановлюємо флаг, що перехід з Pinterest
+                                        sessionStorage.setItem('nft_from_pinterest', 'true');
+                                    }}
+                                    className="nft-market-icon flex items-center justify-center w-12 h-12 rounded-[30%] transition-all duration-300 ease-out relative overflow-hidden hover:bg-black/6 hover:scale-110 active:scale-95 active:bg-black/12 hover:!bg-purple-500/10 active:!bg-purple-500/20"
+                                    style={{
+                                        backgroundColor: activeIcon === 'nft-market' ? 'rgba(147, 51, 234, 0.1)' : 'transparent',
+                                        animation: activeIcon === 'nft-market' ? 'glow 2s ease-in-out infinite' : 'none'
+                                    }}
+                                >
+                                    <Iconify 
+                                        icon={getIconName('nft-market', activeIcon === 'nft-market')} 
+                                        width={35} 
+                                        height={35} 
+                                        color={getIconColor('nft-market')}
+                                        style={{
+                                            animation: activeIcon === 'nft-market' ? 'float 3s ease-in-out infinite' : 'none'
+                                        }}
+                                    />
+
+                                    <div className="absolute inset-0 rounded-[30%] opacity-0 hover:opacity-30 transition-opacity duration-300" 
+                                         style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+                                    </div>
                                 </Link>
                             </>
                         )}

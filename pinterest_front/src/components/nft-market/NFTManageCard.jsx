@@ -184,7 +184,7 @@ const NFTManageCard = ({ nft, onUpdate }) => {
               </button>
             )}
 
-            <Link to={`/nft-market/nft/${nft.id}`} className="block">
+            <Link to={`/nft-marketplace/nft/${nft.id}`} className="block">
               <button className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-medium py-1.5 px-3 rounded-md text-sm transition-colors">
                 👁️ Переглянути деталі
               </button>

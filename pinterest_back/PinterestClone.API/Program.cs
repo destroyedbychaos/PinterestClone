@@ -41,6 +41,7 @@ using PinterestClone.DAL.Repositories.NotificationSettingsRepository;
 using PinterestClone.BLL.Services.SecurityService;
 using PinterestClone.DAL.Repositories.SecurityRepository;
 using PinterestClone.BLL.Services.Web3AuthService;
+using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.NFTService;
 using PinterestClone.DAL.Repositories.NFTRepository;
 using PinterestClone.DAL.Repositories.UserFavoritesRepository;

@@ -162,7 +162,7 @@ const ViewNFT = () => {
 
     setIsProcessing(true);
     try {
-      // Детальна перевірка ціни
+
       const numericPrice = Number(salePrice);
       if (!salePrice || salePrice === '' || salePrice === null || salePrice === undefined || isNaN(numericPrice) || numericPrice <= 0) {
         throw new Error(`Ціна NFT некоректна: ${salePrice} (тип: ${typeof salePrice})`);
@@ -170,9 +170,9 @@ const ViewNFT = () => {
       
       await buyNFT(nft.id, tokenId, salePrice);
       toast.success('NFT успішно придбано! Додаємо в "Всі NFT" вашого профілю.');
-      // Оновлюємо дані та переходимо в профіль покупця
+
       await loadNFT();
-      try { navigate(`/nft-market/profile/${account}`); } catch {}
+      try { navigate(`/nft-marketplace/profile/${account}`); } catch {}
     } catch (error) {
       console.error('Error buying NFT:', error);
       toast.error('Помилка при покупці NFT');
@@ -236,7 +236,7 @@ const ViewNFT = () => {
       await deleteNFT(nft.id, false); 
       toast.success('NFT успішно видалено!');
 
-      navigate('/nft-market/profile');
+      navigate('/nft-marketplace/profile');
     } catch (error) {
       console.error('Error deleting NFT:', error);
       toast.error('Помилка при видаленні NFT');
@@ -282,7 +282,7 @@ const ViewNFT = () => {
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-white mb-4">NFT не знайдено</h1>
             <p className="text-gray-400 mb-6">Цей NFT не існує або був видалений.</p>
-            <Link to="/nft-market">
+            <Link to="/nft-marketplace">
               <Button>Повернутись до маркетплейсу</Button>
             </Link>
           </div>

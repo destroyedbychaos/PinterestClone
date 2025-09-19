@@ -259,7 +259,7 @@ const MarketplacePage = () => {
             
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/nft-market/create">
+              <Link to="/nft-marketplace/create">
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-xl">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -385,7 +385,7 @@ const MarketplacePage = () => {
                    'Станьте першим хто створить NFT на нашому маркетплейсі!'}
                 </p>
                 {activeTab !== 2 && (
-                  <Link to="/nft-market/create">
+                  <Link to="/nft-marketplace/create">
                     <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-xl">
                       Створити NFT
                     </Button>
@@ -428,7 +428,7 @@ const MarketplacePage = () => {
       </footer>
 
       {isAuthenticated && (
-        <Link to="/nft-market/create">
+        <Link to="/nft-marketplace/create">
           <button className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-4 rounded-full shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-110 z-50">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

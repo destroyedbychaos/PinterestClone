@@ -34,6 +34,12 @@ namespace PinterestClone.DAL.Data
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<PinViewHistory> PinViewHistories { get; set; }
+        
+
+        public DbSet<NFT> NFTs { get; set; }
+        public DbSet<MarketplaceListing> MarketplaceListings { get; set; }
+        public DbSet<UserFavorite> UserFavorites { get; set; }
+        public DbSet<Nonce> Nonces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -335,6 +341,45 @@ namespace PinterestClone.DAL.Data
                 entity.HasIndex(us => us.SessionId)
                     .IsUnique();
                 entity.HasIndex(us => us.IsActive);
+            });
+
+            builder.Entity<NFT>(entity =>
+            {
+                entity.HasKey(nft => nft.Id);
+                entity.HasIndex(nft => nft.CreatorWalletAddress);
+                entity.HasIndex(nft => nft.TokenId);
+                entity.HasIndex(nft => nft.CreatedAt);
+            });
+
+            builder.Entity<MarketplaceListing>(entity =>
+            {
+                entity.HasKey(ml => ml.Id);
+                entity.HasOne<NFT>()
+                    .WithMany()
+                    .HasForeignKey(ml => ml.NFTId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(ml => ml.SellerWalletAddress);
+                entity.HasIndex(ml => ml.ListedAt);
+                entity.HasIndex(ml => ml.IsActive);
+            });
+
+            builder.Entity<UserFavorite>(entity =>
+            {
+                entity.HasKey(uf => uf.Id);
+                entity.HasOne(uf => uf.NFT)
+                    .WithMany()
+                    .HasForeignKey(uf => uf.NFTId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(uf => uf.UserWalletAddress);
+                entity.HasIndex(uf => new { uf.UserWalletAddress, uf.NFTId })
+                    .IsUnique();
+            });
+
+            builder.Entity<Nonce>(entity =>
+            {
+                entity.HasKey(n => n.WalletAddress);
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => n.ExpiresAt);
             });
         }
     }

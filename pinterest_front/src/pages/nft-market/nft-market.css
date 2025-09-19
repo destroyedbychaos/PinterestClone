@@ -39,30 +39,30 @@
 }
 
 @layer base {
-  .nft-market * {
+  .nft-marketplace-container * {
     border-color: hsl(var(--border));
   }
 
-  .nft-market body {
+  .nft-marketplace-container {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
 }
 
 @layer utilities {
-  .neon-glow {
+  .nft-marketplace-container .neon-glow {
     box-shadow: 0 0 10px hsl(var(--neon-purple) / 0.3), 0 0 20px hsl(var(--neon-purple) / 0.2), 0 0 30px hsl(var(--neon-purple) / 0.1);
   }
   
-  .neon-text {
+  .nft-marketplace-container .neon-text {
     text-shadow: 0 0 5px hsl(var(--neon-purple) / 0.4), 0 0 10px hsl(var(--neon-purple) / 0.3), 0 0 15px hsl(var(--neon-purple) / 0.2);
   }
   
-  .gradient-border {
+  .nft-marketplace-container .gradient-border {
     position: relative;
   }
   
-  .gradient-border::before {
+  .nft-marketplace-container .gradient-border::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -73,15 +73,15 @@
     mask-composite: xor;
   }
 
-  .animate-neon-pulse {
+  .nft-marketplace-container .animate-neon-pulse {
     animation: neon-pulse 3s ease-in-out infinite;
   }
 
-  .animate-float {
+  .nft-marketplace-container .animate-float {
     animation: float 8s ease-in-out infinite;
   }
 
-  .bg-neon-gradient {
+  .nft-marketplace-container .bg-neon-gradient {
     background: linear-gradient(45deg, hsl(var(--neon-purple) / 0.8), hsl(var(--neon-blue) / 0.8), hsl(var(--neon-pink) / 0.8));
   }
 }
@@ -130,12 +130,12 @@
   }
 }
 
-.animate-gradient {
+.nft-marketplace-container .animate-gradient {
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
 
-.animate-gradient-x {
+.nft-marketplace-container .animate-gradient-x {
   background-size: 200% 200%;
   animation: gradient-x 3s ease infinite;
 }
@@ -164,12 +164,25 @@
   }
 }
 
-.animate-gradient {
+.nft-marketplace-container .animate-gradient {
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
 
-.animate-gradient-x {
+.nft-marketplace-container .animate-gradient-x {
   background-size: 200% 200%;
   animation: gradient-x 3s ease infinite;
-} 
+}
+
+/* Приховування header під час анімації */
+.hide-navbar {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -9999 !important;
+}

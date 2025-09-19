@@ -153,7 +153,7 @@ const MarketplaceNFTCard = ({ nft, isOwner, onUpdate, isNew = false }) => {
 
       <div
         className="relative bg-gray-800 rounded-xl shadow-lg group-hover:shadow-[0_0_25px_rgba(34,197,94,0.6)] transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-1 overflow-hidden cursor-pointer"
-        onClick={() => navigate(`/nft-market/nft/${nft.id}`)}
+        onClick={() => navigate(`/nft-marketplace/nft/${nft.id}`)}
       >
 
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>

@@ -25,6 +25,13 @@ import Notifications from "../pages/Notifications/Notifications.jsx";
 import CreateAest from "../pages/CreateAest/CreateAest.jsx";
 import SearchBoards from "../pages/Search/SearchBoards.jsx";
 import BoardPage from "../pages/Board/BoardPage.jsx";
+import NFTMarketApp from "../pages/nft-market/NFTMarketApp.jsx";
+import MarketplacePage from "../pages/nft-market/MarketplacePage.jsx";
+import CreateNFT from "../pages/nft-market/CreateNFT.jsx";
+import ViewNFT from "../pages/nft-market/ViewNFT.jsx";
+import Profile from "../pages/nft-market/Profile.jsx";
+import EditProfile from "../pages/nft-market/EditProfile.jsx";
+import NFTLayout from "../components/layout/NFTLayout.jsx";
 
 
 
@@ -124,6 +131,16 @@ const BasicRoute = () => {
                 </ProtectedRoute>
             }>
                 <Route index element={<HistoryPage/>} />
+            </Route>
+            
+            
+            <Route path="/nft-marketplace" element={<NFTLayout />}>
+                <Route index element={<NFTMarketApp/>} />
+                <Route path="create" element={<CreateNFT/>} />
+                <Route path="nft/:id" element={<ViewNFT/>} />
+                <Route path="profile/:walletAddress?" element={<Profile/>} />
+                <Route path="edit-profile" element={<EditProfile/>} />
+                <Route path="marketplace" element={<MarketplacePage/>} />
             </Route>
         </Routes>
     );

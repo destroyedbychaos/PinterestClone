@@ -492,7 +492,7 @@ const CreateNFT = () => {
                   
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/nft-market/nft/${createdNFT.id}`)}
+                    onClick={() => navigate(`/nft-marketplace/nft/${createdNFT.id}`)}
                     className="border-gray-600 text-white hover:bg-gray-700 px-8 py-3"
                   >
                     Переглянути NFT
@@ -543,7 +543,7 @@ const CreateNFT = () => {
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
-                    onClick={() => navigate(`/nft-market/nft/${createdNFT.id}`)}
+                    onClick={() => navigate(`/nft-marketplace/nft/${createdNFT.id}`)}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 transition-all duration-300 shadow-lg shadow-purple-500/25"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -554,7 +554,7 @@ const CreateNFT = () => {
                   </Button>
                   
                   <Button
-                    onClick={() => navigate('/nft-market/profile')}
+                    onClick={() => navigate('/nft-marketplace/profile')}
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3 transition-all duration-300 shadow-lg shadow-blue-500/25"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify'
 import {ThemeProvider} from "@mui/material";
 import {theme} from "./theme.js";
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { Web3Provider } from './contexts/Web3Context.jsx'
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
@@ -25,7 +26,9 @@ createRoot(document.getElementById('root')).render(
               theme="light"
           />
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-            <App />
+            <Web3Provider>
+              <App />
+            </Web3Provider>
           </GoogleOAuthProvider>
       </ThemeProvider>
   </Provider>,
