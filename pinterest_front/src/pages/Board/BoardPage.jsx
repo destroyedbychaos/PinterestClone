@@ -73,12 +73,33 @@ const BoardPage = () => {
     <Box sx={{ p: 4 }}>
       <SearchHeader title="Board" />
 
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 700, mb: 2, textAlign: "center", marginTop: 5 }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 1,
+          mt: 5,
+          mb: 2,
+        }}
       >
-        {board.name || "Untitled Board"}
-      </Typography>
+        {board.isPrivate && (
+          <span role="img" aria-label="private" style={{ fontSize: "20px" }}>
+            🔒
+          </span>
+        )}
+        {board.isArchived && (
+          <span role="img" aria-label="archived" style={{ fontSize: "20px" }}>
+            🗁
+          </span>
+        )}
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, textAlign: "center" }}
+        >
+          {board.name || "Untitled Board"}
+        </Typography>
+      </Box>
 
       <Box
         onClick={() => navigate(`/user/${board.owner.userName}`)}

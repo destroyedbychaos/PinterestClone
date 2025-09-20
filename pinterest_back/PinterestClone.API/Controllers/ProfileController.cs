@@ -1294,14 +1294,19 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Перевіряє, чи існує аватар чи банер користувача за назвою файлу.
+        /// </summary>
+        /// <param name="fileName">Назва файлу.</param>
+        /// <returns><c>True</c> та посилання на картинку якщо існує, <c>False</c> та посилання за яким картинки не існує.</returns>
         [HttpGet("test-image/{fileName}")]
         public IActionResult TestImage(string fileName)
         {
             try
             {
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
-                Console.WriteLine($"Testing image path: {imagePath}");
-                Console.WriteLine($"File exists: {System.IO.File.Exists(imagePath)}");
+                Console.WriteLine($"Розташування на перевірці: {imagePath}");
+                Console.WriteLine($"Файл існує: {System.IO.File.Exists(imagePath)}");
                 
                 if (System.IO.File.Exists(imagePath))
                 {
@@ -1311,7 +1316,7 @@ namespace PinterestClone.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error testing image: {ex.Message}");
+                Console.WriteLine($"Проблема при перевірці фотографії: {ex.Message}");
                 return BadRequest(ex.Message);
             }
         }
