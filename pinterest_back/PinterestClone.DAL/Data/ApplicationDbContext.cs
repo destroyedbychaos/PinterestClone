@@ -354,23 +354,26 @@ namespace PinterestClone.DAL.Data
             builder.Entity<MarketplaceListing>(entity =>
             {
                 entity.HasKey(ml => ml.Id);
-                entity.HasOne<NFT>()
+                entity.HasOne(ml => ml.NFT)
                     .WithMany()
                     .HasForeignKey(ml => ml.NFTId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(ml => ml.SellerWalletAddress);
                 entity.HasIndex(ml => ml.ListedAt);
                 entity.HasIndex(ml => ml.IsActive);
+                entity.HasIndex(ml => ml.NFTId);
             });
 
             builder.Entity<UserFavorite>(entity =>
             {
                 entity.HasKey(uf => uf.Id);
                 entity.HasOne(uf => uf.NFT)
-                    .WithMany()
+                    .WithMany(n => n.UserFavorites)
                     .HasForeignKey(uf => uf.NFTId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(uf => uf.UserWalletAddress);
+                entity.HasIndex(uf => uf.NFTId);
+                entity.HasIndex(uf => uf.CreatedAt);
                 entity.HasIndex(uf => new { uf.UserWalletAddress, uf.NFTId })
                     .IsUnique();
             });
