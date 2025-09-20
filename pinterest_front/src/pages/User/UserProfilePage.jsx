@@ -1,0 +1,546 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { Box, Avatar, Button, Typography } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import ProfileHeader from "../../components/layout/ProfileHeader";
+import SideMenu from "../../components/layout/SideMenu";
+import MasonryGrid from "../../components/ui/MasonryGrid";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { fetchSavedPins } from "../../utils/fetchSavedPins";
+
+const defaultBannerSvg = (
+  <svg width="1720" height="260" viewBox="0 0 1720 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1720" height="260" rx="40" fill="#EAEFF9"/>
+  </svg>
+);
+
+const API_BASE = "/api";
+
+const UserProfilePage = () => {
+  const { username } = useParams();
+  const authState = useSelector((state) => state.auth);
+  const currentUser = useCurrentUser();
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
+  const token = useMemo(() => localStorage.getItem("token"), [authState?.token]);
+
+  const [profile, setProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [activeTab, setActiveTab] = useState("Created");
+  const [pins, setPins] = useState([]);
+  const [loadingPins, setLoadingPins] = useState(false);
+  const [boards, setBoards] = useState([]);
+  const [loadingBoards, setLoadingBoards] = useState(false);
+  const [savedPins, setSavedPins] = useState([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [savedError, setSavedError] = useState("");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loadingFollow, setLoadingFollow] = useState(false);
+
+  useEffect(() => {
+    if (username) {
+      fetchUserProfile();
+    }
+  }, [username]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    let isMounted = true;
+
+    const loadPins = async (userId) => {
+      setLoadingPins(true);
+      try {
+        const res = await fetch(`${API_BASE}/Pins/user/${userId}?pageNumber=1&pageSize=60`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error("Failed to load pins");
+        const data = await res.json();
+        const list = data?.Pins || data?.pins || [];
+        if (isMounted) setPins(list);
+      } catch {
+        if (isMounted) setPins([]);
+      } finally {
+        if (isMounted) setLoadingPins(false);
+      }
+    };
+
+    const loadBoards = async (userId) => {
+      setLoadingBoards(true);
+      try {
+        const boardsRes = await fetch(`${API_BASE}/Boards/user/${userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!boardsRes.ok) throw new Error("Failed to fetch boards");
+        const boardsData = await boardsRes.json();
+        const boardsRaw = boardsData.boards || boardsData.Boards || [];
+
+        const boardsWithPins = await Promise.all(
+          boardsRaw.map(async (b) => {
+            let pinsBoard = [];
+            try {
+              const pinsRes = await fetch(`${API_BASE}/Pins/board/${b.id}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (pinsRes.ok) {
+                const pinsData = await pinsRes.json();
+                pinsBoard = pinsData.pins || [];
+              }
+            } catch {}
+            return {
+              id: b.id,
+              title: b.name || "Untitled Board",
+              description: b.description || "",
+              ownerId: b.userId,
+              pinsBoard,
+              updatedAt: b.updatedAt || Date.now(),
+              isPrivate: b.isPrivate || false,
+              isArchived: b.isArchived || false
+            };
+          })
+        );
+
+        if (isMounted) setBoards(boardsWithPins);
+      } catch (err) {
+        console.error(err);
+        if (isMounted) setBoards([]);
+      } finally {
+        if (isMounted) setLoadingBoards(false);
+      }
+    };
+
+    loadPins(profile.id);
+    loadBoards(profile.id);
+    return () => { isMounted = false; };
+  }, [profile?.id, token]);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (activeTab !== 'Aests') return;
+
+    let active = true;
+
+    const loadSaved = async () => {
+      setLoadingSaved(true);
+      setSavedError('');
+      try {
+        const list = await fetchSavedPins(token, profile.displayName || profile.userName, profile.id);
+        if (active) setSavedPins(list);
+      } catch (e) {
+        if (active) {
+          setSavedPins([]);
+          setSavedError(e.message || 'Error');
+        }
+      } finally {
+        if (active) setLoadingSaved(false);
+      }
+    };
+
+    loadSaved();
+    return () => { active = false; };
+  }, [activeTab, profile, token]);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoadingProfile(true);
+      const response = await fetch(`${API_BASE}/profile/username/${username}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data);
+        setIsFollowing(data.isFollowing || false);
+      } else if (response.status === 404) {
+        toast.error('Користувача не знайдено');
+        navigate('/');
+      } else {
+        throw new Error('Failed to fetch user profile');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      toast.error('Помилка завантаження профілю');
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!token || !currentUser) {
+      toast.error('Потрібно увійти в систему');
+      navigate('/login');
+      return;
+    }
+
+    if (!profile) return;
+
+    setLoadingFollow(true);
+
+    try {
+      const isCurrentlyFollowing = isFollowing;
+      
+      setIsFollowing(!isCurrentlyFollowing);
+
+      const response = await fetch(`${API_BASE}/profile/${profile.id}/${isCurrentlyFollowing ? 'unfollow' : 'follow'}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success(isCurrentlyFollowing ? 'Ви відписалися' : 'Ви підписалися');
+      } else {
+
+        setIsFollowing(isCurrentlyFollowing);
+        toast.error('Помилка при підписці/відписці');
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error);
+      setIsFollowing(!isFollowing); 
+      toast.error('Помилка при підписці/відписці');
+    } finally {
+      setLoadingFollow(false);
+    }
+  };
+
+  const normalizedCreatedPins = useMemo(() => {
+    return pins.map((pin) => {
+      let image = pin.ImageUrl || pin.imageUrl || pin.image;
+      if (image && !/^https?:\/\//.test(image)) {
+        if (!image.startsWith("/")) image = "/images/" + image.replace(/^.*[\\/]/, "");
+      }
+      const rawTags = pin.Tags ?? pin.tags ?? '';
+      const tags = Array.isArray(rawTags)
+        ? rawTags.map((t) => String(t).trim()).filter(Boolean)
+        : String(rawTags || "")
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean);
+      return {
+        id: pin.Id || pin.id,
+        image,
+        title: pin.Title || pin.title,
+        description: pin.Description || pin.description,
+        author: pin.UserName || pin.userName || profile?.displayName || profile?.userName,
+        tags
+      };
+    });
+  }, [pins, profile]);
+
+  const handleSearch = () => {};
+
+  const handleBoardClick = (board) => {
+    if (board.isArchived || (board.isPrivate && String(board.ownerId) !== String(profile.id))) return;
+    navigate(`/board/${board.id}`);
+  };
+
+  const bannerUrl = profile?.bannerUrl;
+  const avatarUrl = profile?.avatarUrl;
+  const displayName = profile?.displayName || profile?.userName || "User";
+
+  if (loadingProfile) {
+    return (
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
+        <SideMenu />
+        <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Typography>Завантаження профілю...</Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
+        <SideMenu />
+        <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Typography color="error">Користувача не знайдено</Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#fff" }}>
+      <SideMenu />
+
+      <Box sx={{ flex: 1 }}>
+        <ProfileHeader
+          user={currentUser}
+          onSearch={handleSearch}
+          searchRef={searchRef}
+          onFocusSearch={() => {}}
+          title={displayName}
+        />
+
+        <Box sx={{ bgcolor: "#fff", borderRadius: "16px", overflow: "hidden", mt: "30px" }}>
+          <Box
+            sx={{
+              width: "98%",
+              height: 180,
+              borderTopLeftRadius: "40px",
+              borderTopRightRadius: "40px",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "#EAEFF9",
+            }}
+          >
+            {bannerUrl ? (
+              <Box
+                component="img"
+                src={bannerUrl}
+                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <Box sx={{ transform: "scale(0.1)" }}>{defaultBannerSvg}</Box>
+            )}
+          </Box>
+
+          <Box sx={{ position: "relative", px: 3, pb: 2, mt: -10 }}>
+            <Box
+              sx={{
+                position: "relative",
+                display: "inline-block",
+                borderRadius: "50%",
+                bgcolor: "#fff",
+                p: 0.7,
+                boxShadow: 1,
+              }}
+            >
+              {avatarUrl ? (
+                <Avatar
+                  src={avatarUrl}
+                  alt="avatar"
+                  sx={{ width: 140, height: 140, borderRadius: "50%" }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: 140,
+                    height: 140,
+                    borderRadius: "50%",
+                    bgcolor: "#EAEFF9",
+                    border: "4px solid white",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
+                />
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mt: -12,
+                ml: "-25px",
+                bgcolor: "#fff",
+                borderTopLeftRadius: "40px",
+                borderTopRightRadius: "40px",
+                p: 2,
+              }}
+            >
+              <Box sx={{ ml: 24, flex: 1 }}>
+                <Typography sx={{ fontSize: 20, fontWeight: 700 }}>
+                  {profile?.userName || displayName}
+                </Typography>
+                <Typography sx={{ color: "#6b7280", fontSize: 14, mt: 0.5, maxWidth: "400px" }}>
+                  {profile?.bio || "Looking for inspiration..."}
+                </Typography>
+                <Typography sx={{ color: "#111827", fontSize: 14, mt: 0.5 }}>
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    {profile?.followersCount ?? 0} followers
+                  </Box>{" "}
+                  ·{" "}
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    {profile?.followingCount ?? 0} following
+                  </Box>
+                </Typography>
+              </Box>
+
+              {currentUser && currentUser.id !== profile.id && (
+                <Button
+                  variant="outlined"
+                  size="medium"
+                  onClick={handleFollow}
+                  disabled={loadingFollow}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 10,
+                    px: 2.5,
+                    py: 1,
+                    bgcolor: isFollowing ? "#D7E0F4" : "#6780E2",
+                    color: isFollowing ? "#111827" : "white",
+                    fontWeight: 500,
+                    width: "164px",
+                    border: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.2,
+                    fontSize: "1rem",
+                    "&:hover": {
+                      bgcolor: isFollowing ? "#C7D0E4" : "#4f65c7"
+                    }
+                  }}
+                >
+                  {loadingFollow ? "..." : (isFollowing ? "Unfollow" : "Follow")}
+                </Button>
+              )}
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1.5, mt: 3, px: 2 }}>
+            {["Aests", "Boards", "Created"].map((tab) => (
+              <Button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                variant="text"
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 6,
+                  px: 2,
+                  py: 1,
+                  boxShadow: activeTab === tab ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  bgcolor: activeTab === tab ? "#FFFFFF" : "#EAEFF9",
+                  color: "#111827",
+                  border: activeTab === tab ? "1px solid #EAEFF9" : "none",
+                  "&:hover": { bgcolor: "#EAEFF9", borderColor: "#CBD7F1" },
+                }}
+              >
+                {tab}
+              </Button>
+            ))}
+          </Box>
+
+          <Box sx={{ mt: 2, pb: 6 }}>
+            {activeTab === "Boards" && (
+              <>
+                {(loadingProfile || loadingBoards) ? (
+                  <Box sx={{ textAlign: "center", mt: 4, color: "#7B8D9B" }}>Loading...</Box>
+                ) : boards.length > 0 ? (
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 1, mt: 3, overflow: "visible" }}>
+                    {boards.map((board) => {
+                      const isOwner = String(board.ownerId) === String(profile.id);
+
+                      return (
+                        <Box
+                          key={board.id}
+                          sx={{
+                            position: "relative",
+                            backgroundColor: "#ffffff",
+                            borderRadius: "16px",
+                            height: "400px",
+                            padding: 2,
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            transition: "all 0.2s ease",
+                            "&:hover": { backgroundColor: "#EAEFF9", transform: "translateY(-1px)" },
+                            "&:active": { transform: "translateY(0)" },
+                          }}
+                          onClick={() => handleBoardClick(board)}
+                        >
+                          <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gridTemplateRows: "1fr 1fr", gap: 1, width: "100%", height: "calc(100% - 110px)" }}>
+                            {(board.pinsBoard || []).slice(0, 3).map((pin, idx) => {
+                              const imgSrc = pin.imageUrl || pin.ImageUrl || pin.image;
+                              const style = { width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" };
+                              return idx === 0 ? (
+                                <img key={idx} src={imgSrc} alt={`Board ${board.title} preview ${idx + 1}`} style={{ ...style, gridRow: "1 / span 2" }} />
+                              ) : (
+                                <img key={idx} src={imgSrc} alt={`Board ${board.title} preview ${idx + 1}`} style={style} />
+                              );
+                            })}
+                          </Box>
+
+                          <Box sx={{ width: "100%", textAlign: "center", mt: 2, height: "100px", padding: "3%", borderRadius: "8px", backgroundColor: "#ffffff" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                              {board.isPrivate && (
+                                <span role="img" aria-label="private" style={{ fontSize: "16px" }}>🔒</span>
+                              )}
+                              {board.isArchived && (
+                                <span role="img" aria-label="archived" style={{ fontSize: "16px" }}>🗁</span>
+                              )}
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5, textAlign: "center" }}>
+                                {board.title}
+                              </Typography>
+                            </Box>
+
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>by {board.ownerName || "Unknown"}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {(board.pinsBoard || []).length} Pins | Updated {new Date(board.updatedAt).toLocaleDateString("en-GB").replace(/\//g, ".")}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                ) : (
+                  <Typography sx={{ mt: 4, textAlign: "center" }}>No boards found</Typography>
+                )}
+              </>
+            )}
+
+            {activeTab === 'Aests' && (
+              <>
+                {loadingSaved ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: '#7B8D9B' }}>Loading...</Box>
+                ) : savedError ? (
+                  <Box sx={{ textAlign: 'center', mt: 4, color: 'crimson' }}>{savedError}</Box>
+                ) : savedPins.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', color: '#6b7280', py: 6 }}>
+                    <Box sx={{ mb: 4 }}>There are no Aests saved yet, let's save the first one!</Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                      <Button
+                        variant="contained"
+                        onClick={() => navigate('/')}
+                        sx={{
+                          display: "flex",
+                          width: "200px",
+                          padding: "12px 20px",
+                          alignItems: "center",
+                          gap: "12px",
+                          borderRadius: "100px",
+                          background: "#6F91D9",
+                          color: "white",
+                          textTransform: "none",
+                          fontWeight: 500,
+                          fontSize: "0.9rem",
+                          "&:hover": { background: "#5A7BC4" }
+                        }}
+                      >
+                        Go explore
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <MasonryGrid pins={savedPins} limitedMenu />
+                )}
+              </>
+            )}
+
+            {activeTab === 'Created' && (
+              <>
+                {loadingPins ? (
+                  <Box sx={{ textAlign: "center", mt: 4, color: "#7B8D9B" }}>Loading...</Box>
+                ) : normalizedCreatedPins.length === 0 ? (
+                  <Typography sx={{ mt: 4, textAlign: "center" }}>No created pins</Typography>
+                ) : (
+                  <MasonryGrid pins={normalizedCreatedPins} limitedMenu />
+                )}
+              </>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default UserProfilePage;

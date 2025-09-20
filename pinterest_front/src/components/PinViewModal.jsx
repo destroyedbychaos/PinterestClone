@@ -8,6 +8,7 @@ import SideMenu from './layout/SideMenu';
 import SearchHeader from './layout/SearchHeader';
 import { commentsApi, pinsApi } from '../services/commentsApi';
 import historyApiService from '../services/historyApi';
+import { getFullImageUrl } from '../utils/imageUtils';
 import SimilarPinsGallery from './ui/SimilarPinsGallery';
 import ReportModal from './ui/ReportModal';
 import FullscreenPinModal from './ui/FullscreenPinModal';
@@ -288,7 +289,7 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
   const handlePinDownload = () => {
     try {
       const link = document.createElement('a');
-      link.href = currentPin.imageUrl || "https://placehold.co/379x642";
+      link.href = getFullImageUrl(currentPin.imageUrl);
       link.download = `${currentPin.title || 'pin'}.jpg`;
       document.body.appendChild(link);
       link.click();
@@ -406,7 +407,7 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
       <Box key={comment.id} className={isReply ? "comment-reply-item" : "comment-item"}>
         <Avatar 
           className="comment-avatar clickable-avatar" 
-          src={comment.user?.avatarUrl || "https://placehold.co/56x56"} 
+          src={getFullImageUrl(comment.user?.avatarUrl) || "https://placehold.co/56x56"} 
           onClick={() => {
             console.log('Avatar clicked for comment:', comment);
             console.log('Comment user data:', comment.user);
@@ -545,15 +546,12 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                 <Box className="pin-view-image-wrapper">
                   <img 
                     className="pin-view-image" 
-                    src={currentPin.imageUrl || "https://placehold.co/379x642"} 
+                    src={getFullImageUrl(currentPin.imageUrl)} 
                     alt={currentPin.title || "Pin"} 
                   />
-                                                         <IconButton 
-                      className="fullscreen-button"
-                      onClick={() => setFullscreenModalOpen(true)}
-                    >
-                      <Fullscreen />
-                    </IconButton>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none" onClick={() => setFullscreenModalOpen(true)} className="fullscreen-icon">
+                    <path d="M4.00391 15C4.20282 15 4.39358 15.079 4.53424 15.2197C4.67489 15.3603 4.75391 15.5511 4.75391 15.75V19.25C4.75391 19.388 4.86591 19.5 5.00391 19.5H8.50391C8.70282 19.5 8.89358 19.579 9.03424 19.7197C9.17489 19.8603 9.25391 20.0511 9.25391 20.25C9.25391 20.4489 9.17489 20.6397 9.03424 20.7803C8.89358 20.921 8.70282 21 8.50391 21H5.00391C4.53978 21 4.09466 20.8156 3.76647 20.4874C3.43828 20.1592 3.25391 19.7141 3.25391 19.25V15.75C3.25391 15.5511 3.33292 15.3603 3.47358 15.2197C3.61423 15.079 3.80499 15 4.00391 15ZM20.5039 15C20.7028 15 20.8936 15.079 21.0342 15.2197C21.1749 15.3603 21.2539 15.5511 21.2539 15.75V19.25C21.2539 19.7141 21.0695 20.1592 20.7413 20.4874C20.4132 20.8156 19.968 21 19.5039 21H16.0039C15.805 21 15.6142 20.921 15.4736 20.7803C15.3329 20.6397 15.2539 20.4489 15.2539 20.25C15.2539 20.0511 15.3329 19.8603 15.4736 19.7197C15.6142 19.579 15.805 19.5 16.0039 19.5H19.5039C19.5702 19.5 19.6338 19.4737 19.6807 19.4268C19.7276 19.3799 19.7539 19.3163 19.7539 19.25V15.75C19.7539 15.5511 19.8329 15.3603 19.9736 15.2197C20.1142 15.079 20.305 15 20.5039 15ZM5.00391 4.5C4.9376 4.5 4.87401 4.52634 4.82713 4.57322C4.78025 4.62011 4.75391 4.6837 4.75391 4.75V8.25C4.75391 8.44891 4.67489 8.63968 4.53424 8.78033C4.39358 8.92098 4.20282 9 4.00391 9C3.80499 9 3.61423 8.92098 3.47358 8.78033C3.33292 8.63968 3.25391 8.44891 3.25391 8.25V4.75C3.25391 3.784 4.03791 3 5.00391 3H8.50391C8.70282 3 8.89358 3.07902 9.03424 3.21967C9.17489 3.36032 9.25391 3.55109 9.25391 3.75C9.25391 3.94891 9.17489 4.13968 9.03424 4.28033C8.89358 4.42098 8.70282 4.5 8.50391 4.5H5.00391ZM15.2539 3.75C15.2539 3.55109 15.3329 3.36032 15.4736 3.21967C15.6142 3.07902 15.805 3 16.0039 3H19.5039C20.4699 3 21.2539 3.784 21.2539 4.75V8.25C21.2539 8.44891 21.1749 8.63968 21.0342 8.78033C20.8936 8.92098 20.7028 9 20.5039 9C20.305 9 20.1142 8.92098 19.9736 8.78033C19.8329 8.63968 19.7539 8.44891 19.7539 8.25V4.75C19.7539 4.6837 19.7276 4.62011 19.6807 4.57322C19.6338 4.52634 19.5702 4.5 19.5039 4.5H16.0039C15.805 4.5 15.6142 4.42098 15.4736 4.28033C15.3329 4.13968 15.2539 3.94891 15.2539 3.75Z" fill="#000D17"/>
+                  </svg>
                 </Box>
               </Box>
 
@@ -582,9 +580,9 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                       {isLiked ? <Favorite className="liked-icon" /> : <FavoriteBorder />}
                       <Typography className="like-count">{likesCount}</Typography>
                     </Button>
-                    <IconButton className="share-button">
-                      <SendIcon size={20} />
-                    </IconButton>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" onClick={() => setSharePinModalOpen(true)} style={{cursor: 'pointer'}}>
+                      <path d="M1.01928 0.613535C1.28807 0.375663 1.62098 0.222249 1.97644 0.172452C2.33189 0.122655 2.69414 0.178681 3.01795 0.333535L28.7979 12.6202C29.0585 12.7446 29.2784 12.9403 29.4324 13.1845C29.5864 13.4287 29.6681 13.7115 29.6681 14.0002C29.6681 14.2889 29.5864 14.5717 29.4324 14.8159C29.2784 15.0601 29.0585 15.2558 28.7979 15.3802L3.01795 27.6669C2.71621 27.8105 2.38092 27.8689 2.04839 27.8357C1.71585 27.8025 1.39873 27.6789 1.13136 27.4785C0.863988 27.278 0.656554 27.0082 0.531511 26.6982C0.406468 26.3883 0.36858 26.0501 0.42195 25.7202L2.32195 14.0002L0.42195 2.2802C0.373325 1.97458 0.40257 1.66162 0.50698 1.3703C0.611391 1.07898 0.787593 0.818694 1.01928 0.613535ZM4.18595 15.0002L2.44728 25.7229L27.0433 14.0002L2.44728 2.27753L4.18595 13.0002H14.0019C14.2672 13.0002 14.5215 13.1056 14.7091 13.2931C14.8966 13.4806 15.0019 13.735 15.0019 14.0002C15.0019 14.2654 14.8966 14.5198 14.7091 14.7073C14.5215 14.8948 14.2672 15.0002 14.0019 15.0002H4.18595Z" fill="#01233F"/>
+                    </svg>
                                          <IconButton 
                        className="more-button"
                        onClick={handlePinOptionsOpen}

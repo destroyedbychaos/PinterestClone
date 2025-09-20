@@ -121,5 +121,58 @@ namespace PinterestClone.BLL.Services.NotificationService
                 return ServiceResponse.InternalServerErrorResponse($"Помилка при позначенні повідомлень як прочитаних: {ex.Message}");
             }
         }
+
+
+        public async Task<ServiceResponse> CreatePinSharedNotificationAsync(string recipientUserId, Guid pinId, string senderUserName, string? message = null)
+        {
+            try
+            {
+                var recipient = await _context.Users.FindAsync(recipientUserId);
+                if (recipient == null)
+                {
+                    return ServiceResponse.BadRequestResponse("Користувача-отримувача не знайдено");
+                }
+
+                var pin = await _context.Pins.FindAsync(pinId);
+                if (pin == null)
+                {
+                    return ServiceResponse.BadRequestResponse("Пін не знайдено");
+                }
+
+                var notificationMessage = $"{senderUserName} поділився піном \"{pin.Title}\" з вами";
+                if (!string.IsNullOrEmpty(message))
+                {
+                    notificationMessage += $": {message}";
+                }
+
+                var notification = new Notification
+                {
+                    UserId = recipientUserId,
+                    Message = notificationMessage,
+                    Title = "Новий пін поділився з вами",
+                    CreatedAt = DateTime.UtcNow,
+                    Type = NotificationType.System,
+                    Status = NotificationStatus.Sent,
+                    IsInAppEnabled = true,
+                    IsSmsEnabled = recipient.IsPhoneNumberVerified && recipient.SmsNotificationsEnabled,
+                    IsEmailEnabled = false,
+                    PinId = pinId
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+
+                if (recipient.IsPhoneNumberVerified && recipient.SmsNotificationsEnabled && !string.IsNullOrEmpty(recipient.PhoneNumber))
+                {
+                    await _smsService.SendNotificationAsync(recipient.PhoneNumber, notification.Message);
+                }
+
+                return ServiceResponse.OkResponse("Повідомлення про поширення піна створено");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResponse.InternalServerErrorResponse($"Помилка при створенні повідомлення: {ex.Message}");
+            }
+        }
     }
 } 
