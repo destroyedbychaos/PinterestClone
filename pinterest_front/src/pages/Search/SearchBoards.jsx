@@ -7,6 +7,8 @@ import SideMenu from "../../components/layout/SideMenu";
 import SearchHeader from "../../components/layout/SearchHeader";
 import SearchFilterModal from "../../components/SearchFilterModal";
 import { apiUrl } from "../../env";
+import { Button } from "@mui/material";
+import BoardOptionsModal from "../../components/ui/BoardOptionsModal";
 
 const API_BASE = apiUrl;
 
@@ -17,10 +19,146 @@ const SearchBoards = () => {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [showSearchFilterModal, setShowSearchFilterModal] = useState(false);
+  const [boardOptionsOpen, setBoardOptionsOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [optionsPosition, setOptionsPosition] = useState(null);
 
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
+  const handleArchiveToggle = async (board) => {
+    try {
+      if (!board.isArchived) {
+        const res = await fetch(`${API_BASE}/Boards/${board.id}/archive`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }, 
+        })
+        if (!res.ok) throw new Error("Failed to toggle archive");
+        const data = await res.json();
+        setBoardOptionsOpen(false);
+        setBoards((prev) =>
+          prev.map((b) =>
+            b.id === board.id ? { ...b, isArchived: data.isArchived } : b
+          )
+        );
+      }
+      else {
+          const res = await fetch(`${API_BASE}/Boards/${board.id}/restore`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error("Failed to toggle archive");
+        const data = await res.json();
+        setBoards((prev) =>
+          prev.map((b) =>
+            b.id === board.id ? { ...b, isArchived: data.isArchived } : b
+          )
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePrivacyToggle = async (board) => {
+    try {
+      let res;
+
+      if (!board.isPrivate) {
+        res = await fetch(`${API_BASE}/Boards/${board.id}/privatise`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } else {
+        res = await fetch(`${API_BASE}/Boards/${board.id}/publicise`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+
+      if (!res.ok) throw new Error("Failed to toggle privacy");
+
+      const data = await res.json();
+
+
+      console.log(data);
+      setBoards((prev) =>
+        prev.map((b) =>
+          b.id === board.id ? { ...b, isPrivate: data.isPrivate } : b
+        )
+      );
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (board) => {
+    if (board.ownerId !== user.id) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the board "${board.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/Boards/${board.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to delete board");
+
+      setBoards((prev) => prev.filter((b) => b.id !== board.id));
+      setResults((prev) => prev.filter((b) => b.id !== board.id));
+      setBoardOptionsOpen(false);
+      setSelectedBoard(null);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete the board. Please try again.");
+    }
+  };
+
+  const toggleBoardOptions = (board, e) => {
+    e.stopPropagation();
+    if (boardOptionsOpen && selectedBoard?.id === board.id) {
+      setBoardOptionsOpen(false);
+      setSelectedBoard(null);
+      setOptionsPosition(null);
+    } else {
+      setSelectedBoard(board);
+      setOptionsPosition({ x: e.clientX, y: e.clientY });
+      setBoardOptionsOpen(true);
+    }
+  };
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (boardOptionsOpen) {
+        setBoardOptionsOpen(false);
+        setSelectedBoard(null);
+        setOptionsPosition(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [boardOptionsOpen]);
 
   useEffect(() => {
     const fetchBoardsAndUsers = async () => {
@@ -39,8 +177,11 @@ const SearchBoards = () => {
         const usersData = await usersRes.json();
         const usersMap = {};
         if (usersData.success && Array.isArray(usersData.payload)) {
-          usersData.payload.forEach((user) => {
-            usersMap[user.id] = user.displayName || user.userName || "Unknown";
+          usersData.payload.forEach((u) => {
+            usersMap[u.id] = {
+              id: u.id,
+              name: u.displayName || u.userName || "Unknown",
+            };
           });
         }
 
@@ -64,9 +205,12 @@ const SearchBoards = () => {
               id: b.id,
               title: b.name || "Untitled Board",
               description: b.description || "",
-              ownerName: usersMap[b.userId] || "Unknown",
+              ownerId: usersMap[b.userId].id || "Unknown",
+              ownerName: usersMap[b.userId].name || "Unknown",
               pins: pins,
               updatedAt: b.updatedAt || Date.now(),
+              isPrivate: b.isPrivate || false,
+              isArchived: b.isArchived || false,
             };
           })
         );
@@ -100,6 +244,7 @@ const SearchBoards = () => {
   }, [query, boards]);
 
   const handleBoardClick = (board) => {
+    if (board.isArchived || (board.isPrivate && String(board.ownerId) !== String(user.id))) return;
     navigate(`/board/${board.id}`);
   };
 
@@ -181,97 +326,146 @@ const SearchBoards = () => {
                 mt: 3,
               }}
             >
-              {results.map((board) => (
-                <Box
-                  key={board.id}
-                  onClick={() => handleBoardClick(board)}
-                  sx={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: "16px",
-                    height: "400px",
-                    padding: 2,
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      backgroundColor: "#EAEFF9",
-                      transform: "translateY(-1px)",
-                    },
-                    "&:active": { transform: "translateY(0)" },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: "2fr 1fr",
-                      gridTemplateRows: "1fr 1fr",
-                      gap: 1,
-                      width: "100%",
-                      height: "calc(100% - 110px)",
-                    }}
-                  >
-                    {board.pins.slice(0, 3).map((pin, idx) => {
-                      const style = {
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "4px",
-                      };
-                      if (idx === 0) {
-                        return (
-                          <img
-                            key={idx}
-                            src={pin.imageUrl}
-                            alt={`Board ${board.title} preview ${idx + 1}`}
-                            style={{ ...style, gridRow: "1 / span 2" }}
-                          />
-                        );
-                      } else {
-                        return (
-                          <img
-                            key={idx}
-                            src={pin.imageUrl}
-                            alt={`Board ${board.title} preview ${idx + 1}`}
-                            style={style}
-                          />
-                        );
-                      }
-                    })}
-                  </Box>
+              {results.map((board) => {
+                const isOwner = String(board.ownerId) === String(user?.id);
 
+                return (
                   <Box
+                    key={board.id}
                     sx={{
-                      width: "100%",
-                      textAlign: "center",
-                      mt: 2,
-                      height: "100px",
-                      padding: "3%",
-                      borderRadius: "8px",
+                      position: "relative",
+                      overflow: "visible",
                       backgroundColor: "#ffffff",
+                      borderRadius: "16px",
+                      height: "400px",
+                      padding: 2,
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: "#EAEFF9",
+                        transform: "translateY(-1px)",
+                      },
+                      "&:active": { transform: "translateY(0)" },
                     }}
                   >
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      {board.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      by {board.ownerName ?? "Unknown"}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {board.pins.length} Pins | Updated{" "}
-                      {new Date(board.updatedAt)
-                        .toLocaleDateString("en-GB")
-                        .replace(/\//g, ".")}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "2fr 1fr",
+                        gridTemplateRows: "1fr 1fr",
+                        gap: 1,
+                        width: "100%",
+                        height: "calc(100% - 110px)",
+                      }}
+                      onClick={() => handleBoardClick(board)}
+                    >
+                      {board.pins.slice(0, 3).map((pin, idx) => {
+                        const style = {
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        };
+                        return (
+                          <img
+                            key={idx}
+                            src={pin.imageUrl}
+                            alt={`Board ${board.title} preview ${idx + 1}`}
+                            style={{ ...style, gridRow: idx === 0 ? "1 / span 2" : undefined }}
+                          />
+                        );
+                      })}
+                    </Box>
+
+                    <Box
+                      sx={{
+                        width: "100%",
+                        mt: 2,
+                        height: "100px",
+                        padding: "3%",
+                        borderRadius: "8px",
+                        backgroundColor: "#ffffff",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        position: "relative",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 1,
+                          position: "relative",
+                        }}
+                      >
+                        {board.isPrivate && <span role="img" aria-label="private" style={{ fontSize: "16px" }}>🔒</span>}
+                        {board.isArchived && <span role="img" aria-label="archived" style={{ fontSize: "16px" }}>🗁</span>}
+                        
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: 600, textAlign: "center" }}
+                        >
+                          {board.title}
+                        </Typography>
+
+                        {isOwner && (
+                          <Box
+                            component="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBoardOptions(board, e);
+                            }}
+                            sx={{
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: "20px",
+                              lineHeight: 1,
+                              padding: 0,
+                              ml: 1,
+                            }}
+                          >
+                            ⋮
+                          </Box>
+                        )}
+                      </Box>
+
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: "center" }}>
+                        by {board.ownerName ?? "Unknown"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: "center" }}>
+                        {board.pins.length} Pins | Updated{" "}
+                        {new Date(board.updatedAt).toLocaleDateString("en-GB").replace(/\//g, ".")}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                );
+              })}
             </Box>
           ) : (
             <Typography sx={{ mt: 4, textAlign: "center" }}>No boards found</Typography>
           )}
         </Box>
       </Box>
+
+      <BoardOptionsModal
+        isOpen={boardOptionsOpen}
+        onClose={() => {
+          setBoardOptionsOpen(false);
+          setSelectedBoard(null);
+          setOptionsPosition(null);
+        }}
+        board={selectedBoard}
+        position={optionsPosition}
+        onArchiveToggle={() => handleArchiveToggle(selectedBoard)}
+        onPrivacyToggle={() => handlePrivacyToggle(selectedBoard)}
+        onDelete={() => handleDelete(selectedBoard)}
+      />
+
 
       <SearchFilterModal
         open={showSearchFilterModal}
