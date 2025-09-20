@@ -25,6 +25,8 @@ namespace PinterestClone.BLL.Services.BoardService
     ///     -- Отримати дошки за ID дошки
     ///     -- Оновити інформацію про дошку
     ///     -- Видалити дошку
+    ///     -- Зробити дошку приватною
+    ///     -- Зробити дошку публічною
     ///     -- Заархівувати дошку
     ///     -- Розархівувати дошку
     /// </summary>
@@ -336,6 +338,42 @@ namespace PinterestClone.BLL.Services.BoardService
         public async Task<bool> DeleteBoardAsync(string boardId)
         {
             return await _boardRepository.DeleteBoardAsync(boardId);
+        }
+
+        /// <summary>
+        /// Робить дошку публічною.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <returns><see cref="BoardResponseDto"/> з оновленою дошкою або <c>null</c> при помилці.</returns>
+        public async Task<BoardResponseDto?> PubliciseBoardAsync(string boardId)
+        {
+            var board = await _boardRepository.GetBoardByIdAsync(boardId);
+
+            if (board == null) return null;
+
+            board.IsPrivate = false;
+
+            await _boardRepository.UpdateBoardAsync(board);
+
+            return await GetBoardByIdAsync(boardId);
+        }
+
+        /// <summary>
+        /// Робить дошку приватною.
+        /// </summary>
+        /// <param name="boardId">ID дошки.</param>
+        /// <returns><see cref="BoardResponseDto"/> з оновленою дошкою або <c>null</c> при помилці.</returns>
+        public async Task<BoardResponseDto?> PrivatiseBoardAsync(string boardId)
+        {
+            var board = await _boardRepository.GetBoardByIdAsync(boardId);
+
+            if (board == null) return null;
+
+            board.IsPrivate = true;
+
+            await _boardRepository.UpdateBoardAsync(board);
+
+            return await GetBoardByIdAsync(boardId);
         }
 
         /// <summary>

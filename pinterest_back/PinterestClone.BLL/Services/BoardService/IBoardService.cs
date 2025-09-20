@@ -20,6 +20,8 @@ namespace PinterestClone.BLL.Services.BoardService
         Task<BoardResponseDto?> GetBoardByIdAsync(string boardId);
         Task<BoardResponseDto?> UpdateBoardAsync(string boardId, BoardSimpleDto updateBoard, string userId);
         Task<bool> DeleteBoardAsync(string boardId);
+        Task<BoardResponseDto?> PubliciseBoardAsync(string boardId);
+        Task<BoardResponseDto?> PrivatiseBoardAsync(string boardId);
         Task<BoardResponseDto?> ArchiveBoardAsync(string boardId, string userId);
         Task<BoardResponseDto?> RestoreBoardAsync(string boardId, string userId);
     }

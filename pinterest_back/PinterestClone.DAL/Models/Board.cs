@@ -12,7 +12,7 @@ namespace PinterestClone.DAL.Models
         public required Guid Id { get; set; } = Guid.NewGuid();
         public required string Name { get; set; }
         public string? Description { get; set; }
-        public bool IsPrivate { get; set; }
+        public bool IsPrivate { get; set; } = false;
         public bool IsArchived { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

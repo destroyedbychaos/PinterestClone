@@ -1113,6 +1113,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Завантажує фото за URL.
+        /// </summary>
+        /// <param name="url">Посилання на фотографію.</param>
+        /// <returns><c>True</c> якщо завантаження можливе та <c>False</c> з помилкою про повідомлення якщо ні.</returns>
         [HttpGet("proxy-image")]
         [AllowAnonymous]
         public async Task<IActionResult> ProxyImage([FromQuery] string url)
@@ -1133,14 +1138,14 @@ namespace PinterestClone.API.Controllers
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return BadRequest($"Failed to fetch image. Status code: {response.StatusCode}");
+                    return BadRequest($"Помилка при завантаженні фотографії.");
                 }
 
                 var contentType = response.Content.Headers.ContentType?.MediaType;
 
                 if (!IsValidImageContentType(contentType))
                 {
-                    return BadRequest("URL does not point to a valid image");
+                    return BadRequest("Посилання не вказує на дійсну фотографію.");
                 }
 
                 var imageBytes = await response.Content.ReadAsByteArrayAsync(cts.Token);
@@ -1148,7 +1153,7 @@ namespace PinterestClone.API.Controllers
                 const int maxImageSize = 10 * 1024 * 1024;
                 if (imageBytes.Length > maxImageSize)
                 {
-                    return BadRequest("Image is too large");
+                    return BadRequest("Фотографія завелика за розмірами.");
                 }
 
                 Response.Headers.Add("Access-Control-Allow-Origin", "*");
@@ -1159,22 +1164,22 @@ namespace PinterestClone.API.Controllers
             }
             catch (OperationCanceledException)
             {
-                return BadRequest("Request timeout while fetching image");
+                return BadRequest("Помилка при запиті.");
             }
             catch (HttpRequestException ex)
             {
-                return BadRequest($"Failed to fetch image: {ex.Message}");
+                return BadRequest($"Помилка при завантаженні фотографії: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error proxying image from {url}: {ex}");
-                return BadRequest("An error occurred while fetching the image");
+                Console.WriteLine($"Помилка при конвертації посилання в картинку. {ex}");
+                return BadRequest("Помилка при завантаженні картинки.");
             }
         }
 
         /// <summary>
-        /// Validates if URL is safe for image proxying
-        /// </summary>
+        /// Перевіряє чи URL безпечне.
+
         private bool IsValidImageProxyUrl(string url, out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -1183,23 +1188,22 @@ namespace PinterestClone.API.Controllers
             {
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
-                    errorMessage = "Invalid URL format";
+                    errorMessage = "Невалідний формат URL.";
                     return false;
                 }
 
                 if (uri.Scheme != "http" && uri.Scheme != "https")
                 {
-                    errorMessage = "Only HTTP and HTTPS URLs are allowed";
+                    errorMessage = "Лише HTTP та HTTPS URL дозволені.";
                     return false;
                 }
 
                 if (IsLocalAddress(uri.Host))
                 {
-                    errorMessage = "Access to local addresses is not allowed";
+                    errorMessage = "Доступ до приватних файлів заборонений.";
                     return false;
                 }
 
-                // Additional security: check for known image hosting domains or patterns
                 var host = uri.Host.ToLower();
                 var allowedImageHosts = new[]
                 {
@@ -1207,10 +1211,8 @@ namespace PinterestClone.API.Controllers
             "images.unsplash.com",
             "cdn.pixabay.com",
             "images.pexels.com",
-            // Add more trusted image hosting domains as needed
         };
 
-                // For Pinterest specifically, allow pinimg.com subdomains
                 bool isAllowedHost = allowedImageHosts.Contains(host) ||
                                    host.EndsWith(".pinimg.com") ||
                                    host.EndsWith(".unsplash.com") ||
@@ -1218,7 +1220,6 @@ namespace PinterestClone.API.Controllers
 
                 if (!isAllowedHost)
                 {
-                    // For other domains, do additional validation
                     var path = uri.AbsolutePath.ToLower();
                     var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
 
@@ -1239,7 +1240,7 @@ namespace PinterestClone.API.Controllers
         }
 
         /// <summary>
-        /// Validates if content type is a valid image type
+        /// Validates if content type is a valid image type.
         /// </summary>
         private bool IsValidImageContentType(string contentType)
         {

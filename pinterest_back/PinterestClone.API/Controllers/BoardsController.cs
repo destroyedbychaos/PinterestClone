@@ -17,6 +17,8 @@ namespace PinterestClone.API.Controllers
     ///     -- Отримати дошку за ID
     ///     -- Оновити дошку
     ///     -- Видалити дошку
+    ///     -- Зробити дошку приватною
+    ///     -- Зробити дошку публічною
     ///     -- Заархівувати дошку
     ///     -- Розархівувати дошку
     /// </summary>
@@ -237,6 +239,42 @@ namespace PinterestClone.API.Controllers
             {
                 return BadRequest($"Error deleting board: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Робить дошку публічною.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <returns><see cref="ActionResult"/> з оновленою дошкою або повідомленням про помилку.</returns>
+        [HttpPost("{id}/publicise")]
+        [Authorize]
+        public async Task<ActionResult> PubliciseBoard(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return BadRequest("Невалідне ID дошки.");
+
+            var result = await _boardService.PubliciseBoardAsync(id);
+
+            if (result == null) return BadRequest("Помилка при публікації дошки.");
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Приватизує дошку.
+        /// </summary>
+        /// <param name="id">ID дошки.</param>
+        /// <returns><see cref="ActionResult"/> з оновленою дошкою або повідомленням про помилку.</returns>
+        [HttpPost("{id}/privatise")]
+        [Authorize]
+        public async Task<ActionResult> PrivatiseBoard(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return BadRequest("Невалідне ID дошки.");
+
+            var result = await _boardService.PrivatiseBoardAsync(id);
+
+            if (result == null) return BadRequest("Помилка при публікації дошки.");
+
+            return Ok(result);
         }
 
         /// <summary>
