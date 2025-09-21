@@ -32,6 +32,7 @@ import ViewNFT from "../pages/nft-market/ViewNFT.jsx";
 import Profile from "../pages/nft-market/Profile.jsx";
 import EditProfile from "../pages/nft-market/EditProfile.jsx";
 import NFTLayout from "../components/layout/NFTLayout.jsx";
+import UserProfilePage from "../pages/User/UserProfilePage.jsx";
 
 
 
@@ -101,6 +102,10 @@ const BasicRoute = () => {
             
             <Route path="/board/:boardId" element={<Layout />}>
                 <Route index element={<BoardPage/>} />
+            </Route>
+            
+            <Route path="/user/:username" element={<Layout />}>
+                <Route index element={<UserProfilePage/>} />
             </Route>
 
             <Route path="/settings" element={

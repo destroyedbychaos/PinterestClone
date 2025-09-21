@@ -24,6 +24,8 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IMapper _mapper;
         private readonly IFileService _fileService;
         private readonly IUserRepository _userRepository;
+        
+        private static readonly Dictionary<string, string> _imageHashCache = new Dictionary<string, string>();
 
         public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository, IFileService fileService)
         {
@@ -555,52 +557,144 @@ namespace PinterestClone.BLL.Services.PinService
             }
         }
 
-        /// <summary>
-        /// Знаходить піни зі схожими зображеннями за допомогою сервісу пошуку зображень.
-        /// </summary>
-        /// <param name="imageFile">Файл зображення для пошуку.</param>
-        /// <param name="searchArea">Область для пошуку.</param>
-        /// <param name="selectionCoords">Координати вибору.</param>
-        /// <returns><see cref="PinListDto"/> з результатами пошуку.</returns>
+
         public async Task<PinListDto?> FindSimilarImagesAsync(IFormFile imageFile, string? searchArea = null, string? selectionCoords = null)
         {
             try
             {
                 Console.WriteLine($"PinService.FindSimilarImagesAsync called - SearchArea: {searchArea}, SelectionCoords: {selectionCoords}");
                 
-                var searchAreaInfo = new { SearchArea = searchArea, SelectionCoords = selectionCoords };
-                
-                Console.WriteLine("Calling _imageSearchService.FindSimilarImagesAsync...");
-
-                var similarImagePaths = await _imageSearchService.FindSimilarImagesAsync(imageFile, searchAreaInfo);
-                Console.WriteLine($"FindSimilarImagesAsync completed, found {similarImagePaths.Count} similar images");
-
                 var allPins = await _pinRepository.GetAllPins().ToListAsync();
-                var similarPins = new List<Pin>();
+                var resultPins = new List<Pin>();
 
-                foreach (var imagePath in similarImagePaths)
+                Console.WriteLine("Searching for exact image copies...");
+                var queryHash = await _imageSearchService.CalculateImageHashAsync(imageFile);
+                Console.WriteLine($"Query hash = {queryHash}");
+
+                if (!string.IsNullOrEmpty(queryHash))
                 {
-                    var fileName = System.IO.Path.GetFileName(imagePath);
-                    var matchingPins = allPins.Where(pin => pin.ImageUrl != null && 
-                        (pin.ImageUrl.Contains(fileName) || pin.ImageUrl.EndsWith(fileName))).ToList();
-                    similarPins.AddRange(matchingPins);
+
+                    var pinsToCheck = allPins.Where(p => !string.IsNullOrEmpty(p.ImageUrl)).Take(100).ToList();
+                    Console.WriteLine($"Checking {pinsToCheck.Count} pins for exact matches...");
+
+                    var semaphore = new SemaphoreSlim(5); 
+                    var tasks = pinsToCheck.Select(async pin =>
+                    {
+                        await semaphore.WaitAsync();
+                        try
+                        {
+
+                            if (_imageHashCache.TryGetValue(pin.ImageUrl, out var cachedHash))
+                            {
+                                if (cachedHash == queryHash)
+                                {
+                                    Console.WriteLine($"EXACT MATCH found (from cache): {pin.ImageUrl}");
+                                    return pin;
+                                }
+                            }
+                            else
+                            {
+
+                                using var httpClient = new HttpClient();
+                                using var response = await httpClient.GetAsync(pin.ImageUrl);
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    using var stream = await response.Content.ReadAsStreamAsync();
+                                    using var memoryStream = new MemoryStream();
+                                    await stream.CopyToAsync(memoryStream);
+                                    memoryStream.Position = 0;
+
+                                    var currentHash = await _imageSearchService.CalculateImageHashFromBytesAsync(memoryStream.ToArray());
+                                    
+                                    _imageHashCache[pin.ImageUrl] = currentHash;
+
+                                    if (!string.IsNullOrEmpty(currentHash) && currentHash == queryHash)
+                                    {
+                                        Console.WriteLine($"EXACT MATCH found: {pin.ImageUrl}");
+                                        return pin;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing pin {pin.Id}: {ex.Message}");
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                        return null;
+                    });
+
+                    var results = await Task.WhenAll(tasks);
+                    resultPins.AddRange(results.Where(p => p != null));
                 }
 
-                if (!similarPins.Any())
+                Console.WriteLine($"Found {resultPins.Count} exact copies");
+
+                Console.WriteLine("Searching for similar images...");
+                
+                var similarPins = new List<(Pin pin, double similarity)>();
+                
+                var exactCopyIds = resultPins.Select(p => p.Id).ToHashSet();
+                
+                var similarPinsToCheck = allPins.Where(p => !string.IsNullOrEmpty(p.ImageUrl) && !exactCopyIds.Contains(p.Id)).Take(20).ToList();
+                Console.WriteLine($"Checking {similarPinsToCheck.Count} pins for similar images...");
+                
+                var similarSemaphore = new SemaphoreSlim(3);
+                var similarTasks = similarPinsToCheck.Select(async pin =>
                 {
-                    similarPins = allPins.Take(30).ToList();
+                    await similarSemaphore.WaitAsync();
+                    try
+                    {
+                        var similarity = await _imageSearchService.CalculateSimilarityAsync(imageFile, pin.ImageUrl);
+                        if (similarity > 0.5) 
+                        {
+                            Console.WriteLine($"Similar image found: {pin.ImageUrl} with similarity {similarity:F3}");
+                            return (pin, similarity);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error calculating similarity for pin {pin.Id}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        similarSemaphore.Release();
+                    }
+                    return ((Pin)null, 0.0);
+                });
+
+                var similarResults = await Task.WhenAll(similarTasks);
+                similarPins.AddRange(similarResults.Where(r => r.Item1 != null));
+
+                var exactCopies = resultPins.ToList();
+                var similarPinsList = similarPins.OrderByDescending(x => x.similarity).Select(x => x.pin).ToList();
+                
+                Console.WriteLine($"Found {similarPinsList.Count} similar images");
+                
+                var finalPins = new List<Pin>();
+                finalPins.AddRange(exactCopies); 
+                finalPins.AddRange(similarPinsList); 
+                
+                if (!finalPins.Any())
+                {
+                    Console.WriteLine("No exact copies or similar images found, returning first 30 pins");
+                    finalPins = allPins.Take(30).ToList();
                 }
 
-                var result = new PinListDto
+                var finalResult = new PinListDto
                 {
-                    Pins = _mapper.Map<List<PinSimpleDto>>(similarPins),
-                    TotalCount = similarPins.Count,
+                    Pins = _mapper.Map<List<PinSimpleDto>>(finalPins),
+                    TotalCount = finalPins.Count,
                     PageNumber = 1,
                     PageSize = 30,
                     TotalPages = 1
                 };
                 
-                return result;
+                Console.WriteLine($"Returning {exactCopies.Count} exact copies + {similarPinsList.Count} similar images = {finalPins.Count} total");
+                return finalResult;
             }
             catch (Exception ex)
             {

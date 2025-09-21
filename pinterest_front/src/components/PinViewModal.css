@@ -75,33 +75,35 @@
   aspect-ratio: 379.49 / 642;
 }
 
-.fullscreen-button {
+.fullscreen-icon {
   position: absolute !important;
-  left: 299px;
-  top: 560px;
-  height: 58px !important;
-  padding: 16px !important;
-  background: rgba(228, 234, 248, 0.60) !important;
-  border-radius: 100px !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  gap: 16px !important;
-  min-width: auto !important;
+  right: 20px !important;
+  bottom: 20px !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
   z-index: 10 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 35px !important;
+  height: 32px !important;
 }
 
-.fullscreen-button:hover {
-  background: rgba(228, 234, 248, 0.80) !important;
+.fullscreen-icon:hover {
+  background: rgba(255, 255, 255, 1) !important;
   transform: scale(1.05) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
-.fullscreen-button:active {
-  transform: scale(0.95) !important;
+/* Глобально приховуємо всі сині кнопки */
+.pin-view-modal-content button[style*="#6F91D9"],
+.pin-view-modal-content button[style*="rgb(111, 145, 217)"],
+.pin-view-modal-content .MuiButton-contained[style*="background"],
+.pin-view-modal-overlay button[style*="#6F91D9"],
+.pin-view-modal-overlay button[style*="rgb(111, 145, 217)"] {
+  display: none !important;
+  visibility: hidden !important;
 }
+
 
 
 
@@ -161,6 +163,30 @@
   align-items: center;
 }
 
+.pin-actions > *:not(.pin-actions-left) {
+  display: none !important;
+}
+
+/* Приховуємо всі елементи з темним фоном */
+.pin-actions [style*="background-color: rgb(1, 35, 63)"],
+.pin-actions [style*="background-color: #01233F"],
+.pin-actions [style*="background: #01233F"],
+.pin-actions button[style*="background"],
+.pin-actions .MuiButton-contained,
+.pin-actions button[class*="save"],
+.pin-actions [class*="save"],
+.pin-actions button[style*="background-color"],
+.pin-actions div[style*="background"],
+button[style*="background-color: rgb(111, 145, 217)"],
+button[style*="background: rgb(111, 145, 217)"],
+button[style*="background-color: #6F91D9"],
+button[style*="background: #6F91D9"],
+.pin-actions .MuiButton-root[style*="background"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
 .pin-actions-left {
   display: flex;
   align-items: center;
@@ -195,11 +221,6 @@
   word-wrap: break-word;
 }
 
-.share-button {
-  width: 32px !important;
-  height: 32px !important;
-  color: #01233F !important;
-}
 
 .more-button {
   width: 38px !important;
@@ -208,47 +229,7 @@
   color: #01233F !important;
 }
 
-.save-button {
-  height: 48px !important;
-  max-width: 240px !important;
-  padding: 8px 24px !important;
-  background: #6F91D9 !important;
-  border-radius: 40px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  text-transform: none !important;
-  min-width: auto !important;
-}
 
-.save-button:hover {
-  background: #5A7BC7 !important;
-}
-
-.save-text {
-  color: white;
-  font-size: 21px;
-  font-family: 'Geologica', sans-serif;
-  font-weight: 400;
-  word-wrap: break-word;
-}
-
-.save-arrow {
-  width: 24px;
-  height: 24px;
-  position: relative;
-}
-
-.save-arrow::after {
-  content: '';
-  position: absolute;
-  width: 7.75px;
-  height: 13.98px;
-  left: 8.50px;
-  top: 5.02px;
-  background: white;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
 
 .pin-divider {
   width: 100%;
@@ -516,10 +497,6 @@
     height: auto;
   }
   
-  .fullscreen-button {
-    left: calc(100% - 80px) !important;
-    top: calc(100% - 80px) !important;
-  }
 }
 
 @media (max-width: 1200px) {

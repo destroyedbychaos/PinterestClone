@@ -13,18 +13,19 @@ export const getFullImageUrl = (imageUrl) => {
     return PLACEHOLDER_DATA_URI;
   }
   
- 
+
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
   
- 
+
   const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); 
   
 
-  const normalizedImageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+  let cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+  let cleanImageUrl = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
   
-  return `${baseUrl}${normalizedImageUrl}`;
+  return `${cleanBaseUrl}/${cleanImageUrl}`;
 };
 
 /**

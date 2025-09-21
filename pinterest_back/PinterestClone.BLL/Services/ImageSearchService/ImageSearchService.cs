@@ -4,6 +4,8 @@ using Emgu.CV.Structure;
 using Emgu.CV.Features2D;
 using Emgu.CV.Util;
 using System.Drawing;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace PinterestClone.BLL.Services.ImageSearchService
 {
@@ -18,17 +20,11 @@ namespace PinterestClone.BLL.Services.ImageSearchService
     /// </summary>
     public class ImageSearchService : IImageSearchService
     {
-        private readonly string _imageStoragePath;
+        private readonly HttpClient _httpClient;
         
         public ImageSearchService()
         {
-            _imageStoragePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-            
-
-            if (!Directory.Exists(_imageStoragePath))
-            {
-                Console.WriteLine($"Warning: Image storage path does not exist: {_imageStoragePath}");
-            }
+            _httpClient = new HttpClient();
         }
 
         /// <summary>
@@ -53,94 +49,8 @@ namespace PinterestClone.BLL.Services.ImageSearchService
         {
             try
             {
-                var similarImages = new List<string>();
-                
-
-                var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
-                using (var stream = new FileStream(tempUploadPath, FileMode.Create))
-                {
-                    await uploadedImage.CopyToAsync(stream);
-                }
-
-                using var queryImage = new Mat(tempUploadPath, Emgu.CV.CvEnum.ImreadModes.Color);
-                
-                if (queryImage.IsEmpty)
-                {
-                    Console.WriteLine($"Error: Could not load uploaded image: {tempUploadPath}");
-                    return new List<string>();
-                }
-                
-
-                using var sift = new SIFT();
-
-                using var queryKeyPoints = new VectorOfKeyPoint();
-                using var queryDescriptors = new Mat();
-                sift.DetectAndCompute(queryImage, null, queryKeyPoints, queryDescriptors, false);
-                
-
-                if (queryKeyPoints.Size == 0 || queryDescriptors.IsEmpty)
-                {
-                    Console.WriteLine($"Error: No keypoints found in uploaded image");
-                    return new List<string>();
-                }
-
-
-                using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2, false);
-
-                foreach (var imagePath in Directory.GetFiles(_imageStoragePath, "*.jpg").Concat(Directory.GetFiles(_imageStoragePath, "*.png")))
-                {
-                    try
-                    {
-                        using var currentImage = new Mat(imagePath, Emgu.CV.CvEnum.ImreadModes.Color);
-                        
-                        if (currentImage.IsEmpty)
-                        {
-                            Console.WriteLine($"Warning: Could not load image: {imagePath}");
-                            continue;
-                        }
-                        
-                        using var currentKeyPoints = new VectorOfKeyPoint();
-                        using var currentDescriptors = new Mat();
-                        
-                        sift.DetectAndCompute(currentImage, null, currentKeyPoints, currentDescriptors, false);
-
-                        if (currentKeyPoints.Size == 0 || currentDescriptors.IsEmpty)
-                        {
-                            Console.WriteLine($"Warning: No keypoints found in image: {imagePath}");
-                            continue;
-                        }
-
-                        using var matches = new VectorOfDMatch();
-                        matcher.Match(queryDescriptors, currentDescriptors, matches);
-                        
-                        var goodMatches = 0;
-                        for (int i = 0; i < matches.Size; i++)
-                        {
-                            if (matches[i].Distance < similarityThreshold * 100)
-                            {
-                                goodMatches++;
-                            }
-                        }
-                        var similarity = matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
-
-                        if (similarity > similarityThreshold)
-                        {
-                            similarImages.Add(imagePath);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing image {imagePath}: {ex.Message}");
-                        continue;
-                    }
-                }
-
-                if (File.Exists(tempUploadPath))
-                {
-                    File.Delete(tempUploadPath);
-                }
-
-                return similarImages;
+                Console.WriteLine("FindSimilarImagesAsync: This method now works with online images from PinService");
+                return new List<string>();
             }
             catch (Exception ex)
             {
@@ -149,54 +59,135 @@ namespace PinterestClone.BLL.Services.ImageSearchService
             }
         }
 
-        /// <summary>
-        /// Обчислює схожість між завантаженим зображенням та існуючим зображенням.
-        /// </summary>
-        /// <param name="uploadedImage">Завантажене зображення.</param>
-        /// <param name="existingImageUrl">Шлях або назва існуючого зображення.</param>
-        /// <returns>Число від 0.0 до 1.0, де 1.0 означає повну ідентичність.</returns>
+
+        public async Task<string> CalculateImageHashAsync(IFormFile imageFile)
+        {
+            try
+            {
+
+                using var stream = imageFile.OpenReadStream();
+                using var md5 = MD5.Create();
+                var hashBytes = await md5.ComputeHashAsync(stream);
+                return Convert.ToHexString(hashBytes).ToLower();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error calculating hash for uploaded image: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        public async Task<string> CalculateImageHashFromPathAsync(string imagePath)
+        {
+            if (!File.Exists(imagePath))
+            {
+                Console.WriteLine($"File not found: {imagePath}");
+                return string.Empty;
+            }
+
+            try
+            {
+
+                using var stream = File.OpenRead(imagePath);
+                using var md5 = MD5.Create();
+                var hashBytes = await md5.ComputeHashAsync(stream);
+                return Convert.ToHexString(hashBytes).ToLower();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error calculating hash for {imagePath}: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        public async Task<string> CalculateImageHashFromBytesAsync(byte[] imageBytes)
+        {
+            try
+            {
+                using var md5 = MD5.Create();
+                var hashBytes = await md5.ComputeHashAsync(new MemoryStream(imageBytes));
+                return Convert.ToHexString(hashBytes).ToLower();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"CalculateImageHashFromBytesAsync error: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+        public async Task<List<string>> FindExactImageCopiesAsync(IFormFile imageFile)
+        {
+            try
+            {
+                Console.WriteLine($"FindExactImageCopiesAsync: Starting search for {imageFile.FileName}");
+                var queryHash = await CalculateImageHashAsync(imageFile);
+                
+                if (string.IsNullOrEmpty(queryHash))
+                {
+                    Console.WriteLine("FindExactImageCopiesAsync: Failed to calculate query hash");
+                    return new List<string>();
+                }
+                
+                Console.WriteLine($"FindExactImageCopiesAsync: Query hash = {queryHash}");
+
+                Console.WriteLine("FindExactImageCopiesAsync: This method now works with online images from PinService");
+                return new List<string>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in FindExactImageCopiesAsync: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+
         public async Task<double> CalculateSimilarityAsync(IFormFile uploadedImage, string existingImageUrl)
         {
             return await CalculateSimilarityAsync(uploadedImage, existingImageUrl, null);
         }
 
-        /// <summary>
-        /// Обчислює схожість між завантаженим зображенням та існуючим зображенням з урахуванням додаткової області пошуку.
-        /// </summary>
-        /// <param name="uploadedImage">Завантажене зображення.</param>
-        /// <param name="existingImageUrl">Шлях або назва існуючого зображення.</param>
-        /// <param name="searchAreaInfo">Додаткова інформація про область пошуку (може бути <c>null</c>).</param>
-        /// <returns>Число від 0.0 до 1.0, де 1.0 означає повну ідентичність.</returns>
+
         public async Task<double> CalculateSimilarityAsync(IFormFile uploadedImage, string existingImageUrl, object? searchAreaInfo)
         {
+            var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
+            var tempExistingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
+            
             try
             {
-                var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
                 using (var stream = new FileStream(tempUploadPath, FileMode.Create))
                 {
                     await uploadedImage.CopyToAsync(stream);
                 }
 
-                var existingImagePath = Path.Combine(_imageStoragePath, Path.GetFileName(existingImageUrl));
-                
-                if (!File.Exists(existingImagePath))
+                using var httpClient = new HttpClient();
+                using var response = await httpClient.GetAsync(existingImageUrl);
+                if (!response.IsSuccessStatusCode)
                 {
+                    Console.WriteLine($"CalculateSimilarityAsync: Could not download image from {existingImageUrl}");
                     return 0.0;
                 }
 
-                using var queryImage = new Mat(tempUploadPath, Emgu.CV.CvEnum.ImreadModes.Color);
-                using var existingImage = new Mat(existingImagePath, Emgu.CV.CvEnum.ImreadModes.Color);
-                
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var fileStream = new FileStream(tempExistingPath, FileMode.Create))
+                {
+                    await stream.CopyToAsync(fileStream);
+                }
 
+                using var queryImage = new Mat(tempUploadPath, Emgu.CV.CvEnum.ImreadModes.Color);
+                using var existingImage = new Mat(tempExistingPath, Emgu.CV.CvEnum.ImreadModes.Color);
+                
                 if (queryImage.IsEmpty)
                 {
-                    Console.WriteLine($"Error: Could not load uploaded image: {tempUploadPath}");
+                    Console.WriteLine($"CalculateSimilarityAsync: Could not load uploaded image: {Path.GetFileName(tempUploadPath)}");
                     return 0.0;
                 }
                 
                 if (existingImage.IsEmpty)
                 {
-                    Console.WriteLine($"Error: Could not load existing image: {existingImagePath}");
+                    Console.WriteLine($"CalculateSimilarityAsync: Could not load existing image: {Path.GetFileName(tempExistingPath)}");
                     return 0.0;
                 }
                 
@@ -210,15 +201,13 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                 sift.DetectAndCompute(queryImage, null, queryKeyPoints, queryDescriptors, false);
                 sift.DetectAndCompute(existingImage, null, existingKeyPoints, existingDescriptors, false);
                 
-
                 if (queryKeyPoints.Size == 0 || queryDescriptors.IsEmpty || existingKeyPoints.Size == 0 || existingDescriptors.IsEmpty)
                 {
-                    Console.WriteLine($"Error: No keypoints found in one or both images");
+                    Console.WriteLine($"CalculateSimilarityAsync: No keypoints found in images");
                     return 0.0;
                 }
 
                 using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2, false);
-
                 using var matches = new VectorOfDMatch();
                 matcher.Match(queryDescriptors, existingDescriptors, matches);
                 
@@ -230,19 +219,26 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                         goodMatches++;
                     }
                 }
+                
                 var similarity = matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
-
-                if (File.Exists(tempUploadPath))
-                {
-                    File.Delete(tempUploadPath);
-                }
-
+                Console.WriteLine($"CalculateSimilarityAsync: Similarity with {existingImageUrl}: {similarity:F3}");
                 return similarity;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ImageSearchService: CalculateSimilarityAsync error: {ex.Message}");
+                Console.WriteLine($"CalculateSimilarityAsync: Error processing {existingImageUrl}: {ex.Message}");
                 return 0.0;
+            }
+            finally
+            {
+                if (File.Exists(tempUploadPath))
+                {
+                    File.Delete(tempUploadPath);
+                }
+                if (File.Exists(tempExistingPath))
+                {
+                    File.Delete(tempExistingPath);
+                }
             }
         }
     }

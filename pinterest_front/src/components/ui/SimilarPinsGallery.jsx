@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import PropTypes from 'prop-types';
 import similarPinsApi from '../../services/similarPinsApi';
+import { getFullImageUrl } from '../../utils/imageUtils';
 import './SimilarPinsGallery.css';
 
 const SimilarPinsGallery = ({ pinId, onPinClick }) => {
@@ -32,7 +33,15 @@ const SimilarPinsGallery = ({ pinId, onPinClick }) => {
 
       try {
         console.log('📌 Using general recommendations API...');
-        const response = await fetch(`${API_BASE}/Pins/recommendations`);
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(`${API_BASE}/Pins/recommendations`, {
+          headers
+        });
         if (response.ok) {
           const data = await response.json();
 
@@ -42,6 +51,9 @@ const SimilarPinsGallery = ({ pinId, onPinClick }) => {
           );
           pins = { Pins: filteredData.slice(0, 24) };
           console.log('✅ General recommendations success:', pins);
+        } else if (response.status === 401) {
+          console.log('❌ Unauthorized: User needs to login');
+
         } else {
           console.log('❌ General recommendations failed:', response.status, response.statusText);
         }
@@ -144,7 +156,7 @@ const SimilarPinsGallery = ({ pinId, onPinClick }) => {
               >
                 <img
                   className="gallery-pin-image"
-                  src={pin.ImageUrl || pin.imageUrl || pin.image || "https://placehold.co/267x267"}
+                  src={getFullImageUrl(pin.ImageUrl || pin.imageUrl || pin.image)}
                   alt={pin.Title || pin.title || "Similar pin"}
                   onError={(e) => {
                     e.target.src = "https://placehold.co/267x267";

@@ -19,17 +19,39 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!Array.isArray(users)) {
+      setFilteredUsers([]);
+      return;
+    }
+    
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);
     } else {
       const filtered = users.filter(user => 
         user.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
+
+  const getAvatarUrl = (user) => {
+    if (!user.avatarUrl) return null;
+    
+    if (user.avatarUrl.startsWith('http')) {
+      return user.avatarUrl;
+    }
+    
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5228';
+    
+    let cleanAvatarUrl = user.avatarUrl.startsWith('/') ? user.avatarUrl.substring(1) : user.avatarUrl;
+    let cleanApiBase = API_BASE.endsWith('/') ? API_BASE.substring(0, API_BASE.length - 1) : API_BASE;
+    
+    return `${cleanApiBase}/${cleanAvatarUrl}`;
+  };
 
   const fetchUsers = async () => {
     try {
@@ -45,14 +67,48 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data || []);
-        setFilteredUsers(data || []);
+        const usersArray = Array.isArray(data.payload) ? data.payload : [];
+        setUsers(usersArray);
+        setFilteredUsers(usersArray);
+      } else {
+        console.error('Failed to fetch users:', response.status, response.statusText);
+        setUsers([]);
+        setFilteredUsers([]);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
+  };
+
+
+  const sendNotificationToUser = async (user, pin, message) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const notificationData = {
+      recipientUserId: user.id,
+      pinId: pin.id || pin.Id,
+      message: message?.trim() || null
+    };
+
+    const response = await fetch('/api/notifications/pin-shared', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(notificationData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to send notification: ${response.status}`);
+    }
+
+    console.log('Notification sent successfully to:', user.displayName || user.userName);
   };
 
   const handleShare = async () => {
@@ -82,6 +138,15 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
 
       if (response.ok) {
         console.log('Pin shared successfully');
+        
+        try {
+          await sendNotificationToUser(selectedUser, pin, message);
+        } catch (notificationError) {
+          console.error('Failed to send notification, but pin shared successfully:', notificationError);
+        }
+        
+        console.log(`Pin successfully shared with ${selectedUser.displayName || selectedUser.userName}`);
+        
         onShare && onShare(selectedUser, message);
         onClose();
       } else {
@@ -118,16 +183,26 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
         </Box>
 
         <Box className="share-pin-users">
-          <Typography className="users-title">Select user to share with:</Typography>
+          <Typography className="users-title">
+            {searchTerm.trim() ? `Search results for "${searchTerm}":` : 'Select user to share with:'}
+          </Typography>
           <List className="users-list">
-            {filteredUsers.map((user) => (
-              <ListItem
-                key={user.id}
-                className={`user-item ${selectedUser?.id === user.id ? 'selected' : ''}`}
-                onClick={() => setSelectedUser(user)}
-              >
+            {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <ListItem
+                  key={user.id}
+                  className={`user-item ${selectedUser?.id === user.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedUser(user)}
+                >
                 <ListItemAvatar>
-                  <Avatar src={user.avatarUrl} alt={user.displayName || user.userName}>
+                  <Avatar 
+                    src={getAvatarUrl(user)} 
+                    alt={user.displayName || user.userName}
+                    onError={(e) => {
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
+                  >
                     {(user.displayName || user.userName || user.email || 'U').charAt(0).toUpperCase()}
                   </Avatar>
                 </ListItemAvatar>
@@ -136,7 +211,15 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
                   secondary={user.userName && user.userName !== user.displayName ? `@${user.userName}` : ''}
                 />
               </ListItem>
-            ))}
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText
+                  primary={loading ? "Loading users..." : "No users found"}
+                  secondary={!loading && searchTerm ? "Try a different search term" : ""}
+                />
+              </ListItem>
+            )}
           </List>
         </Box>
 
@@ -158,7 +241,7 @@ const SharePinModal = ({ isOpen, onClose, onShare, pin }) => {
 
                  <Box className="share-pin-actions">
                      <Button
-            className="share-button"
+            className="share-pin-submit-button"
             variant="contained"
             disabled={!selectedUser}
             onClick={handleShare}
