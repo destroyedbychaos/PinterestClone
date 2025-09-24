@@ -15,6 +15,8 @@ import FullscreenPinModal from './ui/FullscreenPinModal';
 import PinOptionsModal from './ui/PinOptionsModal';
 import SharePinModal from './ui/SharePinModal';
 import './PinViewModal.css';
+import ActionButton from './ui/CreateAestComponents/ActionButton';
+import { Icon as Iconify } from '@iconify/react';
 
 const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source = 'home' }) => {
   const [comment, setComment] = useState('');
@@ -580,6 +582,7 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                       {isLiked ? <Favorite className="liked-icon" /> : <FavoriteBorder />}
                       <Typography className="like-count">{likesCount}</Typography>
                     </Button>
+                  
                     <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" onClick={() => setSharePinModalOpen(true)} style={{cursor: 'pointer'}}>
                       <path d="M1.01928 0.613535C1.28807 0.375663 1.62098 0.222249 1.97644 0.172452C2.33189 0.122655 2.69414 0.178681 3.01795 0.333535L28.7979 12.6202C29.0585 12.7446 29.2784 12.9403 29.4324 13.1845C29.5864 13.4287 29.6681 13.7115 29.6681 14.0002C29.6681 14.2889 29.5864 14.5717 29.4324 14.8159C29.2784 15.0601 29.0585 15.2558 28.7979 15.3802L3.01795 27.6669C2.71621 27.8105 2.38092 27.8689 2.04839 27.8357C1.71585 27.8025 1.39873 27.6789 1.13136 27.4785C0.863988 27.278 0.656554 27.0082 0.531511 26.6982C0.406468 26.3883 0.36858 26.0501 0.42195 25.7202L2.32195 14.0002L0.42195 2.2802C0.373325 1.97458 0.40257 1.66162 0.50698 1.3703C0.611391 1.07898 0.787593 0.818694 1.01928 0.613535ZM4.18595 15.0002L2.44728 25.7229L27.0433 14.0002L2.44728 2.27753L4.18595 13.0002H14.0019C14.2672 13.0002 14.5215 13.1056 14.7091 13.2931C14.8966 13.4806 15.0019 13.735 15.0019 14.0002C15.0019 14.2654 14.8966 14.5198 14.7091 14.7073C14.5215 14.8948 14.2672 15.0002 14.0019 15.0002H4.18595Z" fill="#01233F"/>
                     </svg>
@@ -589,7 +592,19 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                      >
                        <MoreVert />
                      </IconButton>
+                     <Box sx={{
+                      paddingLeft: '28rem',
+                     }}>
+                        
+                      <ActionButton width="140" height="48" variant="secondary">
+                        Profile
+                        <Iconify  icon="octicon:chevron-right-24" width={28} height={28} color='white' />
+                      </ActionButton>
+                     </Box>
+                     
+                     
                   </Box>
+                  
                 </Box>
 
                 <Box className="pin-divider" />

@@ -19,6 +19,7 @@ import CreateBoardModal from '../../components/modals/CreateBoardModal';
 import SaveFromUrlModal from '../../components/modals/SaveFromUrlModal';
 import SelectAestsModal from '../../components/modals/SelectAestsModal';
 import PinViewModal from '../../components/PinViewModal';
+import CreateBoardPanel from '../../components/ui/CreateAestComponents/CreateBoardPanel';
 
 import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../../store/Boards/BoardsApi';
 import { useCreatePinMutation } from '../../../store/Pins/PinApi';
@@ -50,6 +51,7 @@ const CreateAest = () => {
     const [scraper] = useState(new WebsiteScraper());
     const [showPinViewModal, setShowPinViewModal] = useState(false);
     const [selectedPinForView, setSelectedPinForView] = useState(null);
+    const [showCreateBoardPanel, setShowCreateBoardPanel] = useState(false);
 
     const [toast, setToast] = useState({
       open: false,
@@ -96,6 +98,10 @@ const CreateAest = () => {
       isSuccess: isPinCreated, 
       error: pinCreationError 
     }] = useCreatePinMutation();
+
+    const handleCreateNewBoard = () => {
+      setShowCreateBoardPanel(true);
+    };
 
     const boards = boardsData?.boards || [];
   
@@ -527,8 +533,63 @@ useEffect(() => {
       refetchBoards();
     };
 
-    const handleCreateNewBoard = () => {
-      setShowCreateBoardModal(true);
+    // const handleCreateNewBoard = () => {
+    //   setShowCreateBoardModal(true);
+    // };
+
+    const handleBackToBoardList = () => {
+      setShowCreateBoardPanel(false);
+    };
+    
+    const handleCreateBoardFromPanel = async (boardName, isPrivate = false) => {
+      try {
+        const boardData = {
+          name: boardName,
+          description: "",
+          isPrivate: isPrivate
+        };
+    
+        const result = await createBoard(boardData).unwrap();
+        await refetchBoards();
+    
+        const newBoard = {
+          id: result.id,
+          name: result.name,
+          image: null,
+          isPrivate: result.isPrivate || false
+        };
+        setSelectedBoard(newBoard);
+    
+        setShowCreateBoardPanel(false);
+        showToast('Board created successfully', 'success');
+      } catch (error) {
+        console.error('Board creation error:', error);
+        let errorMessage = "Failed to create board. Please try again.";
+        
+        if (error.status === 400) {
+          if (error.data && error.data.errors) {
+            const validationErrors = error.data.errors;
+            const errorMessages = [];
+            
+            Object.keys(validationErrors).forEach(field => {
+              const fieldErrors = validationErrors[field];
+              if (Array.isArray(fieldErrors)) {
+                fieldErrors.forEach(err => {
+                  errorMessages.push(`${field}: ${err}`);
+                });
+              }
+            });
+            
+            if (errorMessages.length > 0) {
+              errorMessage = `Validation errors: ${errorMessages.join(', ')}`;
+            }
+          } else if (error.data && error.data.message) {
+            errorMessage = error.data.message;
+          }
+        }
+        
+        showToast(errorMessage, 'error');
+      }
     };
 
     const handleConfirmCreateBoard = async (boardName) => {
@@ -943,70 +1004,78 @@ useEffect(() => {
   
     const renderChooseBoardStep = () => {
       const currentFile = uploadedFiles[selectedImageIndex];
-
+    
       return (
         <Container sx={{ pt: 4, pb: "140px" }}>
           <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
             <ImagePreview file={currentFile} />
-
+    
             <Box maxHeight={"650px"} sx={{ width: "690px" }}>
-              <Paper sx={{
-                height: "650px", borderRadius: "40px", padding: "32px",
-                boxShadow: "none", border: "1px solid #B4C6EB",
-                display: "flex", flexDirection: "column", justifyContent: "space-between"
-              }}>
-                <Typography sx={{
-                  textAlign: "center", fontWeight: 600, fontSize: "28px",
-                  fontStyle: 'semibold', color: theme.palette.text.primary, mb: 5,
-                  fontFamily: "Geologica, sans-serif"
+              {showCreateBoardPanel ? (
+                <CreateBoardPanel
+                  onBack={handleBackToBoardList}
+                  onCreateBoard={handleCreateBoardFromPanel}
+                  isLoading={isCreatingBoard}
+                />
+              ) : (
+                <Paper sx={{
+                  height: "650px", borderRadius: "40px", padding: "32px",
+                  boxShadow: "none", border: "1px solid #B4C6EB",
+                  display: "flex", flexDirection: "column", justifyContent: "space-between"
                 }}>
-                  Choose a board
-                </Typography>
-
-                {boardsLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                    <CircularProgress />
+                  <Typography sx={{
+                    textAlign: "center", fontWeight: 600, fontSize: "28px",
+                    fontStyle: 'semibold', color: theme.palette.text.primary, mb: 5,
+                    fontFamily: "Geologica, sans-serif"
+                  }}>
+                    Choose a board
+                  </Typography>
+    
+                  {boardsLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : boardsError ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: 2 }}>
+                      <Alert severity="error" sx={{ width: '100%' }}>
+                        Failed to load boards: {boardsErrorDetails?.message || 'Unknown error'}
+                      </Alert>
+                      <Button onClick={handleRetryLoadBoards} variant="outlined">
+                        Retry
+                      </Button>
+                    </Box>
+                  ) : (
+                    <BoardList
+                      boards={boards}
+                      selectedBoard={selectedBoard}
+                      onBoardSelect={handleBoardSelect}
+                      boardsLoading={boardsLoading}
+                      boardsError={boardsError}
+                      onRetryLoadBoards={handleRetryLoadBoards}
+                      onCreateNewBoard={handleCreateNewBoard}
+                    />
+                  )}
+    
+                  <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
+                    <ActionButton 
+                      onClick={() => setCurrentStep(1)}
+                      color="secondary"
+                      disabled={isCreatingPin}
+                    >
+                      Back
+                    </ActionButton>
+                    <ActionButton 
+                      onClick={handlePublish}
+                      disabled={!selectedBoard || boardsLoading || isCreatingPin}
+                    >
+                      {isCreatingPin ? <CircularProgress size={20} /> : "Publish"}
+                    </ActionButton>
                   </Box>
-                ) : boardsError ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: 2 }}>
-                    <Alert severity="error" sx={{ width: '100%' }}>
-                      Failed to load boards: {boardsErrorDetails?.message || 'Unknown error'}
-                    </Alert>
-                    <Button onClick={handleRetryLoadBoards} variant="outlined">
-                      Retry
-                    </Button>
-                  </Box>
-                ) : (
-                  <BoardList
-                    boards={boards}
-                    selectedBoard={selectedBoard}
-                    onBoardSelect={handleBoardSelect}
-                    boardsLoading={boardsLoading}
-                    boardsError={boardsError}
-                    onRetryLoadBoards={handleRetryLoadBoards}
-                    onCreateNewBoard={handleCreateNewBoard}
-                  />
-                )}
-
-                <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
-                  <ActionButton 
-                    onClick={() => setCurrentStep(1)}
-                    color="secondary"
-                    disabled={isCreatingPin}
-                  >
-                    Back
-                  </ActionButton>
-                  <ActionButton 
-                    onClick={handlePublish}
-                    disabled={!selectedBoard || boardsLoading || isCreatingPin}
-                  >
-                    {isCreatingPin ? <CircularProgress size={20} /> : "Publish"}
-                  </ActionButton>
-                </Box>
-              </Paper>
+                </Paper>
+              )}
             </Box>
           </Box>
-
+    
           <ImageThumbnailBar
             uploadedFiles={uploadedFiles}
             selectedImageIndex={selectedImageIndex}
@@ -1166,6 +1235,13 @@ useEffect(() => {
             onSave={handleSaveAests}
             scrapedImages={scrapedImages}
             websiteUrl={currentWebsiteUrl}
+        />
+
+        <CreateBoardModal
+          open={showCreateBoardModal}
+          onClose={handleCancelCreateBoard}
+          onConfirm={handleConfirmCreateBoard}
+          isLoading={isCreatingBoard}
         />
         <PinViewModal
         pin={selectedPinForView}

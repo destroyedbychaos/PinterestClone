@@ -70,6 +70,10 @@ export const profileApi = createApi({
       }),
       invalidatesTags: ["Profile"],
     }),
+    getAllUsers: builder.query({
+      query: () => "/Profile/users",
+      providesTags: ["Profile"],
+    }),
   }),
 });
 
@@ -79,4 +83,5 @@ export const {
   useAddInterestsMutation,
   useAddVibesMutation,
   useUpdateInterestsAndVibesMutation,
+  useGetAllUsersQuery,
 } = profileApi;
