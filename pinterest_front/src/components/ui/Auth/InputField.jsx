@@ -2,6 +2,7 @@
 import { Box, Typography, Icon } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import SearchIcon from '@mui/icons-material/Search';
 
 const InputField = ({label, type, value, onChange, placeholder, id, required, showPassword, setShowPassword}) => {
     const theme = useTheme();
@@ -15,7 +16,7 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
 
     return (
         <Box sx={{
-            width: '464px',
+            width: '100',
             gap: '12px',
         }}>
             <Typography
@@ -46,6 +47,17 @@ const InputField = ({label, type, value, onChange, placeholder, id, required, sh
                 alignItems: 'center',
                 position: 'relative',
             }}>
+                {/** Лупа зліва */}
+                    {placeholder === 'Search people' && (
+                        <SearchIcon
+                        sx={{
+                            color: '#52697C',
+                            mr: 1, // відступ справа
+                            fontSize: '22px',
+                            flexShrink: 0,
+                        }}
+                        />
+                    )}
                 <input
                     className={'input-field w-full focus:outline-none'}
                     type={type === 'password' && showPassword ? 'text' : type}

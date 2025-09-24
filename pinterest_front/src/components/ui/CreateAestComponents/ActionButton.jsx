@@ -5,6 +5,7 @@ import { useTheme } from '@mui/material';
 const ActionButton = ({ 
   children, 
   onClick, 
+  height = '58px',
   variant = 'contained', 
   disabled = false,
   width = '300px',
@@ -16,7 +17,7 @@ const ActionButton = ({
     const baseStyles = {
       borderRadius: '100px',
       textTransform: 'none',
-      height: '58px',
+      height: height,
       width,
       fontWeight: 400,
       fontSize: '18px',
