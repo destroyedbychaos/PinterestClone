@@ -8,7 +8,9 @@ namespace PinterestClone.API.Controllers
     /// <summary>
     /// Контролер для операцій з прихованими пінами.
     /// --------------------------------------------
+    /// Методи:
     ///     -- Приховати пін для користувача
+    ///     -- Відкрити прихований пін
     ///     -- Отримати ID прихованих пінів для користувача
     /// </summary>
     [ApiController]
@@ -41,6 +43,11 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Відкриває прихований пін для користувача.
+        /// </summary>
+        /// <param name="pinId">Ідентифікатор піна, який потрібно відкрити.</param>
+        /// <returns><see cref="IActionResult"/> з результатом операції: успіх або помилка.</returns>
         [HttpDelete("unhide/{pinId}")]
         public async Task<IActionResult> UnhidePin(string pinId)
         {
@@ -54,6 +61,10 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Отримує список ID всіх прихованих пінів користувача.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> зі списком ID прихованих пінів.</returns>
         [HttpGet("hidden-ids")]
         public async Task<IActionResult> GetHiddenPinIds()
         {

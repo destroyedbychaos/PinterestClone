@@ -8,21 +8,42 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для керування профілем користувача та його NFT.
+    /// ---------------------------------------------
+    /// Методи:
+    ///     -- Отримання профілю користувача
+    ///     -- Оновлення профілю користувача
+    ///     -- Завантаження аватара
+    ///     -- Завантаження баннера
+    ///     -- Видалення аватара
+    ///     -- Видалення баннера
+    ///     -- Отримання NFT користувача
+    ///     -- Отримання створених користувачем NFT
+    ///     -- Отримання улюблених NFT користувача
+    ///     -- Додавання NFT у фаворити
+    ///     -- Видалення NFT з фаворитів
+    /// </summary>
     [ApiController]
     [Route("api/users")]
-    public class UsersController : BaseController
+    public class UsersNFTController : BaseController
     {
         private readonly IUserService _userService;
         private readonly IImageService _imageService;
         private readonly INFTService _nftService;
 
-        public UsersController(IUserService userService, IImageService imageService, INFTService nftService)
+        public UsersNFTController(IUserService userService, IImageService imageService, INFTService nftService)
         {
             _userService = userService;
             _imageService = imageService;
             _nftService = nftService;
         }
 
+        /// <summary>
+        /// Отримує профіль користувача за адресою гаманця.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <returns><see cref="IActionResult"/> з профілем користувача.</returns>
         [HttpGet("{walletAddress}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserProfile(string walletAddress)
@@ -31,6 +52,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Оновлює профіль користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="request">Модель з новими даними профілю.</param>
+        /// <returns><see cref="IActionResult"/> з результатом оновлення профілю.</returns>
         [HttpPut("{walletAddress}")]
         [Authorize]
         public async Task<IActionResult> UpdateUserProfile(string walletAddress, [FromBody] UpdateUserProfileRequest request)
@@ -56,6 +83,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Завантажує аватар користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="file">Файл аватара для завантаження.</param>
+        /// <returns><see cref="IActionResult"/> з результатом завантаження аватара.</returns>
         [HttpPost("{walletAddress}/avatar")]
         [Authorize]
         public async Task<IActionResult> UploadAvatar(string walletAddress, IFormFile file)
@@ -105,6 +138,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Завантажує баннер користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="file">Файл баннера для завантаження.</param>
+        /// <returns><see cref="IActionResult"/> з результатом завантаження баннера.</returns>
         [HttpPost("{walletAddress}/banner")]
         [Authorize]
         public async Task<IActionResult> UploadBanner(string walletAddress, IFormFile file)
@@ -148,6 +187,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Видаляє аватар користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <returns><see cref="IActionResult"/> з результатом видалення аватара.</returns>
         [HttpDelete("{walletAddress}/avatar")]
         [Authorize]
         public async Task<IActionResult> DeleteAvatar(string walletAddress)
@@ -188,6 +232,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Видаляє баннер користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <returns><see cref="IActionResult"/> з результатом видалення баннера.</returns>
         [HttpDelete("{walletAddress}/banner")]
         [Authorize]
         public async Task<IActionResult> DeleteBanner(string walletAddress)
@@ -224,6 +273,13 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Отримує NFT користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="page">Номер сторінки пагінації.</param>
+        /// <param name="pageSize">Кількість елементів на сторінці.</param>
+        /// <returns><see cref="IActionResult"/> з NFT користувача.</returns>
         [HttpGet("{walletAddress}/nfts")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserNFTs(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -232,6 +288,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Отримує NFT, створені користувачем.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="page">Номер сторінки пагінації.</param>
+        /// <param name="pageSize">Кількість елементів на сторінці.</param>
+        /// <returns><see cref="IActionResult"/> з NFT, створеними користувачем.</returns>
         [HttpGet("{walletAddress}/created-nfts")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserCreatedNFTs(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -240,6 +303,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Отримує обрані NFT користувача.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="page">Номер сторінки пагінації.</param>
+        /// <param name="pageSize">Кількість елементів на сторінці.</param>
+        /// <returns><see cref="IActionResult"/> з обраними NFT користувача.</returns>
         [HttpGet("{walletAddress}/favorites")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserFavorites(string walletAddress, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -248,6 +318,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Додає NFT користувача до обраних.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="nftId">ID NFT для додавання.</param>
+        /// <returns><see cref="IActionResult"/> з результатом додавання до обраних.</returns>
         [HttpPost("{walletAddress}/favorites/{nftId}")]
         [Authorize]
         public async Task<IActionResult> AddToFavorites(string walletAddress, string nftId)
@@ -262,6 +338,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Видаляє NFT користувача з обраних.
+        /// </summary>
+        /// <param name="walletAddress">Адреса гаманця користувача.</param>
+        /// <param name="nftId">ID NFT для видалення.</param>
+        /// <returns><see cref="IActionResult"/> з результатом видалення з обраних.</returns>
         [HttpDelete("{walletAddress}/favorites/{nftId}")]
         [Authorize]
         public async Task<IActionResult> RemoveFromFavorites(string walletAddress, string nftId)

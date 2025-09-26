@@ -175,6 +175,10 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Отримання профілю поточного користувача.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з профілем користувача або повідомленням про помилку.</returns>
         [HttpGet("me")]
         public async Task<IActionResult> GetMeAsync()
         {
