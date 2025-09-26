@@ -585,7 +585,7 @@ const ProfileBoards = () => {
                               )}
                             </Box>
 
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>by {board.ownerName || "Unknown"}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>by {profile.displayName || "Unknown"}</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                               {(board.pinsBoard || []).length} Pins | Updated {new Date(board.updatedAt).toLocaleDateString("en-GB").replace(/\//g, ".")}
                             </Typography>
