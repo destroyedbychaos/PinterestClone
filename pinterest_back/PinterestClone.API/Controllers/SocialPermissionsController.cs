@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.SocialPermissionsService;
@@ -6,6 +6,18 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для керування соціальними дозволами користувача.
+    /// --------------------------------------------------------------------
+    /// Методи:
+    ///     -- Отримання поточних соціальних дозволів
+    ///     -- Оновлення соціальних дозволів
+    ///     -- Отримання списку заблокованих користувачів
+    ///     -- Блокування користувача
+    ///     -- Розблокування користувача
+    ///     -- Отримання фільтрів ключових слів
+    ///     -- Оновлення фільтрів ключових слів
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -18,6 +30,12 @@ namespace PinterestClone.API.Controllers
             _socialPermissionsService = socialPermissionsService;
         }
 
+        /// <summary>
+        /// Отримує соціальні дозволи користувача.
+        /// </summary>
+        /// <returns>
+        /// <see cref="IActionResult"/> з поточними соціальними дозволами.
+        /// </returns>
         [HttpGet]
         public async Task<IActionResult> GetSocialPermissions()
         {
@@ -31,6 +49,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Оновлює соціальні дозволи користувача.
+        /// </summary>
+        /// <param name="dto">Модель із новими параметрами соціальних дозволів.</param>
+        /// <returns>
+        /// <see cref="IActionResult"/> з результатом оновлення.
+        /// </returns>
         [HttpPut]
         public async Task<IActionResult> UpdateSocialPermissions([FromBody] SocialPermissionsDto dto)
         {
@@ -44,6 +69,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Отримує список заблокованих користувачів.
+        /// </summary>
+        /// <returns>
+        /// <see cref="IActionResult"/> з переліком заблокованих користувачів.
+        /// </returns>
         [HttpGet("blocked-users")]
         public async Task<IActionResult> GetBlockedUsers()
         {
@@ -57,6 +88,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Блокує користувача.
+        /// </summary>
+        /// <param name="request">Модель з ID користувача для блокування.</param>
+        /// <returns>
+        /// <see cref="IActionResult"/> з результатом блокування.
+        /// </returns>
         [HttpPost("block-user")]
         public async Task<IActionResult> BlockUser([FromBody] BlockUserRequest request)
         {
@@ -70,6 +108,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Розблоковує користувача.
+        /// </summary>
+        /// <param name="blockedUserId">ID користувача для розблокування.</param>
+        /// <returns>
+        /// <see cref="IActionResult"/> з результатом розблокування.
+        /// </returns>
         [HttpDelete("unblock-user/{blockedUserId}")]
         public async Task<IActionResult> UnblockUser(string blockedUserId)
         {
@@ -83,6 +128,12 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Отримує фільтри ключових слів користувача.
+        /// </summary>
+        /// <returns>
+        /// <see cref="IActionResult"/> з переліком фільтрів ключових слів.
+        /// </returns>
         [HttpGet("keyword-filters")]
         public async Task<IActionResult> GetKeywordFilters()
         {
@@ -96,6 +147,13 @@ namespace PinterestClone.API.Controllers
             return GetResult(result);
         }
 
+        /// <summary>
+        /// Оновлює фільтри ключових слів користувача.
+        /// </summary>
+        /// <param name="dto">Модель з новими фільтрами ключових слів.</param>
+        /// <returns>
+        /// <see cref="IActionResult"/> з результатом оновлення.
+        /// </returns>
         [HttpPut("keyword-filters")]
         public async Task<IActionResult> UpdateKeywordFilters([FromBody] KeywordFilterDto dto)
         {

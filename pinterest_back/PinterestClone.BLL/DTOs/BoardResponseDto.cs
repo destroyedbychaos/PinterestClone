@@ -55,7 +55,7 @@ namespace PinterestClone.BLL.DTOs
         /// <summary>
         /// Нікнейм власника дошки.
         /// </summary>
-        public string UserName { get; set; } = string.Empty;
+        public string? UserName { get; set; }
 
         /// <summary>
         /// Піни на дошці.

@@ -134,7 +134,6 @@ namespace PinterestClone.API.Controllers
         /// </summary>
         /// <param name="pageNumber">Номер сторінки (за замовчуванням 1).</param>
         /// <param name="pageSize">Кількість елементів на сторінці (за замовчуванням 20).</param>
-        /// <param name="searchTerm">Опціональний пошуковий запит.</param>
         /// <param name="sortBy">Поле для сортування (за замовчуванням "createdAt").</param>
         /// <param name="isAscending">Чи виконувати сортування за зростанням.</param>
         /// <param name="isArchived">Фільтр за архівованими дошками.</param>

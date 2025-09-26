@@ -305,7 +305,11 @@ namespace PinterestClone.BLL.Services.BoardService
 
             if (board == null) return null;
 
-            return _mapper.Map<BoardResponseDto>(board);
+            var boardDto = _mapper.Map<BoardResponseDto>(board);
+            var owner = await _userRepository.GetUserAsync(board.UserId);
+            boardDto.UserName = owner.DisplayName;
+
+            return boardDto;
         }
 
         /// <summary>

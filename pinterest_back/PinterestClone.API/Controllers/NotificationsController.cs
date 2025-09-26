@@ -92,6 +92,11 @@ namespace PinterestClone.API.Controllers
         }
 
 
+        /// <summary>
+        /// Створює сповіщення про поширення піна.
+        /// </summary>
+        /// <param name="request">Дані для створення сповіщення (одержувач, ідентифікатор піна, повідомлення).</param>
+        /// <returns><see cref="ActionResult{ServiceResponse}"/> з результатом створення сповіщення.</returns>
         [HttpPost("pin-shared")]
         public async Task<ActionResult<ServiceResponse>> CreatePinSharedNotification([FromBody] CreatePinSharedNotificationRequest request)
         {

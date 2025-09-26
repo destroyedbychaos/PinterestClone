@@ -4,6 +4,19 @@ using PinterestClone.DAL.Data;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для тестових операцій з NFT.
+    /// --------------------------------------
+    /// Методи:
+    ///     -- Видалити NFT без зображення
+    ///     -- Видалити NFT за назвами
+    ///     -- Видалити NFT за назвами (регістронезалежно)
+    ///     -- Попередній перегляд NFT для видалення
+    ///     -- Масове видалення NFT за умовами
+    ///     -- Видалити NFT за ID
+    ///     -- Виправити адреси творців NFT
+    ///     -- Перевірити статус NFT
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class DebugController : ControllerBase
@@ -15,6 +28,10 @@ namespace PinterestClone.API.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Видаляє всі NFT, у яких відсутнє зображення.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з кількістю видалених записів або повідомленням про помилку.</returns>
         [HttpDelete("nfts/without-image")]
         public async Task<IActionResult> DeleteNFTsWithoutImage()
         {
@@ -35,6 +52,11 @@ namespace PinterestClone.API.Controllers
         }
 
 
+        /// <summary>
+        /// Видаляє NFT за вказаними іменами.
+        /// </summary>
+        /// <param name="names">Список імен NFT через кому.</param>
+        /// <returns><see cref="IActionResult"/> з інформацією про видалені записи або помилку.</returns>
         [HttpDelete("nfts/by-names")]
         public async Task<IActionResult> DeleteNFTsByNames([FromQuery] string names)
         {
@@ -60,6 +82,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Видаляє NFT за вказаними іменами (регістронезалежно).
+        /// </summary>
+        /// <param name="names">Список імен NFT через кому.</param>
+        /// <returns><see cref="IActionResult"/> з інформацією про видалені записи або помилку.</returns>
         [HttpDelete("nfts/by-names-ci")]
         public async Task<IActionResult> DeleteNFTsByNamesCaseInsensitive([FromQuery] string names)
         {
@@ -95,7 +122,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Попередній перегляд NFT, які можуть бути видалені за умовами.
+        /// </summary>
+        /// <param name="names">Cписок імен NFT через кому.</param>
+        /// <param name="noImage">Фільтр NFT без зображення.</param>
+        /// <returns><see cref="IActionResult"/> зі списком NFT для видалення та загальною кількістю.</returns>
         [HttpGet("nfts/preview")]
         public async Task<IActionResult> PreviewDelete([FromQuery] string? names = null, [FromQuery] bool noImage = false)
         {
@@ -141,7 +173,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
- 
+        /// <summary>
+        /// Масове видалення NFT за умовами (імена та/або без зображення).
+        /// </summary>
+        /// <param name="names">Cписок імен NFT через кому.</param>
+        /// <param name="noImage">Фільтр NFT без зображення.</param>
+        /// <returns><see cref="IActionResult"/> з інформацією про видалені записи.</returns>
         [HttpDelete("nfts/prune")]
         public async Task<IActionResult> Prune([FromQuery] string? names = null, [FromQuery] bool noImage = false)
         {
@@ -187,6 +224,11 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Видаляє NFT за вказаними ID (розділеними комами).
+        /// </summary>
+        /// <param name="ids">Список ID NFT через кому.</param>
+        /// <returns><see cref="IActionResult"/> з інформацією про видалені записи або повідомленням про помилку.</returns>
         [HttpDelete("nfts/by-ids")]
         public async Task<IActionResult> DeleteByIds([FromQuery] string ids)
         {
@@ -228,6 +270,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Виправляє порожні адреси творців NFT, встановлюючи їх рівними власнику.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з кількістю оновлених записів або повідомленням про помилку.</returns>
         [HttpPost("fix-creator-addresses")]
         public async Task<IActionResult> FixCreatorAddresses()
         {
@@ -257,6 +303,10 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Перевіряє статус NFT: загальна кількість, кількість з порожніми адресами творців та приклади.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з інформацією про NFT та вибіркою для перевірки.</returns>
         [HttpGet("check-nft-status")]
         public async Task<IActionResult> CheckNFTStatus()
         {

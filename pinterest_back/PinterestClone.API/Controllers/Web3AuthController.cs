@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.Services.Web3AuthService;
 using PinterestClone.BLL.DTOs;
@@ -6,6 +6,14 @@ using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для Web3 аутентифікації користувача.
+    /// ----------------------------------------------
+    /// Методи:
+    ///     -- Отримання nonce для підпису
+    ///     -- Перевірка підпису користувача
+    ///     -- Отримання інформації про поточного користувача
+    /// </summary>
     [ApiController]
     [Route("api/auth")]
     public class Web3AuthController : BaseController
@@ -17,6 +25,11 @@ namespace PinterestClone.API.Controllers
             _web3AuthService = web3AuthService;
         }
 
+        /// <summary>
+        /// Генерує nonce для Web3 аутентифікації користувача.
+        /// </summary>
+        /// <param name="request">Модель із адресою гаманця користувача.</param>
+        /// <returns><see cref="IActionResult"/> з nonce для підпису.</returns>
         [HttpPost("nonce")]
         public async Task<IActionResult> GetNonce([FromBody] GetNonceRequest request)
         {
@@ -30,6 +43,11 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Перевіряє підпис користувача для Web3 аутентифікації.
+        /// </summary>
+        /// <param name="request">Модель з адресою гаманця, підписом та nonce.</param>
+        /// <returns><see cref="IActionResult"/> з результатом перевірки підпису.</returns>
         [HttpPost("verify")]
         public async Task<IActionResult> VerifySignature([FromBody] VerifySignatureRequest request)
         {
@@ -50,6 +68,10 @@ namespace PinterestClone.API.Controllers
             return GetResult(response);
         }
 
+        /// <summary>
+        /// Отримує інформацію про поточного користувача.
+        /// </summary>
+        /// <returns><see cref="IActionResult"/> з профілем користувача.</returns>
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> GetMe()

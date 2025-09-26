@@ -4,6 +4,13 @@ using PinterestClone.DAL.Data;
 
 namespace PinterestClone.API.Controllers
 {
+    /// <summary>
+    /// Контролер для виконання міграційних операцій над даними NFT.
+    /// ------------------------------------------------------------
+    /// Методи:
+    ///     -- Оновлення поля CreatorWalletAddress для NFT
+    ///     -- Перевірка стану даних NFT
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class DataMigrationController : ControllerBase
@@ -15,12 +22,17 @@ namespace PinterestClone.API.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Оновлює всі NFT-записи, у яких поле CreatorWalletAddress порожнє, встановлюючи його значення рівним OwnerWalletAddress.
+        /// </summary>
+        /// <returns>
+        /// <see cref="IActionResult"/> з інформацією про кількість оновлених записів.
+        /// </returns>
         [HttpPost("update-creator-addresses")]
         public async Task<IActionResult> UpdateCreatorAddresses()
         {
             try
             {
-                // Знайти всі NFT де CreatorWalletAddress порожній або null
                 var nftsToUpdate = await _context.NFTs
                     .Where(n => string.IsNullOrEmpty(n.CreatorWalletAddress))
                     .ToListAsync();
@@ -59,6 +71,12 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Перевіряє стан даних NFT.
+        /// </summary>
+        /// <returns>
+        /// <see cref="IActionResult"/> з аналітикою по NFT-даним.
+        /// </returns>
         [HttpGet("check-nft-data")]
         public async Task<IActionResult> CheckNFTData()
         {
