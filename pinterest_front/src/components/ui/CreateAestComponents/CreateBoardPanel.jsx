@@ -68,23 +68,24 @@ const CreateBoardPanel = ({ onBack, onCreateBoard, isLoading }) => {
       display: "flex", 
       flexDirection: "column"
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, position: 'relative' }}>
         <IconButton 
           onClick={onBack}
           sx={{ 
-            mr: 2, 
             p: 1,
+            position: 'absolute',
+            left: 0,
             '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
           }}
         >
           <Iconify icon="octicon:arrow-left-24" width={32} height={32} color='black' />
         </IconButton>
+
         <Typography sx={{
-          pl:'20%',
           fontWeight: 600, 
           fontSize: "28px",
-          justifyContent: "center",
           textAlign: "center",
+          flex: 1,
           color: theme.palette.dark?.[600] || '#000',
           fontFamily: "Geologica, sans-serif"
         }}>
