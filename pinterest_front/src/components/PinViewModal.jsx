@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Avatar, Button, TextField, IconButton, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, Avatar, Button, TextField, IconButton, Menu, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { Close, Favorite, FavoriteBorder, MoreVert, Reply, Fullscreen } from '@mui/icons-material';
 import SendIcon from './ui/icons/SendIcon';
 import { useSelector } from 'react-redux';
@@ -16,7 +17,13 @@ import PinOptionsModal from './ui/PinOptionsModal';
 import SharePinModal from './ui/SharePinModal';
 import './PinViewModal.css';
 import ActionButton from './ui/CreateAestComponents/ActionButton';
+import BoardList from './ui/CreateAestComponents/BoardList';
+import CreateBoardPanel from './ui/CreateAestComponents/CreateBoardPanel';
+import CreateBoardModal from './modals/CreateBoardModal';
 import { Icon as Iconify } from '@iconify/react';
+
+// Import board-related hooks and utilities
+import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../store/Boards/BoardsApi';
 
 const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source = 'home' }) => {
   const [comment, setComment] = useState('');
@@ -40,8 +47,41 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
   const [pinOptionsPosition, setPinOptionsPosition] = useState({ x: 0, y: 0 });
   const [sharePinModalOpen, setSharePinModalOpen] = useState(false);
   const [pinReportModalOpen, setPinReportModalOpen] = useState(false);
+
+  // New states for board selection functionality
+  const [showBoardSelection, setShowBoardSelection] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [showCreateBoardPanel, setShowCreateBoardPanel] = useState(false);
+  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
+  const [savingToBoard, setSavingToBoard] = useState(false);
+
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+
+  // Board-related queries and mutations
+  const {
+    data: boardsData,
+    isLoading: boardsLoading,
+    isError: boardsError,
+    error: boardsErrorDetails,
+    refetch: refetchBoards
+  } = useGetUserBoardsQuery(
+    {
+      userId: user?.id || user?.userId,
+    },
+    {
+      skip: !user || (!user.id && !user.userId) || !showBoardSelection,
+      refetchOnMountOrArgChange: true
+    }
+  );
+
+  const [createBoard, { 
+    isLoading: isCreatingBoard,
+    isSuccess: isBoardCreated,
+    error: boardCreationError 
+  }] = useCreateBoardMutation();
+
+  const boards = boardsData?.boards || [];
 
   useEffect(() => {
     setCurrentPin(pin);
@@ -53,7 +93,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
       console.log('✅ Pin має ID:', currentPin.id);
       fetchComments();
       fetchPinLikes();
-
       addPinToHistory();
     } else {
       console.log('❌ Pin не має ID або pin не передано');
@@ -62,7 +101,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
 
   const addPinToHistory = async () => {
     if (currentPin?.id && source !== 'history') {
-
       const token = localStorage.getItem('token');
       if (!token) {
         console.log('⚠️ Користувач не авторизований, історія не зберігається');
@@ -161,30 +199,128 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     console.log('Focus search');
   };
 
+  // Board selection handlers
+  const handleProfileClick = () => {
+    setShowBoardSelection(true);
+  };
+
+  const handleBackToBoardList = () => {
+    setShowCreateBoardPanel(false);
+  };
+
+  const handleBoardSelect = (board) => {
+    setSelectedBoard(board);
+  };
+
+  const handleCreateNewBoard = () => {
+    setShowCreateBoardPanel(true);
+  };
+
+  const handleRetryLoadBoards = () => {
+    refetchBoards();
+  };
+
+  const handleCreateBoardFromPanel = async (boardName, isPrivate = false) => {
+    try {
+      const boardData = {
+        name: boardName,
+        description: "",
+        isPrivate: isPrivate
+      };
+
+      const result = await createBoard(boardData).unwrap();
+      await refetchBoards();
+
+      const newBoard = {
+        id: result.id,
+        name: result.name,
+        image: null,
+        isPrivate: result.isPrivate || false
+      };
+      setSelectedBoard(newBoard);
+
+      setShowCreateBoardPanel(false);
+      console.log('Board created successfully');
+    } catch (error) {
+      console.error('Board creation error:', error);
+    }
+  };
+
+  const handleSavePinToBoard = async () => {
+    if (!selectedBoard || !currentPin?.id) {
+      console.log('No board selected or no pin ID');
+      return;
+    }
+
+    setSavingToBoard(true);
+    try {
+      const token = localStorage.getItem('authToken') || 
+                   localStorage.getItem('token') || 
+                   sessionStorage.getItem('authToken') || 
+                   sessionStorage.getItem('token');
+
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      if (!selectedBoard.isProfile && selectedBoard.id) {
+        const response = await fetch(`/api/pins/${currentPin.id}/boards/${selectedBoard.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            pinId: currentPin.id,
+            boardId: selectedBoard.id
+          })
+        });
+
+        if (response.ok) {
+          console.log('Pin saved to board successfully');
+          // Reset board selection
+          setShowBoardSelection(false);
+          setSelectedBoard(null);
+          setShowCreateBoardPanel(false);
+        } else {
+          const errorText = await response.text();
+          console.error('Failed to save pin to board:', errorText);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving pin to board:', error);
+    } finally {
+      setSavingToBoard(false);
+    }
+  };
+
+  const handleBackFromBoardSelection = () => {
+    setShowBoardSelection(false);
+    setSelectedBoard(null);
+    setShowCreateBoardPanel(false);
+  };
+
+  // ... (keep all the existing comment handlers and other methods as they are)
   const handleCommentMenuOpen = (event, commentId) => {
     console.log('Opening comment modal for comment:', commentId);
     console.log('Current state - commentModalOpen:', commentModalOpen, 'selectedCommentId:', selectedCommentId);
     
-
     const rect = event.currentTarget.getBoundingClientRect();
     let x = rect.left;
     let y = rect.bottom + 10; 
     
-
     const modalWidth = 200; 
     const modalHeight = 150; 
     
-
     if (x + modalWidth > window.innerWidth) {
       x = window.innerWidth - modalWidth - 20;
     }
     
-
     if (y + modalHeight > window.innerHeight) {
       y = rect.top - modalHeight - 10;
     }
     
-   
     if (x < 20) {
       x = 20;
     }
@@ -232,19 +368,16 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
 
       console.log('Sending comment report with commentId:', commentId, 'reportMessage:', reportMessage);
 
-  
       const requestBody = {
         CommentId: commentId,
         ReportMessage: reportMessage
       };
       console.log('Request body:', requestBody);
 
-
       console.log('Comment report submitted:', { commentId, reportMessage });
       
-
-       setCommentReportModalOpen(false);
-       setSelectedCommentForReport(null);
+      setCommentReportModalOpen(false);
+      setSelectedCommentForReport(null);
     } catch (error) {
       console.error('Error reporting comment:', error);
       alert(error.message || 'Помилка відправки скарги');
@@ -260,7 +393,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     const userIdToBlock = commentToBlock.user.id;
     console.log('Blocking user:', userIdToBlock);
 
-
     const newBlockedUsers = [...blockedUsers, userIdToBlock];
     setBlockedUsers(newBlockedUsers);
 
@@ -273,19 +405,15 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
 
   const handleZoomIn = () => {
     console.log('Zoom in clicked');
-
   };
 
   const handleZoomOut = () => {
     console.log('Zoom out clicked');
-    
   };
-
 
   const handlePinEdit = () => {
     console.log('Edit pin clicked');
     setPinOptionsModalOpen(false);
-
   };
 
   const handlePinDownload = () => {
@@ -297,7 +425,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
       link.click();
       document.body.removeChild(link);
       
-
       console.log('Зображення завантажується...');
     } catch (error) {
       console.error('Error downloading image:', error);
@@ -331,7 +458,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
 
       if (response.ok) {
         console.log('Пін успішно приховано');
-
         onClose();
       } else {
         const responseData = await response.json();
@@ -355,7 +481,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
 
   const handlePinShareSuccess = (selectedUser, message) => {
     console.log('Pin shared successfully with:', selectedUser, 'Message:', message);
-
   };
 
   const handlePinOptionsOpen = (event) => {
@@ -363,11 +488,9 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     let x = rect.left;
     let y = rect.bottom + 10; 
     
-
     const modalWidth = 180; 
     const modalHeight = 200; 
     
-
     if (x + modalWidth > window.innerWidth) {
       x = window.innerWidth - modalWidth - 20;
     }
@@ -375,7 +498,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     if (y + modalHeight > window.innerHeight) {
       y = rect.top - modalHeight - 10; 
     }
-    
 
     if (x < 20) {
       x = 20;
@@ -440,7 +562,7 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
         <Box className="comment-header">
           <Typography 
             className="comment-author clickable-author"
-                                     onClick={() => {
+            onClick={() => {
               console.log('Name clicked for comment:', comment);
               console.log('Comment user data:', comment.user);
               console.log('User email:', comment.user?.email);
@@ -485,6 +607,80 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
         </Box>
       </Box>
     </Box>
+    );
+  };
+
+  // Render board selection UI
+  const renderBoardSelectionPanel = () => {
+    if (showCreateBoardPanel) {
+      return (
+        <CreateBoardPanel
+          onBack={handleBackToBoardList}
+          onCreateBoard={handleCreateBoardFromPanel}
+          isLoading={isCreatingBoard}
+          isborder={false}
+          padding='20px'
+        />
+      );
+    }
+
+    return (
+      <Box sx={{
+        height: "650px", borderRadius: "40px", padding: "10px",
+         backgroundColor: '#FFFFFF',
+        display: "flex", flexDirection: "column", justifyContent: "space-between"
+      }}>
+        <Typography sx={{
+          textAlign: "center", fontWeight: 600, fontSize: "28px",
+          color: '#01233F', mb: 5,
+          fontFamily: "Geologica, sans-serif"
+        }}>
+          Choose a board
+        </Typography>
+
+        {boardsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+            <CircularProgress />
+          </Box>
+        ) : boardsError ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: 2 }}>
+            <Alert severity="error" sx={{ width: '100%' }}>
+              Failed to load boards: {boardsErrorDetails?.message || 'Unknown error'}
+            </Alert>
+            <Button onClick={handleRetryLoadBoards} variant="outlined">
+              Retry
+            </Button>
+          </Box>
+        ) : (
+          <BoardList
+            boards={boards}
+            selectedBoard={selectedBoard}
+            onBoardSelect={handleBoardSelect}
+            boardsLoading={boardsLoading}
+            boardsError={boardsError}
+            onRetryLoadBoards={handleRetryLoadBoards}
+            onCreateNewBoard={handleCreateNewBoard}
+          />
+        )}
+
+        <Box sx={{ display: "flex", gap: 4, mt: 3 }}>
+          <ActionButton 
+            onClick={handleBackFromBoardSelection}
+            color="secondary"
+            disabled={savingToBoard}
+            width='350px'
+          >
+            Back
+          </ActionButton>
+          <ActionButton 
+            onClick={handleSavePinToBoard}
+            disabled={!selectedBoard || boardsLoading || savingToBoard}
+            width='350px'
+          >
+            {savingToBoard ? <CircularProgress size={20} /> : "Save"}
+          </ActionButton>
+        </Box>
+      </Box>
     );
   };
 
@@ -558,123 +754,132 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
               </Box>
 
               <Box className="pin-view-info">
+                {!showBoardSelection ? (
+                  <>
+                    <Box className="pin-info-header">
+                      <Typography className="pin-title">{currentPin.title || "Interior design"}</Typography>
+                      <Typography className="pin-description">{currentPin.description || "Interior design"}</Typography>
+                      <Typography className="pin-tags">
+                        {(() => {
+                          const tagsString = typeof currentPin.tags === 'string' ? currentPin.tags : 
+                                            Array.isArray(currentPin.tags) ? currentPin.tags.join(' ') : 
+                                            "interior design";
+                          return tagsString
+                            .split(/[,\s]+/)
+                            .filter(tag => tag.trim())
+                            .map(tag => `#${tag.trim()}`)
+                            .join(' ');
+                        })()}
+                      </Typography>
+                    </Box>
 
-                <Box className="pin-info-header">
-                  <Typography className="pin-title">{currentPin.title || "Interior design"}</Typography>
-                  <Typography className="pin-description">{currentPin.description || "Interior design"}</Typography>
-                  <Typography className="pin-tags">
-                    {(() => {
-                      const tagsString = typeof currentPin.tags === 'string' ? currentPin.tags : 
-                                        Array.isArray(currentPin.tags) ? currentPin.tags.join(' ') : 
-                                        "interior design";
-                      return tagsString
-                        .split(/[,\s]+/)
-                        .filter(tag => tag.trim())
-                        .map(tag => `#${tag.trim()}`)
-                        .join(' ');
-                    })()}
-                  </Typography>
-                </Box>
+                    <Box className="pin-actions">
+                      <Box className="pin-actions-left">
+                        <Button className="like-button" onClick={handleLike}>
+                          {isLiked ? <Favorite className="liked-icon" /> : <FavoriteBorder />}
+                          <Typography className="like-count">{likesCount}</Typography>
+                        </Button>
+                      
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" onClick={() => setSharePinModalOpen(true)} style={{cursor: 'pointer'}}>
+                          <path d="M1.01928 0.613535C1.28807 0.375663 1.62098 0.222249 1.97644 0.172452C2.33189 0.122655 2.69414 0.178681 3.01795 0.333535L28.7979 12.6202C29.0585 12.7446 29.2784 12.9403 29.4324 13.1845C29.5864 13.4287 29.6681 13.7115 29.6681 14.0002C29.6681 14.2889 29.5864 14.5717 29.4324 14.8159C29.2784 15.0601 29.0585 15.2558 28.7979 15.3802L3.01795 27.6669C2.71621 27.8105 2.38092 27.8689 2.04839 27.8357C1.71585 27.8025 1.39873 27.6789 1.13136 27.4785C0.863988 27.278 0.656554 27.0082 0.531511 26.6982C0.406468 26.3883 0.36858 26.0501 0.42195 25.7202L2.32195 14.0002L0.42195 2.2802C0.373325 1.97458 0.40257 1.66162 0.50698 1.3703C0.611391 1.07898 0.787593 0.818694 1.01928 0.613535ZM4.18595 15.0002L2.44728 25.7229L27.0433 14.0002L2.44728 2.27753L4.18595 13.0002H14.0019C14.2672 13.0002 14.5215 13.1056 14.7091 13.2931C14.8966 13.4806 15.0019 13.735 15.0019 14.0002C15.0019 14.2654 14.8966 14.5198 14.7091 14.7073C14.5215 14.8948 14.2672 15.0002 14.0019 15.0002H4.18595Z" fill="#01233F"/>
+                        </svg>
+                        <IconButton 
+                           className="more-button"
+                           onClick={handlePinOptionsOpen}
+                         >
+                           <MoreVert />
+                         </IconButton>
+                         <Box sx={{
+                          paddingLeft: '28rem',
+                         }}>
+                            
+                          <ActionButton width="140" height="48" variant="secondary" onClick={handleProfileClick}>
+                            Profile
+                            <Iconify  icon="octicon:chevron-right-24" width={28} height={28} color='white' />
+                          </ActionButton>
+                         </Box>
+                      </Box>
+                    </Box>
 
-                <Box className="pin-actions">
-                  <Box className="pin-actions-left">
-                    <Button className="like-button" onClick={handleLike}>
-                      {isLiked ? <Favorite className="liked-icon" /> : <FavoriteBorder />}
-                      <Typography className="like-count">{likesCount}</Typography>
-                    </Button>
-                  
-                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" onClick={() => setSharePinModalOpen(true)} style={{cursor: 'pointer'}}>
-                      <path d="M1.01928 0.613535C1.28807 0.375663 1.62098 0.222249 1.97644 0.172452C2.33189 0.122655 2.69414 0.178681 3.01795 0.333535L28.7979 12.6202C29.0585 12.7446 29.2784 12.9403 29.4324 13.1845C29.5864 13.4287 29.6681 13.7115 29.6681 14.0002C29.6681 14.2889 29.5864 14.5717 29.4324 14.8159C29.2784 15.0601 29.0585 15.2558 28.7979 15.3802L3.01795 27.6669C2.71621 27.8105 2.38092 27.8689 2.04839 27.8357C1.71585 27.8025 1.39873 27.6789 1.13136 27.4785C0.863988 27.278 0.656554 27.0082 0.531511 26.6982C0.406468 26.3883 0.36858 26.0501 0.42195 25.7202L2.32195 14.0002L0.42195 2.2802C0.373325 1.97458 0.40257 1.66162 0.50698 1.3703C0.611391 1.07898 0.787593 0.818694 1.01928 0.613535ZM4.18595 15.0002L2.44728 25.7229L27.0433 14.0002L2.44728 2.27753L4.18595 13.0002H14.0019C14.2672 13.0002 14.5215 13.1056 14.7091 13.2931C14.8966 13.4806 15.0019 13.735 15.0019 14.0002C15.0019 14.2654 14.8966 14.5198 14.7091 14.7073C14.5215 14.8948 14.2672 15.0002 14.0019 15.0002H4.18595Z" fill="#01233F"/>
-                    </svg>
-                                         <IconButton 
-                       className="more-button"
-                       onClick={handlePinOptionsOpen}
-                     >
-                       <MoreVert />
-                     </IconButton>
-                     <Box sx={{
-                      paddingLeft: '28rem',
-                     }}>
-                        
-                      <ActionButton width="140" height="48" variant="secondary">
-                        Profile
-                        <Iconify  icon="octicon:chevron-right-24" width={28} height={28} color='white' />
-                      </ActionButton>
-                     </Box>
-                     
-                     
+                    <Box className="pin-divider" />
+
+                    <Box className="comments-section">
+                      <Box className="comments-list">
+                        {loading ? (
+                          <Typography>Loading comments...</Typography>
+                        ) : comments.length === 0 ? (
+                           <Typography>No comments yet. Be the first to comment!</Typography>
+                         ) : (
+                           (() => {
+                             const filteredComments = comments.filter(comment => !blockedUsers.includes(comment.user?.id));
+                             console.log('Total comments:', comments.length);
+                             console.log('Blocked users:', blockedUsers);
+                             console.log('Filtered comments:', filteredComments.length);
+                             return filteredComments.map(comment => renderComment(comment));
+                           })()
+                         )}
+                      </Box>
+                    </Box>
+
+                    <Box className="comment-input-section">
+                      <TextField
+                        className="comment-input"
+                        placeholder="Add a comment..."
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleComment();
+                          }
+                        }}
+                        multiline
+                        maxRows={3}
+                      />
+                      <Button 
+                        className="send-button"
+                        onClick={handleComment}
+                        disabled={!comment.trim()}
+                      >
+                        <SendIcon size={20} />
+                      </Button>
+                    </Box>
+                  </>
+                ) : (
+                  // Board selection panel
+                  <Box sx={{ width: '100%', height: '100%' }}>
+                    {renderBoardSelectionPanel()}
                   </Box>
-                  
-                </Box>
-
-                <Box className="pin-divider" />
-
-                <Box className="comments-section">
-                  <Box className="comments-list">
-                    {loading ? (
-                      <Typography>Loading comments...</Typography>
-                                         ) : comments.length === 0 ? (
-                       <Typography>No comments yet. Be the first to comment!</Typography>
-                     ) : (
-                       (() => {
-                         const filteredComments = comments.filter(comment => !blockedUsers.includes(comment.user?.id));
-                         console.log('Total comments:', comments.length);
-                         console.log('Blocked users:', blockedUsers);
-                         console.log('Filtered comments:', filteredComments.length);
-                         return filteredComments.map(comment => renderComment(comment));
-                       })()
-                     )}
-                  </Box>
-                </Box>
-
-                <Box className="comment-input-section">
-                  <TextField
-                    className="comment-input"
-                    placeholder="Add a comment..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleComment();
-                      }
-                    }}
-                    multiline
-                    maxRows={3}
-                  />
-                  <Button 
-                    className="send-button"
-                    onClick={handleComment}
-                    disabled={!comment.trim()}
-                  >
-                    <SendIcon size={20} />
-                  </Button>
-                </Box>
+                )}
               </Box>
             </Box>
 
-            <SimilarPinsGallery 
-              pinId={currentPin?.id || currentPin?.Id} 
-              onPinClick={(similarPin) => {
-                const newPin = {
-                  id: similarPin.Id || similarPin.id,
-                  imageUrl: similarPin.ImageUrl || similarPin.imageUrl || similarPin.image,
-                  title: similarPin.Title || similarPin.title,
-                  description: similarPin.Description || similarPin.description,
-                  author: similarPin.UserName || similarPin.userName,
-                  tags: similarPin.Tags || similarPin.tags
-                };
-                console.log('Switching to similar pin:', newPin);
-                
-                setComments([]);
-                setLikesCount(0);
-                setIsLiked(false);
-                setComment('');
-                
+            {!showBoardSelection && (
+              <SimilarPinsGallery 
+                pinId={currentPin?.id || currentPin?.Id} 
+                onPinClick={(similarPin) => {
+                  const newPin = {
+                    id: similarPin.Id || similarPin.id,
+                    imageUrl: similarPin.ImageUrl || similarPin.imageUrl || similarPin.image,
+                    title: similarPin.Title || similarPin.title,
+                    description: similarPin.Description || similarPin.description,
+                    author: similarPin.UserName || similarPin.userName,
+                    tags: similarPin.Tags || similarPin.tags
+                  };
+                  console.log('Switching to similar pin:', newPin);
+                  
+                  setComments([]);
+                  setLikesCount(0);
+                  setIsLiked(false);
+                  setComment('');
+                  setShowBoardSelection(false);
+                  setSelectedBoard(null);
+                  setShowCreateBoardPanel(false);
 
-                setCurrentPin(newPin);
-              }}
-            />
+                  setCurrentPin(newPin);
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -693,16 +898,15 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                 zIndex: 10001
               }}
             >
-                                                              <Box className="comment-modal-menu">
-
-                   {selectedCommentId && comments.find(c => c.id === selectedCommentId)?.userId === user?.id && (
-                     <Button 
-                       className="comment-modal-option delete-option"
-                       onClick={handleDeleteComment}
-                     >
-                       <Box className="comment-modal-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                           <path d="M10.6654 1.16667V2H14.1654C14.298 2 14.4252 2.05268 14.5189 2.14645C14.6127 2.24021 14.6654 2.36739 14.6654 2.5C14.6654 2.63261 14.6127 2.75979 14.5189 2.85355C14.4252 2.94732 14.298 3 14.1654 3H1.83203C1.69942 3 1.57225 2.94732 1.47848 2.85355C1.38471 2.75979 1.33203 2.63261 1.33203 2.5C1.33203 2.36739 1.38471 2.24021 1.47848 2.14645C1.57225 2.05268 1.69942 2 1.83203 2H5.33203V1.16667C5.33203 0.522667 5.8547 0 6.4987 0H9.4987C10.1427 0 10.6654 0.522667 10.6654 1.16667ZM6.33203 1.16667V2H9.66537V1.16667C9.66537 1.12246 9.64781 1.08007 9.61655 1.04882C9.58529 1.01756 9.5429 1 9.4987 1H6.4987C6.4545 1 6.4121 1.01756 6.38085 1.04882C6.34959 1.08007 6.33203 1.12246 6.33203 1.16667ZM3.33003 4.11867C3.32433 4.05284 3.30564 3.9888 3.27504 3.93024C3.24444 3.87168 3.20254 3.81977 3.15176 3.7775C3.10097 3.73523 3.04231 3.70345 2.97917 3.68398C2.91603 3.66452 2.84966 3.65777 2.78389 3.66411C2.71813 3.67045 2.65427 3.68977 2.59601 3.72094C2.53775 3.75211 2.48625 3.79452 2.44448 3.84571C2.40271 3.89691 2.37151 3.95587 2.35266 4.0192C2.33382 4.08253 2.32771 4.14896 2.3347 4.21467L3.27603 13.9467C3.30419 14.2351 3.4387 14.5028 3.65338 14.6975C3.86806 14.8922 4.14753 15 4.43736 15H11.56C11.85 15 12.1295 14.8921 12.3442 14.6972C12.5589 14.5024 12.6934 14.2346 12.7214 13.946L13.6634 4.21467C13.6761 4.08259 13.6358 3.95086 13.5514 3.84847C13.4671 3.74607 13.3454 3.6814 13.2134 3.66867C13.0813 3.65594 12.9496 3.69619 12.8472 3.78059C12.7448 3.86498 12.6801 3.98659 12.6674 4.11867L11.726 13.8493C11.7221 13.8906 11.7028 13.9289 11.6721 13.9567C11.6415 13.9846 11.6015 14 11.56 14H4.43736C4.39591 14 4.35594 13.9846 4.32525 13.9567C4.29455 13.9289 4.27534 13.8906 4.27136 13.8493L3.33003 4.11867Z" fill="#01233F"/>
+              <Box className="comment-modal-menu">
+                 {selectedCommentId && comments.find(c => c.id === selectedCommentId)?.userId === user?.id && (
+                   <Button 
+                     className="comment-modal-option delete-option"
+                     onClick={handleDeleteComment}
+                   >
+                     <Box className="comment-modal-icon">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                         <path d="M10.6654 1.16667V2H14.1654C14.298 2 14.4252 2.05268 14.5189 2.14645C14.6127 2.24021 14.6654 2.36739 14.6654 2.5C14.6654 2.63261 14.6127 2.75979 14.5189 2.85355C14.4252 2.94732 14.298 3 14.1654 3H1.83203C1.69942 3 1.57225 2.94732 1.47848 2.85355C1.38471 2.75979 1.33203 2.63261 1.33203 2.5C1.33203 2.36739 1.38471 2.24021 1.47848 2.14645C1.57225 2.05268 1.69942 2 1.83203 2H5.33203V1.16667C5.33203 0.522667 5.8547 0 6.4987 0H9.4987C10.1427 0 10.6654 0.522667 10.6654 1.16667ZM6.33203 1.16667V2H9.66537V1.16667C9.66537 1.12246 9.64781 1.08007 9.61655 1.04882C9.58529 1.01756 9.5429 1 9.4987 1H6.4987C6.4545 1 6.4121 1.01756 6.38085 1.04882C6.34959 1.08007 6.33203 1.12246 6.33203 1.16667ZM3.33003 4.11867C3.32433 4.05284 3.30564 3.9888 3.27504 3.93024C3.24444 3.87168 3.20254 3.81977 3.15176 3.7775C3.10097 3.73523 3.04231 3.70345 2.97917 3.68398C2.91603 3.66452 2.84966 3.65777 2.78389 3.66411C2.71813 3.67045 2.65427 3.68977 2.59601 3.72094C2.53775 3.75211 2.48625 3.79452 2.44448 3.84571C2.40271 3.89691 2.37151 3.95587 2.35266 4.0192C2.33382 4.08253 2.32771 4.14896 2.3347 4.21467L3.27603 13.9467C3.30419 14.2351 3.4387 14.5028 3.65338 14.6975C3.86806 14.8922 4.14753 15 4.43736 15H11.56C11.85 15 12.1295 14.8921 12.3442 14.6972C12.5589 14.5024 12.6934 14.2346 12.7214 13.946L13.6634 4.21467C13.6761 4.08259 13.6358 3.95086 13.5514 3.84847C13.4671 3.74607 13.3454 3.6814 13.2134 3.66867C13.0813 3.65594 12.9496 3.69619 12.8472 3.78059C12.7448 3.86498 12.6801 3.98659 12.6674 4.11867L11.726 13.8493C11.7221 13.8906 11.7028 13.9289 11.6721 13.9567C11.6415 13.9846 11.6015 14 11.56 14H4.43736C4.39591 14 4.35594 13.9846 4.32525 13.9567C4.29455 13.9289 4.27534 13.8906 4.27136 13.8493L3.33003 4.11867Z" fill="#01233F"/>
                            <path d="M6.1356 5.00071C6.20118 4.99683 6.26688 5.00591 6.32895 5.02744C6.39101 5.04896 6.44823 5.08251 6.49733 5.12616C6.54642 5.1698 6.58644 5.2227 6.61508 5.28182C6.64373 5.34094 6.66044 5.40512 6.66427 5.47071L6.9976 11.1374C7.00538 11.2699 6.9602 11.4001 6.87199 11.4993C6.78379 11.5985 6.65979 11.6586 6.52727 11.6664C6.39475 11.6742 6.26457 11.629 6.16536 11.5408C6.06615 11.4526 6.00605 11.3286 5.99827 11.196L5.66493 5.52937C5.66106 5.46379 5.67014 5.39809 5.69166 5.33603C5.71319 5.27396 5.74674 5.21674 5.79038 5.16765C5.83403 5.11855 5.88693 5.07854 5.94605 5.04989C6.00517 5.02125 6.06935 5.00453 6.13493 5.00071H6.1356ZM10.3309 5.52937C10.3387 5.39685 10.2935 5.26667 10.2053 5.16746C10.1171 5.06826 9.99312 5.00815 9.8606 5.00037C9.72808 4.99259 9.5979 5.03778 9.49869 5.12598C9.39949 5.21418 9.33938 5.33819 9.3316 5.47071L8.99827 11.1374C8.99049 11.2698 9.03563 11.3999 9.12378 11.499C9.21192 11.5982 9.33584 11.6583 9.46827 11.666C9.6007 11.6738 9.7308 11.6287 9.82994 11.5405C9.92909 11.4524 9.98915 11.3285 9.99693 11.196L10.3309 5.52937Z" fill="#01233F"/>
                          </svg>
                        </Box>
@@ -725,10 +929,9 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
                         <path d="M8.0013 0.666504C12.0513 0.666504 15.3346 3.94984 15.3346 7.99984C15.3346 12.0498 12.0513 15.3332 8.0013 15.3332C3.9513 15.3332 0.667969 12.0498 0.667969 7.99984C0.667969 3.94984 3.9513 0.666504 8.0013 0.666504ZM3.89064 12.8178C5.03575 13.7979 6.49402 14.3355 8.0013 14.3332C9.68101 14.3332 11.2919 13.6659 12.4796 12.4782C13.6674 11.2904 14.3346 9.67954 14.3346 7.99984C14.337 6.49256 13.7994 5.03429 12.8193 3.88917L3.89064 12.8178ZM1.66797 7.99984C1.66563 9.50711 2.2032 10.9654 3.1833 12.1105L12.112 3.18184C10.9669 2.20173 9.50858 1.66417 8.0013 1.6665C6.3216 1.6665 4.71069 2.33376 3.52296 3.52149C2.33523 4.70922 1.66797 6.32013 1.66797 7.99984Z" fill="#01233F"/>
                       </svg>
                     </Box>
-                                           <Typography className="comment-modal-text">Block user</Typography>
+                    <Typography className="comment-modal-text">Block user</Typography>
                      </Button>
                    )}
-                   
 
                    <Button 
                      className="comment-modal-option report-option"
@@ -751,7 +954,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
             </Box>
           )}
 
-
           <ReportModal
             isOpen={commentReportModalOpen}
             onClose={() => {
@@ -764,7 +966,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
             type="comment"
           />
 
-
           <FullscreenPinModal
             pin={currentPin}
             isOpen={fullscreenModalOpen}
@@ -772,7 +973,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
           />
-
 
             <PinOptionsModal
               isOpen={pinOptionsModalOpen}
@@ -785,7 +985,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
               pin={currentPin}
               position={pinOptionsPosition}
             />
-
 
           <SharePinModal
             isOpen={sharePinModalOpen}

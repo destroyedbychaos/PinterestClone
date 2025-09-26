@@ -6,7 +6,7 @@ import InputField from '../Auth/InputField';
 import ActionButton from './ActionButton';
 import { useGetAllUsersQuery } from '../../../../store/ProfileApi/ProfileApi';
 
-const CreateBoardPanel = ({ onBack, onCreateBoard, isLoading }) => {
+const CreateBoardPanel = ({ onBack, onCreateBoard, isLoading, isborder = true, padding = '32px' }) => {
   const theme = useTheme();
   const [boardName, setBoardName] = useState('');
   const [searchPeople, setSearchPeople] = useState('');
@@ -62,9 +62,9 @@ const CreateBoardPanel = ({ onBack, onCreateBoard, isLoading }) => {
     <Paper sx={{
       height: "650px", 
       borderRadius: "40px", 
-      padding: "32px",
+      padding: padding,
       boxShadow: "none", 
-      border: "1px solid #B4C6EB",
+      border: isborder ? "1px solid #B4C6EB" : "none",
       display: "flex", 
       flexDirection: "column"
     }}>
@@ -304,10 +304,13 @@ const CreateBoardPanel = ({ onBack, onCreateBoard, isLoading }) => {
         <ActionButton 
           onClick={onBack}
           disabled={isLoading}
+          width={'100%'}
           color="secondary">
+          
           Cancel
         </ActionButton>
         <ActionButton 
+         width={'100%'}
           onClick={handleCreate}
           disabled={!boardName.trim() || isLoading}>
           {isLoading ? 'Creating...' : 'Create'}

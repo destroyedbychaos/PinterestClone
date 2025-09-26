@@ -72,10 +72,10 @@ const CreateAest = () => {
       refetch: refetchBoards
     } = useGetUserBoardsQuery(
       {
-        userId: user?.id || user?.userId, // Use user ID instead of username
+        userId: user?.id || user?.userId,
       },
       {
-        skip: !user || (!user.id && !user.userId), // Skip if no user ID
+        skip: !user || (!user.id && !user.userId),
         refetchOnMountOrArgChange: true
       }
     );
@@ -532,11 +532,7 @@ useEffect(() => {
     const handleRetryLoadBoards = () => {
       refetchBoards();
     };
-
-    // const handleCreateNewBoard = () => {
-    //   setShowCreateBoardModal(true);
-    // };
-
+    
     const handleBackToBoardList = () => {
       setShowCreateBoardPanel(false);
     };
