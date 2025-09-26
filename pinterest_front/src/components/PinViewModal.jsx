@@ -21,7 +21,7 @@ import BoardList from './ui/CreateAestComponents/BoardList';
 import CreateBoardPanel from './ui/CreateAestComponents/CreateBoardPanel';
 import CreateBoardModal from './modals/CreateBoardModal';
 import { Icon as Iconify } from '@iconify/react';
-
+import { savePin, isPinSaved } from '../utils/savedPinsStorage';
 // Import board-related hooks and utilities
 import { useGetUserBoardsQuery, useCreateBoardMutation } from '../../store/Boards/BoardsApi';
 
@@ -199,7 +199,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     console.log('Focus search');
   };
 
-  // Board selection handlers
   const handleProfileClick = () => {
     setShowBoardSelection(true);
   };
@@ -251,19 +250,22 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
       console.log('No board selected or no pin ID');
       return;
     }
-
+  
     setSavingToBoard(true);
     try {
       const token = localStorage.getItem('authToken') || 
                    localStorage.getItem('token') || 
                    sessionStorage.getItem('authToken') || 
                    sessionStorage.getItem('token');
-
+  
       if (!token) {
         console.error('No authentication token found');
         return;
       }
-
+  
+      // ✅ ДОДАЙТЕ ЦЕ: Збереження піна в локальне сховище
+      savePin(currentPin);
+  
       if (!selectedBoard.isProfile && selectedBoard.id) {
         const response = await fetch(`/api/pins/${currentPin.id}/boards/${selectedBoard.id}`, {
           method: 'POST',
@@ -276,13 +278,20 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
             boardId: selectedBoard.id
           })
         });
-
+  
         if (response.ok) {
           console.log('Pin saved to board successfully');
-          // Reset board selection
+          
+          if (typeof window !== 'undefined' && window.dispatchEvent) {
+            window.dispatchEvent(new Event('savedPinsChanged'));
+          }
+          
           setShowBoardSelection(false);
           setSelectedBoard(null);
           setShowCreateBoardPanel(false);
+
+          
+          
         } else {
           const errorText = await response.text();
           console.error('Failed to save pin to board:', errorText);
@@ -291,9 +300,12 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     } catch (error) {
       console.error('Error saving pin to board:', error);
     } finally {
+      
       setSavingToBoard(false);
     }
   };
+
+
 
   const handleBackFromBoardSelection = () => {
     setShowBoardSelection(false);
@@ -301,7 +313,6 @@ const PinViewModal = ({ pin, isOpen, onClose, onLike, onComment, onSave, source 
     setShowCreateBoardPanel(false);
   };
 
-  // ... (keep all the existing comment handlers and other methods as they are)
   const handleCommentMenuOpen = (event, commentId) => {
     console.log('Opening comment modal for comment:', commentId);
     console.log('Current state - commentModalOpen:', commentModalOpen, 'selectedCommentId:', selectedCommentId);
