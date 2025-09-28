@@ -70,8 +70,7 @@ const MinimalTransitionAnimation = ({ onComplete }) => {
               top: `${50 + 30 * Math.sin(i * 30 * Math.PI / 180)}%`,
               opacity: stage >= 1 ? 0.3 : 0,
               transition: `opacity 0.8s ease-out ${i * 100}ms`,
-              animation: stage >= 2 ? 'minimal-float 4s ease-in-out infinite' : 'none',
-              animationDelay: `${i * 200}ms`
+              animation: stage >= 2 ? `minimal-float 4s ease-in-out ${i * 200}ms infinite` : 'none'
             }}
           />
         ))}

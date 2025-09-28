@@ -44,7 +44,21 @@ namespace PinterestClone.BLL.MappingProfiles
                 .ForMember(dest => dest.Logins, opt => opt.Ignore())
                 .ForMember(dest => dest.Tokens, opt => opt.Ignore());
 
-            CreateMap<User, UserSearchDto>();
+            CreateMap<User, UserSearchDto>()
+                .ForMember(dest => dest.Interests, opt => opt.MapFrom(src =>
+                    string.IsNullOrWhiteSpace(src.Interests)
+                        ? new List<string>()
+                        : src.Interests.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                    .Select(i => i.Trim())
+                                    .ToList()
+                ))
+                .ForMember(dest => dest.Vibes, opt => opt.MapFrom(src =>
+                    string.IsNullOrWhiteSpace(src.Vibes)
+                        ? new List<string>()
+                        : src.Vibes.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(v => v.Trim())
+                                  .ToList()
+                ));
         }
     }
 }

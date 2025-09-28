@@ -157,16 +157,8 @@ namespace PinterestClone.BLL.Services.ImageSearchService
 
         public async Task<double> CalculateSimilarityAsync(IFormFile uploadedImage, string existingImageUrl, object? searchAreaInfo)
         {
-            var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
-            var tempExistingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
-
             try
             {
-                var queryImage = new Mat();
-                
-
-                var existingImage = new Mat();
-                
                 byte[] uploadedBytes;
                 using (var ms = new MemoryStream())
                 {
@@ -174,33 +166,19 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                     uploadedBytes = ms.ToArray();
                 }
 
-                using (var stream = await response.Content.ReadAsStreamAsync())
-                using (var fileStream = new FileStream(tempExistingPath, FileMode.Create))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
-
-                using var queryImage = CvInvoke.Imread(tempUploadPath, ImreadModes.Color);
-                using var existingImage = CvInvoke.Imread(tempExistingPath, ImreadModes.Color);
-
-                if (queryImage.IsEmpty)
-                {
-                    Console.WriteLine($"Could not load uploaded image: {Path.GetFileName(tempUploadPath)}");
-                    return 0.0;
-                CvInvoke.Imdecode(uploadedBytes, Emgu.CV.CvEnum.ImreadModes.AnyColor, queryImage);
-
                 byte[] existingBytes;
                 using (var httpClient = new HttpClient())
-                using (var response = await httpClient.GetAsync(existingImageUrl))
                 {
+                    var response = await httpClient.GetAsync(existingImageUrl);
                     if (!response.IsSuccessStatusCode)
                         return 0.0;
                     existingBytes = await response.Content.ReadAsByteArrayAsync();
                 }
 
-                if (existingImage.IsEmpty)
-                {
-                    Console.WriteLine($"Could not load existing image: {Path.GetFileName(tempExistingPath)}");
+                using var queryImage = new Mat();
+                CvInvoke.Imdecode(uploadedBytes, Emgu.CV.CvEnum.ImreadModes.AnyColor, queryImage);
+
+                using var existingImage = new Mat();
                 CvInvoke.Imdecode(existingBytes, Emgu.CV.CvEnum.ImreadModes.AnyColor, existingImage);
 
                 if (queryImage.IsEmpty || existingImage.IsEmpty)
@@ -215,21 +193,20 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                 sift.DetectAndCompute(queryImage, null, queryKeyPoints, queryDescriptors, false);
                 sift.DetectAndCompute(existingImage, null, existingKeyPoints, existingDescriptors, false);
 
-                if (queryKeyPoints.Size == 0 || queryDescriptors.IsEmpty || existingKeyPoints.Size == 0 || existingDescriptors.IsEmpty)
+                if (queryKeyPoints.Size == 0 || existingKeyPoints.Size == 0 || queryDescriptors.IsEmpty || existingDescriptors.IsEmpty)
                     return 0.0;
 
-                using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2, false);
+                using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2);
                 using var matches = new VectorOfDMatch();
                 matcher.Match(queryDescriptors, existingDescriptors, matches);
 
                 int goodMatches = 0;
                 for (int i = 0; i < matches.Size; i++)
                 {
-                    if (matches[i].Distance < 80)
-                        goodMatches++;
+                    if (matches[i].Distance < 80) goodMatches++;
                 }
 
-                return matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
+                return matches.Size > 0 ? (double)goodMatches / matches.Size : 0.0;
             }
             catch
             {

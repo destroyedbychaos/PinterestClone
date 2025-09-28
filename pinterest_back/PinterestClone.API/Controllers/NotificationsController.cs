@@ -29,7 +29,11 @@ namespace PinterestClone.API.Controllers
         public NotificationsController(INotificationService notificationService, AppDbContext context)
         {
             _notificationService = notificationService;
+            _context = context;
+
         }
+
+
 
         /// <summary>
         /// Отримує список сповіщень для користувача.
@@ -111,9 +115,9 @@ namespace PinterestClone.API.Controllers
             var senderName = sender.DisplayName ?? sender.UserName ?? sender.Email ?? "Користувач";
 
             var response = await _notificationService.CreatePinSharedNotificationAsync(
-                request.RecipientUserId, 
-                request.PinId, 
-                senderName, 
+                request.RecipientUserId,
+                request.PinId,
+                senderName,
                 request.Message
             );
 
@@ -132,4 +136,4 @@ namespace PinterestClone.API.Controllers
         public Guid PinId { get; set; }
         public string? Message { get; set; }
     }
-} 
+}

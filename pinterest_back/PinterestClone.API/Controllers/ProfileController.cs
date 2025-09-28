@@ -14,6 +14,9 @@ using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using PinterestClone.BLL.Services.UserService;
+using PinterestClone.BLL.Services.ProfileReportService;
+using PinterestClone.BLL.Services.UserBlockService;
 using System.Text.Json;
 
 namespace PinterestClone.API.Controllers
