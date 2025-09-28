@@ -3,41 +3,22 @@
 const loadState = () => {
     try {
         const serializedState = localStorage.getItem('authState');
-        const authToken = localStorage.getItem('authToken');
-        
-        if (serializedState === null && !authToken) {
+        if (serializedState === null) {
             return {
                 user: null,
                 token: null,
                 isAuthenticated: false,
-                origin: null,
             };
         }
+        const loadedState = JSON.parse(serializedState);
         
-        if (serializedState) {
-            const parsed = JSON.parse(serializedState);
-            return {
-                user: parsed.user || null,
-                token: parsed.token || null,
-                isAuthenticated: !!parsed.isAuthenticated,
-                origin: parsed.origin || null,
-            };
-        }
-        
-
-        return {
-            user: null,
-            token: authToken,
-            isAuthenticated: false,
-            origin: null,
-        };
+        return loadedState;
     } catch (err) {
         console.error("Could not load state", err);
         return {
             user: null,
             token: null,
             isAuthenticated: false,
-            origin: null,
         };
     }
 };
@@ -49,18 +30,21 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setCredentials: (state, action) => {
-            const { user, accessToken, origin } = action.payload;
+            const { user, accessToken, token } = action.payload;
+            
+            const authToken = accessToken || token;
+            
+            console.log("Setting credentials:", { user, authToken: !!authToken });
+            
             state.user = user;
             state.token = authToken;
             state.isAuthenticated = true;
-            state.origin = origin || state.origin || 'site';
             
-            localStorage.setItem('authToken', accessToken);
+            localStorage.setItem('token', authToken);
             localStorage.setItem('authState', JSON.stringify({
                 user,
-                token: accessToken,
-                isAuthenticated: true,
-                origin: state.origin,
+                token: authToken,
+                isAuthenticated: true
             }));
             
             console.log("Saved auth state:", { user, token: !!authToken, isAuthenticated: true });
@@ -70,8 +54,7 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            state.origin = null;
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
             localStorage.removeItem('authState');
             localStorage.removeItem('userPassword'); 
         },

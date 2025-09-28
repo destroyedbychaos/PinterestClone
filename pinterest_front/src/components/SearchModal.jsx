@@ -61,8 +61,9 @@ const SearchModal = ({
 
   const fetchRecommendations = async () => {
     try {
+
       const res = await fetch(`${API_BASE}/Pins/recommendations`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       const data = await res.json();
       if (data?.mightLike || data?.popular) {

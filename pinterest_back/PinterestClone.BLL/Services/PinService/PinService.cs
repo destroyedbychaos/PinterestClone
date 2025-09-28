@@ -24,7 +24,7 @@ namespace PinterestClone.BLL.Services.PinService
         private readonly IMapper _mapper;
         private readonly IFileService _fileService;
         private readonly IUserRepository _userRepository;
-        
+
         private static readonly Dictionary<string, string> _imageHashCache = new Dictionary<string, string>();
 
         public PinService(IPinRepository pinRepository, IImageAnalysisService imageAnalysisService, IImageSearchService imageSearchService, IMapper mapper, IUserRepository userRepository, IFileService fileService)
@@ -55,7 +55,7 @@ namespace PinterestClone.BLL.Services.PinService
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                 );
             }
-            
+
             var pin = _mapper.Map<Pin>(createPinDto);
             pin.UserId = userId;
             pin.User = await _userRepository.GetByIdAsync(userId);
@@ -116,7 +116,7 @@ namespace PinterestClone.BLL.Services.PinService
             {
                 var tagList = tags.Split(',').Select(t => t.Trim().ToLower()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
 
-                query = query.Where(p => p.Tags != null && tagList.Any(tag => 
+                query = query.Where(p => p.Tags != null && tagList.Any(tag =>
                     p.Tags.ToLower().Contains(tag)));
             }
 
@@ -389,11 +389,7 @@ namespace PinterestClone.BLL.Services.PinService
             return tagSet.OrderBy(t => t).ToList();
         }
 
-        /// <summary>
-        /// Отримує рекомендовані піни.
-        /// </summary>
-        /// <returns>Список підів у форматі <see cref="PinRecommendationDto"/>.</returns>
-        public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync()
+        public async Task<List<PinRecommendationDto>> GetRecommendedPinsAsync(string userId, int count = 20)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null || string.IsNullOrEmpty(user.Interests))
@@ -512,10 +508,10 @@ namespace PinterestClone.BLL.Services.PinService
                     if (!string.IsNullOrEmpty(pin.Tags))
                     {
                         var pinTags = pin.Tags.Split(',').Select(t => t.Trim().ToLower()).ToList();
-                        
+
 
                         var similarity = pinTags.Count(t => imageHash.Contains(t)) / (double)Math.Max(pinTags.Count, 1);
-                        
+
                         if (similarity > 0.1)
                         {
                             similarPins.Add((pin, similarity));
@@ -567,7 +563,7 @@ namespace PinterestClone.BLL.Services.PinService
             try
             {
                 Console.WriteLine($"PinService.FindSimilarImagesAsync called - SearchArea: {searchArea}, SelectionCoords: {selectionCoords}");
-                
+
                 var allPins = await _pinRepository.GetAllPins().ToListAsync();
                 var resultPins = new List<Pin>();
 
@@ -581,7 +577,7 @@ namespace PinterestClone.BLL.Services.PinService
                     var pinsToCheck = allPins.Where(p => !string.IsNullOrEmpty(p.ImageUrl)).Take(100).ToList();
                     Console.WriteLine($"Checking {pinsToCheck.Count} pins for exact matches...");
 
-                    var semaphore = new SemaphoreSlim(5); 
+                    var semaphore = new SemaphoreSlim(5);
                     var tasks = pinsToCheck.Select(async pin =>
                     {
                         await semaphore.WaitAsync();
@@ -609,7 +605,7 @@ namespace PinterestClone.BLL.Services.PinService
                                     memoryStream.Position = 0;
 
                                     var currentHash = await _imageSearchService.CalculateImageHashFromBytesAsync(memoryStream.ToArray());
-                                    
+
                                     _imageHashCache[pin.ImageUrl] = currentHash;
 
                                     if (!string.IsNullOrEmpty(currentHash) && currentHash == queryHash)
@@ -638,14 +634,14 @@ namespace PinterestClone.BLL.Services.PinService
                 Console.WriteLine($"Found {resultPins.Count} exact copies");
 
                 Console.WriteLine("Searching for similar images...");
-                
+
                 var similarPins = new List<(Pin pin, double similarity)>();
-                
+
                 var exactCopyIds = resultPins.Select(p => p.Id).ToHashSet();
-                
+
                 var similarPinsToCheck = allPins.Where(p => !string.IsNullOrEmpty(p.ImageUrl) && !exactCopyIds.Contains(p.Id)).Take(20).ToList();
                 Console.WriteLine($"Checking {similarPinsToCheck.Count} pins for similar images...");
-                
+
                 var similarSemaphore = new SemaphoreSlim(3);
                 var similarTasks = similarPinsToCheck.Select(async pin =>
                 {
@@ -653,7 +649,7 @@ namespace PinterestClone.BLL.Services.PinService
                     try
                     {
                         var similarity = await _imageSearchService.CalculateSimilarityAsync(imageFile, pin.ImageUrl);
-                        if (similarity > 0.5) 
+                        if (similarity > 0.5)
                         {
                             Console.WriteLine($"Similar image found: {pin.ImageUrl} with similarity {similarity:F3}");
                             return (pin, similarity);
@@ -675,13 +671,13 @@ namespace PinterestClone.BLL.Services.PinService
 
                 var exactCopies = resultPins.ToList();
                 var similarPinsList = similarPins.OrderByDescending(x => x.similarity).Select(x => x.pin).ToList();
-                
+
                 Console.WriteLine($"Found {similarPinsList.Count} similar images");
-                
+
                 var finalPins = new List<Pin>();
-                finalPins.AddRange(exactCopies); 
-                finalPins.AddRange(similarPinsList); 
-                
+                finalPins.AddRange(exactCopies);
+                finalPins.AddRange(similarPinsList);
+
                 if (!finalPins.Any())
                 {
                     Console.WriteLine("No exact copies or similar images found, returning first 30 pins");
@@ -696,7 +692,7 @@ namespace PinterestClone.BLL.Services.PinService
                     PageSize = 30,
                     TotalPages = 1
                 };
-                
+
                 Console.WriteLine($"Returning {exactCopies.Count} exact copies + {similarPinsList.Count} similar images = {finalPins.Count} total");
                 return finalResult;
             }
@@ -714,7 +710,7 @@ namespace PinterestClone.BLL.Services.PinService
                     PageSize = 30,
                     TotalPages = 1
                 };
-                
+
                 return fallbackResult;
             }
         }
@@ -784,7 +780,7 @@ namespace PinterestClone.BLL.Services.PinService
                             var totalTags = Math.Max(currentTags.Count, pinTags.Count);
                             var similarity = commonTags / (double)totalTags;
 
-                            if (similarity > 0.1) 
+                            if (similarity > 0.1)
                             {
                                 similarPins.Add((pin, similarity));
                             }
@@ -904,4 +900,5 @@ namespace PinterestClone.BLL.Services.PinService
 
     }
 }
+
 

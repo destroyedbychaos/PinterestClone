@@ -1,7 +1,7 @@
-    import { Box } from "@mui/material";
-import { memo, useState } from "react";
+import { Box } from "@mui/material";
+import { memo, useState, useEffect } from "react";
 import { useTheme } from '@mui/material/styles';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Icon as Iconify } from '@iconify/react';
 import icon from '../../assets/images/logo.png';
 import '../../pages/nft-market/transition-animations.css';

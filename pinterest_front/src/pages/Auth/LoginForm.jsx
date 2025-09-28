@@ -1,6 +1,8 @@
-﻿import React, { useState } from 'react';
-import { usePinterestAuth } from '@/hooks/usePinterestAuth';
-import { Button, Typography, useTheme, Icon,Box } from '@mui/material';
+﻿﻿import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useLoginMutation, useGoogleAuthMutation } from '../../../store/Auth/AuthApi.js';
+import { setCredentials } from '../../../store/slices/AuthSlice.js';
+import { Button, Typography, useTheme, Icon, Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useNavigate, useLocation } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
 import SocialLoginButton from '../../components/ui/Auth/SocialLoginButton';
@@ -11,7 +13,9 @@ const LoginForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login, isLoading } = usePinterestAuth();
+    const [login, { isLoading, error }] = useLoginMutation();
+    const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +28,84 @@ const LoginForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await login(email, password);
+            const response = await login({ email, password }).unwrap();
+            dispatch(setCredentials({
+                user: { email: email },
+                accessToken: response.payload.accessToken
+            }));
+            
+            localStorage.setItem('userPassword', password);
+            
+            navigate('/');
+        } catch (err) {
+            console.error('Login error:', err);
+        }
+    };
+
+    const fetchGoogleUserInfo = async (accessToken) => {
+        try {
+            const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
+            const userInfo = await response.json();
+            return userInfo;
+        } catch (error) {
+            console.error('Error fetching Google user info:', error);
+            return null;
+        }
+    };
+
+    const handleGoogleSuccess = async (tokenResponse) => {
+        try {
+            const response = await googleAuth({ 
+                accessToken: tokenResponse.access_token 
+            }).unwrap();
+            console.log('Google auth response:', response);
+            
+            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
+            
+            dispatch(setCredentials({
+                user: response.payload.user || { email: response.payload.user?.email || '' },
+                accessToken: accessToken
+            }));
+            
+            navigate('/');
+        } catch (err) {
+            if (err.status === 400) {
+                const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
+                if (userInfo) {
+                    setGoogleToken(tokenResponse.access_token);
+                    setGoogleUserInfo(userInfo);
+                    setShowGoogleDialog(true);
+                }
+            } else {
+                console.error('Google auth error:', err);
+            }
+        }
+    };
+
+    const handleGoogleRegistration = async () => {
+        if (!birthDate) {
+            alert('Please enter your birth date');
+            return;
+        }
+
+        try {
+            const response = await googleAuth({
+                accessToken: googleToken,
+                email: googleUserInfo.email,
+                firstName: googleUserInfo.given_name,
+                lastName: googleUserInfo.family_name,
+                birthDate: birthDate,
+                profilePicture: googleUserInfo.picture
+            }).unwrap();
+
+            const accessToken = response.payload?.tokens?.accessToken || response.payload?.accessToken;
+
+            dispatch(setCredentials({
+                user: response.payload.user || { email: response.payload.user?.email || '' },
+                accessToken: accessToken
+            }));
+
+            setShowGoogleDialog(false);
             navigate('/');
         } catch (err) {
             console.error('Google registration error:', err);
@@ -39,39 +120,30 @@ const LoginForm = () => {
     });
 
     return (
-        <Box sx={{
-            position: 'right',
-            minHeight: '100vh',
-            width: '100%',
-            fontFamily: 'Geologica, sans-serif',
-            backgroundImage: 'url(../../../src/assets/images/image.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'top',
-            backgroundRepeat: 'no-repeat',
-            backgroundOrigin: 'top right',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-        }}>
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: '100vh',
-                    maxWidth: '786px',
-                    maxHeight: '1080px',
-                    gap: '48px',
-                    borderTopRightRadius: '40px',
-                    borderBottomRightRadius: '40px',
-                    padding: '100px 160px',
-                    boxShadow: '3px 0px 38.7px 2px rgba(1, 35, 63, 0.25)',
-                    position: 'relative',
-                    zIndex: 1,
-                }}
-                bgcolor={"white"}
-            >
+        <LoginLayout title={'Welcome to Aestify!'}>
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignContent: 'center', gap: '16px' }}>
+                <InputField
+                    label="E-mail address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-mail"
+                    id="email"
+                    required
+                />
+
+                <InputField
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    id="password"
+                    required
+                    showPassword={showPassword}
+                    setShowPassword={setShowPassword}
+                />
+
                 <Typography
                     onClick={() => navigate('/forgotpassword')}
                     sx={{

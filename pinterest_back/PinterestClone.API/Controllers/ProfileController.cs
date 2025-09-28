@@ -14,9 +14,6 @@ using PinterestClone.DAL.Models.Identity;
 using PinterestClone.DAL.ViewModels;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using PinterestClone.BLL.Services.UserService;
-using PinterestClone.BLL.Services.ProfileReportService;
-using PinterestClone.BLL.Services.UserBlockService;
 using System.Text.Json;
 
 namespace PinterestClone.API.Controllers
@@ -62,8 +59,10 @@ namespace PinterestClone.API.Controllers
         private readonly IProfileReportService _profileReportService;
         private readonly IUserBlockService _userBlockService;
         private readonly IMapper _mapper;
+        private readonly AppDbContext _context;
 
-        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper)
+
+        public ProfileController(UserManager<User> userManager, IUserService userService, IProfileReportService profileReportService, IUserBlockService userBlockService, IMapper mapper, AppDbContext context)
         {
             _userManager = userManager;
             _userService = userService;
@@ -394,72 +393,42 @@ namespace PinterestClone.API.Controllers
                 if (model.PhoneNumber is not null)
                     user.PhoneNumber = model.PhoneNumber;
                 if (model.DisplayName is not null)
+                    user.DisplayName = model.DisplayName;
+                if (model.Bio is not null)
+                    user.Bio = model.Bio;
+                if (model.BirthDate is not null)
                 {
-                    user.DisplayName = string.IsNullOrWhiteSpace(model.DisplayName) ? null : model.DisplayName.Trim();
+                    Console.WriteLine($"Updating BirthDate from {user.BirthDate} to {model.BirthDate.Value}");
+                    user.BirthDate = model.BirthDate.Value;
                 }
-                if (model.Bio is not null) user.Bio = model.Bio;
-                if (model.Country is not null) user.Country = model.Country;
-                if (model.Language is not null) user.Language = model.Language;
-                if (model.DateOfBirth is not null) user.BirthDate = model.DateOfBirth.Value;
-                if (model.ProfileImageUrl is not null)
-                    user.AvatarUrl = string.IsNullOrWhiteSpace(model.ProfileImageUrl) ? null : model.ProfileImageUrl;
-                if (model.BannerImageUrl is not null)
-                    user.BannerUrl = string.IsNullOrWhiteSpace(model.BannerImageUrl) ? null : model.BannerImageUrl;
-
-                if (model.Interests != null)
+                if (model.Gender is not null)
                 {
-                    user.InterestsList = model.Interests.Where(i => !string.IsNullOrWhiteSpace(i)).ToList();
-                    Console.WriteLine($"Updated interests: {JsonSerializer.Serialize(user.InterestsList)}");
+                    Console.WriteLine($"Updating Gender from '{user.Gender}' to '{model.Gender}'");
+                    user.Gender = model.Gender;
+                    Console.WriteLine($"User Gender after update: {user.Gender}");
                 }
-
-                if (model.Vibes != null)
-                {
-                    user.VibesList = model.Vibes.Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
-                    Console.WriteLine($"Updated vibes: {JsonSerializer.Serialize(user.VibesList)}");
-                }
-
-                if (!user.OnboardingCompleted)
-                {
-                    user.OnboardingCompleted = true;
-                    user.OnboardingCompletedAt = DateTime.UtcNow;
-                    Console.WriteLine("Marking onboarding as completed");
-                }
+                if (model.Country is not null)
+                    user.Country = model.Country;
+                if (model.Language is not null)
+                    user.Language = model.Language;
+                if (model.IsProfilePublic is not null)
+                    user.IsProfilePublic = model.IsProfilePublic.Value;
+                if (model.IsSearchPrivate is not null)
+                    user.IsSearchPrivate = model.IsSearchPrivate.Value;
 
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
-                {
-                    Console.WriteLine($"Update failed: {JsonSerializer.Serialize(updateResult.Errors)}");
-                    return BadRequest(new { errors = updateResult.Errors });
-                }
+                    return BadRequest(updateResult.Errors);
 
-                Console.WriteLine($"Profile updated successfully for user: {user.Email}");
+                Console.WriteLine($"User Gender after database update: {user.Gender}");
+                Console.WriteLine($"Update result succeeded: {updateResult.Succeeded}");
 
-                var updatedUserDto = _mapper.Map<UserProfileDto>(user);
-
-                try
-                {
-                    var followersCount = await _userService.GetFollowersCountAsync(user.Id);
-                    var followingCount = await _userService.GetFollowingCountAsync(user.Id);
-
-                    updatedUserDto.FollowersCount = followersCount.Success ? (int)followersCount.Payload : 0;
-                    updatedUserDto.FollowingCount = followingCount.Success ? (int)followingCount.Payload : 0;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Warning: Could not fetch follower counts: {ex.Message}");
-                }
-
-                return Ok(new
-                {
-                    message = "Profile updated successfully.",
-                    user = updatedUserDto
-                });
+                return Ok(new { message = "Settings updated successfully." });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in UpdateProfile: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                return BadRequest(new { error = "Update failed", details = ex.Message });
+                Console.WriteLine($"Error in UpdateSettings: {ex.Message}");
+                return BadRequest("Update failed");
             }
         }
 
@@ -473,9 +442,6 @@ namespace PinterestClone.API.Controllers
         {
             try
             {
-                if (interests == null || !interests.Any())
-                    return BadRequest("No interests provided.");
-
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                     return Unauthorized("User not found");
@@ -491,8 +457,8 @@ namespace PinterestClone.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in AddInterests: {ex.Message}");
-                return BadRequest("Failed to update interests");
+                Console.WriteLine($"Error in ChangePassword: {ex.Message}");
+                return BadRequest("Password change failed");
             }
         }
 
@@ -505,9 +471,6 @@ namespace PinterestClone.API.Controllers
         {
             try
             {
-                if (vibes == null || !vibes.Any())
-                    return BadRequest("No vibes provided.");
-
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                     return Unauthorized("User not found");
@@ -529,8 +492,8 @@ namespace PinterestClone.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in AddVibes: {ex.Message}");
-                return BadRequest("Failed to update vibes");
+                Console.WriteLine($"Error in DeactivateAccount: {ex.Message}");
+                return BadRequest("Deactivation failed");
             }
         }
 
@@ -569,7 +532,7 @@ namespace PinterestClone.API.Controllers
 
                 var avatarId = $"avatar_{user.Id}_{Guid.NewGuid()}";
                 var uploadResult = await fileService.UploadAsync(model.File, avatarId);
-                
+
                 if (uploadResult.Error)
                 {
                     return BadRequest($"Upload failed: {uploadResult.Status}");
@@ -623,7 +586,7 @@ namespace PinterestClone.API.Controllers
 
                 var bannerId = $"banner_{user.Id}_{Guid.NewGuid()}";
                 var uploadResult = await fileService.UploadAsync(model.File, bannerId);
-                
+
                 if (uploadResult.Error)
                 {
                     return BadRequest($"Upload failed: {uploadResult.Status}");
@@ -644,17 +607,18 @@ namespace PinterestClone.API.Controllers
             }
         }
 
+
         /// <summary>
         /// Скидає профіль користувача до початкових значень.
         /// </summary>
         /// <param name="imageService">Сервіс для роботи з зображеннями.</param>
         /// <returns><see cref="IActionResult"/> з повідомленням про успішне скидання або помилку.</returns>
         [HttpPost("reset")]
-        public async Task<IActionResult> ResetProfile([FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
+        public async Task<IActionResult> ResetProfile(
+            [FromServices] PinterestClone.BLL.Services.ImageService.IImageService imageService)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
-
 
             user.DisplayName = null;
             user.Bio = null;
@@ -699,6 +663,8 @@ namespace PinterestClone.API.Controllers
         [HttpPost("change-email")]
         public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailVM model)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
@@ -717,6 +683,7 @@ namespace PinterestClone.API.Controllers
 
             return Ok(new { message = "Email changed successfully." });
         }
+
 
         /// <summary>
         /// Видаляє обліковий запис користувача.
@@ -803,7 +770,7 @@ namespace PinterestClone.API.Controllers
         {
             var user = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.DisplayName == displayName);
-            
+
             if (user == null) return NotFound();
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -985,6 +952,10 @@ namespace PinterestClone.API.Controllers
             });
         }
 
+
+        // ����� ������ ���������� ��� ���...
+        // (followers, following, follow/unfollow, report, block/unblock ����)
+
         /// <summary>
         /// Отримує список підписників користувача.
         /// </summary>
@@ -1049,7 +1020,7 @@ namespace PinterestClone.API.Controllers
 
                 if (string.IsNullOrEmpty(targetUserId))
                     return BadRequest("Target user ID is required");
-                }
+
 
                 Console.WriteLine($"Following user: {currentUserId} -> {targetUserId}");
 
@@ -1057,17 +1028,17 @@ namespace PinterestClone.API.Controllers
                 if (!result.Success)
                     return BadRequest(result.Message);
 
-                if (currentUserId != targetUserId) 
+                if (currentUserId != targetUserId)
                 {
                     var follower = await _context.Users.FindAsync(currentUserId);
                     if (follower != null)
                     {
                         var notification = new Notification
                         {
-                            UserId = targetUserId, 
+                            UserId = targetUserId,
                             Message = $"{follower.UserName} started following you",
                             Title = "New Follower 👤",
-                            Type = NotificationType.System, 
+                            Type = NotificationType.System,
                             Status = NotificationStatus.Pending,
                             CreatedAt = DateTime.UtcNow
                         };
@@ -1081,10 +1052,10 @@ namespace PinterestClone.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in FollowUser: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// Відписується від користувача.
@@ -1307,7 +1278,7 @@ namespace PinterestClone.API.Controllers
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
                 Console.WriteLine($"Розташування на перевірці: {imagePath}");
                 Console.WriteLine($"Файл існує: {System.IO.File.Exists(imagePath)}");
-                
+
                 if (System.IO.File.Exists(imagePath))
                 {
                     return Ok(new { exists = true, path = imagePath, url = $"/images/{fileName}" });

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PinterestClone.BLL.DTOs;
 using PinterestClone.BLL.Services.NFTService;
+using PinterestClone.BLL.Services.PinService;
 using System.Security.Claims;
 
 namespace PinterestClone.API.Controllers
@@ -21,10 +22,12 @@ namespace PinterestClone.API.Controllers
     public class FavoritesController : BaseController
     {
         private readonly INFTService _nftService;
+        private readonly IPinService _pinService;
 
-        public FavoritesController(INFTService nftService)
+        public FavoritesController(INFTService nftService, IPinService pinService)
         {
             _nftService = nftService;
+            _pinService = pinService;
         }
 
         /// <summary>

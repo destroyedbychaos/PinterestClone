@@ -32,6 +32,14 @@ using PinterestClone.DAL.Repositories.PinReportRepository;
 using PinterestClone.DAL.Repositories.ProfileReportRepository;
 using PinterestClone.DAL.Repositories.UserBlockRepository;
 using PinterestClone.DAL.Repositories.PasswordResetRepository;
+using PinterestClone.DAL.Repositories.HiddenPinRepository;
+using PinterestClone.DAL.Repositories.PinViewHistoryRepository;
+using PinterestClone.BLL.Services.SocialPermissionsService;
+using PinterestClone.DAL.Repositories.SocialPermissionsRepository;
+using PinterestClone.BLL.Services.NotificationSettingsService;
+using PinterestClone.DAL.Repositories.NotificationSettingsRepository;
+using PinterestClone.BLL.Services.SecurityService;
+using PinterestClone.DAL.Repositories.SecurityRepository;
 using PinterestClone.BLL.Services.Web3AuthService;
 using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.NFTService;
@@ -48,7 +56,6 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using PinterestClone.BLL.MappingProfiles;
-using PinterestClone.BLL.Services.UserService;
 using PinterestClone.BLL.Services.FileBlobService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,7 +70,6 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors();
 
-// HTTP Client для внешних API
 builder.Services.AddHttpClient();
 
 builder.Services.AddSwaggerGen(c =>
@@ -144,20 +150,20 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["AuthSettings:audience"],
         ClockSkew = TimeSpan.FromMinutes(5)
     };
-    
+
 });
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IPinRepository, PinRepository>();
-builder.Services.AddScoped<IPinService, PinService>();
-builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IPhoneService, PhoneService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPinService, PinService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IPinShareRepository, PinShareRepository>();
 builder.Services.AddScoped<IPinReportRepository, PinReportRepository>();
 builder.Services.AddScoped<IProfileReportRepository, ProfileReportRepository>();
@@ -169,8 +175,21 @@ builder.Services.AddScoped<IUserBlockService, UserBlockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
-builder.Services.AddScoped<IWeb3AuthService, Web3AuthService>();
+builder.Services.AddScoped<IHiddenPinRepository, HiddenPinRepository>();
+builder.Services.AddScoped<IHiddenPinService, HiddenPinService>();
+builder.Services.AddScoped<ISocialPermissionsRepository, SocialPermissionsRepository>();
+builder.Services.AddScoped<ISocialPermissionsService, SocialPermissionsService>();
+builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
+builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
+builder.Services.AddScoped<ISecurityRepository, SecurityRepository>();
+builder.Services.AddScoped<ISecurityService, SecurityService>();
+builder.Services.AddScoped<IImageAnalysisService, ImageAnalysisService>();
+builder.Services.AddScoped<IImageSearchService, ImageSearchService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPinViewHistoryRepository, PinViewHistoryRepository>();
+builder.Services.AddScoped<IPinViewHistoryService, PinViewHistoryService>();
+builder.Services.AddSingleton<IFileService, FileService>();
+builder.Services.AddScoped<IWeb3AuthService, Web3AuthService>();
 builder.Services.AddScoped<INFTService, NFTService>();
 builder.Services.AddScoped<INFTRepository, NFTRepository>();
 builder.Services.AddScoped<IUserFavoritesRepository, UserFavoritesRepository>();
@@ -178,6 +197,16 @@ builder.Services.AddScoped<IBlockchainService, BlockchainService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<IMarketplaceRepository, MarketplaceRepository>();
 builder.Services.AddScoped<IIPFSService, IPFSService>();
+
+//AutoMapper
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddMaps(typeof(PinMappingProfile).Assembly);
+    cfg.AddMaps(typeof(BoardMappingProfile).Assembly);
+    cfg.AddMaps(typeof(DeviceServicesMappingProfile).Assembly);
+    cfg.AddMaps(typeof(UserMappingProfile).Assembly);
+    cfg.AddMaps(typeof(PinViewHistoryMappingProfile).Assembly);
+});
 
 var app = builder.Build();
 
@@ -197,7 +226,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()
@@ -214,13 +242,13 @@ app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-       
+
         ctx.Context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
         ctx.Context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         ctx.Context.Response.Headers.Add("Access-Control-Allow-Headers", "*");
-        
-        if (ctx.File.Name.EndsWith(".png") || ctx.File.Name.EndsWith(".jpg") || 
-            ctx.File.Name.EndsWith(".jpeg") || ctx.File.Name.EndsWith(".gif") || 
+
+        if (ctx.File.Name.EndsWith(".png") || ctx.File.Name.EndsWith(".jpg") ||
+            ctx.File.Name.EndsWith(".jpeg") || ctx.File.Name.EndsWith(".gif") ||
             ctx.File.Name.EndsWith(".webp"))
         {
             ctx.Context.Response.Headers.Add("Cache-Control", "public, max-age=86400");

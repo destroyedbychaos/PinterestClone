@@ -1,8 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Emgu.CV;
-using Emgu.CV.Structure;
+using Emgu.CV.CvEnum;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Features2D;
 using Emgu.CV.Util;
+using System.IO;
+using System.Net.Http;
+using System.IO;
+using System.Net.Http;
 using System.Drawing;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,7 +26,7 @@ namespace PinterestClone.BLL.Services.ImageSearchService
     public class ImageSearchService : IImageSearchService
     {
         private readonly HttpClient _httpClient;
-        
+
         public ImageSearchService()
         {
             _httpClient = new HttpClient();
@@ -124,13 +129,13 @@ namespace PinterestClone.BLL.Services.ImageSearchService
             {
                 Console.WriteLine($"FindExactImageCopiesAsync: Starting search for {imageFile.FileName}");
                 var queryHash = await CalculateImageHashAsync(imageFile);
-                
+
                 if (string.IsNullOrEmpty(queryHash))
                 {
                     Console.WriteLine("FindExactImageCopiesAsync: Failed to calculate query hash");
                     return new List<string>();
                 }
-                
+
                 Console.WriteLine($"FindExactImageCopiesAsync: Query hash = {queryHash}");
 
                 Console.WriteLine("FindExactImageCopiesAsync: This method now works with online images from PinService");
@@ -154,20 +159,19 @@ namespace PinterestClone.BLL.Services.ImageSearchService
         {
             var tempUploadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(uploadedImage.FileName));
             var tempExistingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
-            
+
             try
             {
-                using (var stream = new FileStream(tempUploadPath, FileMode.Create))
-                {
-                    await uploadedImage.CopyToAsync(stream);
-                }
+                var queryImage = new Mat();
+                
 
-                using var httpClient = new HttpClient();
-                using var response = await httpClient.GetAsync(existingImageUrl);
-                if (!response.IsSuccessStatusCode)
+                var existingImage = new Mat();
+                
+                byte[] uploadedBytes;
+                using (var ms = new MemoryStream())
                 {
-                    Console.WriteLine($"CalculateSimilarityAsync: Could not download image from {existingImageUrl}");
-                    return 0.0;
+                    await uploadedImage.CopyToAsync(ms);
+                    uploadedBytes = ms.ToArray();
                 }
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
@@ -176,70 +180,61 @@ namespace PinterestClone.BLL.Services.ImageSearchService
                     await stream.CopyToAsync(fileStream);
                 }
 
-                using var queryImage = new Mat(tempUploadPath, Emgu.CV.CvEnum.ImreadModes.Color);
-                using var existingImage = new Mat(tempExistingPath, Emgu.CV.CvEnum.ImreadModes.Color);
-                
+                using var queryImage = CvInvoke.Imread(tempUploadPath, ImreadModes.Color);
+                using var existingImage = CvInvoke.Imread(tempExistingPath, ImreadModes.Color);
+
                 if (queryImage.IsEmpty)
                 {
-                    Console.WriteLine($"CalculateSimilarityAsync: Could not load uploaded image: {Path.GetFileName(tempUploadPath)}");
+                    Console.WriteLine($"Could not load uploaded image: {Path.GetFileName(tempUploadPath)}");
                     return 0.0;
+                CvInvoke.Imdecode(uploadedBytes, Emgu.CV.CvEnum.ImreadModes.AnyColor, queryImage);
+
+                byte[] existingBytes;
+                using (var httpClient = new HttpClient())
+                using (var response = await httpClient.GetAsync(existingImageUrl))
+                {
+                    if (!response.IsSuccessStatusCode)
+                        return 0.0;
+                    existingBytes = await response.Content.ReadAsByteArrayAsync();
                 }
-                
+
                 if (existingImage.IsEmpty)
                 {
-                    Console.WriteLine($"CalculateSimilarityAsync: Could not load existing image: {Path.GetFileName(tempExistingPath)}");
+                    Console.WriteLine($"Could not load existing image: {Path.GetFileName(tempExistingPath)}");
+                CvInvoke.Imdecode(existingBytes, Emgu.CV.CvEnum.ImreadModes.AnyColor, existingImage);
+
+                if (queryImage.IsEmpty || existingImage.IsEmpty)
                     return 0.0;
-                }
-                
+
                 using var sift = new SIFT();
-                
                 using var queryKeyPoints = new VectorOfKeyPoint();
                 using var queryDescriptors = new Mat();
                 using var existingKeyPoints = new VectorOfKeyPoint();
                 using var existingDescriptors = new Mat();
-                
+
                 sift.DetectAndCompute(queryImage, null, queryKeyPoints, queryDescriptors, false);
                 sift.DetectAndCompute(existingImage, null, existingKeyPoints, existingDescriptors, false);
-                
+
                 if (queryKeyPoints.Size == 0 || queryDescriptors.IsEmpty || existingKeyPoints.Size == 0 || existingDescriptors.IsEmpty)
-                {
-                    Console.WriteLine($"CalculateSimilarityAsync: No keypoints found in images");
                     return 0.0;
-                }
 
                 using var matcher = new BFMatcher(Emgu.CV.Features2D.DistanceType.L2, false);
                 using var matches = new VectorOfDMatch();
                 matcher.Match(queryDescriptors, existingDescriptors, matches);
-                
-                var goodMatches = 0;
+
+                int goodMatches = 0;
                 for (int i = 0; i < matches.Size; i++)
                 {
                     if (matches[i].Distance < 80)
-                    {
                         goodMatches++;
-                    }
                 }
-                
-                var similarity = matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
-                Console.WriteLine($"CalculateSimilarityAsync: Similarity with {existingImageUrl}: {similarity:F3}");
-                return similarity;
+
+                return matches.Size > 0 ? (double)goodMatches / matches.Size : 0;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"CalculateSimilarityAsync: Error processing {existingImageUrl}: {ex.Message}");
                 return 0.0;
-            }
-            finally
-            {
-                if (File.Exists(tempUploadPath))
-                {
-                    File.Delete(tempUploadPath);
-                }
-                if (File.Exists(tempExistingPath))
-                {
-                    File.Delete(tempExistingPath);
-                }
             }
         }
     }
-} 
+}

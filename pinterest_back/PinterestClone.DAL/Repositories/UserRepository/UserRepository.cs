@@ -59,32 +59,98 @@ namespace PinterestClone.DAL.Repositories.UserRepository
 
             if (includeActivity)
             {
-                return await _userManager.Users
-                .FirstOrDefaultAsync(predicate);
+                query = query
+                    .Include(u => u.Boards)
+                    .Include(u => u.Pins)
+                    .Include(u => u.Comments)
+                    .Include(u => u.Likes);
             }
-            else
+
+            var user = await query.SingleOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return null;
+
+            if (includeFollowing)
+                await _context.Entry(user).Collection(u => u.FollowingRelations).LoadAsync();
+
+            if (includeFollowers)
+                await _context.Entry(user).Collection(u => u.FollowerRelations).LoadAsync();
+
+            return user;
+        }
+
+        public async Task<bool> FollowUserAsync(string followerId, string targetId)
+        {
+            if (followerId == targetId) return false;
+
+            var exists = await _context.UserFollows.AnyAsync(uf => uf.FollowerId == followerId && uf.FollowingId == targetId);
+
+            if (exists) return false;
+
+            _context.UserFollows.Add(new UserFollow
             {
-                return await _userManager.Users
-                .FirstOrDefaultAsync(predicate);
-            }
+                FollowerId = followerId,
+                FollowingId = targetId
+            });
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public async Task<User?> GetByWalletAddressAsync(string walletAddress)
+        public async Task<bool> UnfollowUserAsync(string followerId, string targetId)
         {
-            return await _userManager.Users
-                .FirstOrDefaultAsync(u => u.WalletAddress == walletAddress);
+            var relation = await _context.UserFollows.FirstOrDefaultAsync(uf => uf.FollowerId == followerId && uf.FollowingId == targetId);
+
+            if (relation == null) return false;
+
+            _context.UserFollows.Remove(relation);
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public async Task<User?> CreateAsync(User user)
+        public async Task<List<User>> GetFollowersAsync(string userId)
         {
-            var result = await _userManager.CreateAsync(user);
-            return result.Succeeded ? user : null;
+            var followers = await _context.UserFollows
+                .Where(uf => uf.FollowingId == userId)
+                .Select(uf => uf.Follower)
+                .ToListAsync();
+
+            return followers ?? new List<User>();
         }
 
-        public async Task<User?> UpdateAsync(User user)
+        public async Task<List<User>> GetFollowingAsync(string userId)
         {
-            var result = await _userManager.UpdateAsync(user);
-            return result.Succeeded ? user : null;
+            var following = await _context.UserFollows
+                .Where(uf => uf.FollowerId == userId)
+                .Select(uf => uf.Following)
+                .ToListAsync();
+
+            return following ?? new List<User>();
+        }
+
+        public async Task<bool> IsFollowingAsync(string followerId, string targetId)
+        {
+            return await _context.UserFollows
+                .AnyAsync(uf => uf.FollowerId == followerId && uf.FollowingId == targetId);
+        }
+
+        public async Task<int> GetFollowersCountAsync(string userId)
+        {
+            return await _context.UserFollows
+                .CountAsync(uf => uf.FollowingId == userId);
+        }
+
+        public async Task<int> GetFollowingCountAsync(string userId)
+        {
+            return await _context.UserFollows
+                .CountAsync(uf => uf.FollowerId == userId);
+        }
+
+        public async Task<bool> IsBlockedAsync(string blockerId, string blockedUserId)
+        {
+            return await _context.UserBlocks.AnyAsync(ub => ub.BlockerId == blockerId && ub.BlockedUserId == blockedUserId);
         }
 
         public async Task<User?> GetByWalletAddressAsync(string walletAddress)
@@ -98,3 +164,4 @@ namespace PinterestClone.DAL.Repositories.UserRepository
         }
     }
 }
+

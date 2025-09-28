@@ -17,11 +17,11 @@ namespace PinterestClone.DAL.Models.Identity
         public string? Bio { get; set; }
 
         public DateTime? BirthDate { get; set; }
-        public DateTime? BirthDate { get; set; }
         public string? Gender { get; set; }
         public string? Country { get; set; }
         public string? Language { get; set; }
         public bool IsProfilePublic { get; set; } = true;
+        public bool IsSearchPrivate { get; set; } = false;
 
 
 
@@ -40,6 +40,11 @@ namespace PinterestClone.DAL.Models.Identity
         public DateTime? PhoneNumberVerifiedAt { get; set; }
 
         public string? GoogleId { get; set; }
+
+        public string? Interests { get; set; }
+        public string? Vibes { get; set; }
+        public bool OnboardingCompleted { get; set; } = false;
+        public DateTime? OnboardingCompletedAt { get; set; }
 
         public virtual ICollection<Board> Boards { get; set; } = [];
         public virtual ICollection<Pin> Pins { get; set; } = [];

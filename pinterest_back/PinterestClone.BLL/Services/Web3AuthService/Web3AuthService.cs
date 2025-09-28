@@ -210,7 +210,7 @@ namespace PinterestClone.BLL.Services.Web3AuthService
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
                 Bio = user.Bio,
-                BirthDate = user.BirthDate,
+                BirthDate = (DateTime)user.BirthDate,
                 Gender = user.Gender,
                 Country = user.Country,
                 Language = user.Language,

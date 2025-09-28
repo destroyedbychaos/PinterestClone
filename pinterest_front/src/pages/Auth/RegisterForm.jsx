@@ -1,5 +1,7 @@
-﻿import React, { useState } from 'react';
-import { usePinterestAuth } from '@/hooks/usePinterestAuth';
+﻿﻿import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { useRegisterMutation, useGoogleAuthMutation } from '../../../store/Auth/AuthApi.js';
+import { setCredentials } from '../../../store/slices/AuthSlice.js';
 import { Button, Typography, useTheme, Box } from '@mui/material';
 import { useNavigate } from "react-router";
 import InputField from '../../components/ui/Auth/InputField';
@@ -11,19 +13,28 @@ const RegisterForm = () => {
     const theme = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const { register, isLoading } = usePinterestAuth();
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [register, { isLoading, error }] = useRegisterMutation();
+    const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (password !== confirmPassword) {
-                console.error('Паролі не збігаються');
-                return;
-            }
-            await register(email, password);
+            const response = await register({
+                email,
+                password,
+                dateOfBirth,
+            }).unwrap();
+
+            dispatch(setCredentials({
+                user: { email: email },
+                accessToken: response.payload.accessToken
+            }));
+
+            localStorage.setItem('userPassword', password);
             localStorage.setItem('isNewUser', 'true');
             navigate('/');
         } catch (err) {

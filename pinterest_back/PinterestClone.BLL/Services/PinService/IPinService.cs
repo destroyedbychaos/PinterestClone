@@ -19,7 +19,7 @@ namespace PinterestClone.BLL.Services.PinService
         Task<List<PinRecommendationDto>> GetRecommendedPinsAsync(string userId, int count = 20);
         Task<List<string>> GetSearchSuggestionsAsync(string query);
 
-        
+
 
 
         Task<PinListDto?> SearchPinsAsync(string searchTerm, bool searchInTitle = true, bool searchInDescription = true, bool exactMatch = false, int pageNumber = 1, int pageSize = 20);
